@@ -195,7 +195,13 @@ async function refresh(){
 async function action(fn,successMsg){
  if(!requireReady())return;
  setButtons(true);
- try{await fn();await refresh();toast(successMsg,'success')}catch(e){console.error(e);toast('Could not save the change. Please try again.','error');setButtons(false)}
+ try{await fn();await refresh();toast(successMsg,'success')}
+ catch(e){
+   console.error(e);
+   const msg=e?.message||'Could not save the change. Please try again.';
+   toast(msg,'error');
+   setButtons(false);
+ }
 }
 function openTask(section='daily',task=null){
  if(!requireReady())return;
@@ -247,11 +253,24 @@ async function deleteTask(id){
 async function saveOwner(){
  const name=$('ownerName').value.trim(),phone=$('ownerPhone').value.trim();
  if(!name||!phone){toast('Enter both name and WhatsApp number.','error');return}
+ const duplicate=dbOwners.find(o=>o.name.trim().toLowerCase()===name.toLowerCase() && o.id!==editingOwnerId);
+ if(duplicate){
+   toast('An owner named '+duplicate.name+' is already registered. Use Edit instead.','error');
+   return;
+ }
  await action(async()=>{
    if(editingOwnerId){
-     const u=await SB.from('dp_owners').update({name,whatsapp:phone}).eq('id',editingOwnerId);if(u.error)throw u.error;
+     const u=await SB.from('dp_owners').update({name,whatsapp:phone}).eq('id',editingOwnerId);
+     if(u.error){
+       if(u.error.code==='23505') throw new Error('An owner with this name already exists.');
+       throw u.error;
+     }
    }else{
-     const i=await SB.from('dp_owners').insert({name,whatsapp:phone});if(i.error)throw i.error;
+     const i=await SB.from('dp_owners').insert({name,whatsapp:phone});
+     if(i.error){
+       if(i.error.code==='23505') throw new Error('An owner with this name already exists.');
+       throw i.error;
+     }
    }
    $('ownerName').value='';$('ownerPhone').value='';editingOwnerId=null;$('ownerSave').textContent='Register owner';
    renderOwnerList();
