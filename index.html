@@ -51,8 +51,8 @@ button,input,select{font:inherit}button{cursor:pointer;border:0}.app{max-width:1
  .layout{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,1fr)}.stat{padding:12px}.layout aside{order:2}.task{grid-template-columns:28px minmax(0,1fr) auto}.owner{display:none}
  .task-actions{opacity:1}.task-actions .btn{font-size:10px}.cardhead{padding:13px 14px}
 }
-</style></style>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script></head>
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.0"></script></head>
 
 <body>
 <div class="app">
@@ -259,10 +259,11 @@ fillOwners(people[0]);render();
 /* SUPABASE SHARED BACKEND */
 const SB_URL='https://sqgymglyshbyqhlnmxlj.supabase.co';
 const SB_KEY='sb_publishable_55cb_Smd0gZ2l5O_qlTy9w__Y26o1ea';
-const SB=supabase.createClient(SB_URL,SB_KEY);
+const SB=(window.supabase&&typeof window.supabase.createClient==='function')?window.supabase.createClient(SB_URL,SB_KEY):null;
 let dbOwners=[],dbTasks=[],dbTemplates=[],backendReady=false;
 
 async function loadOwners(){
+ if(!SB){console.warn('Supabase client not available');return}
  const r=await SB.from('dp_owners').select('*').eq('active',true).order('name');
  if(r.error){console.error(r.error);return}
  dbOwners=r.data||[];people=dbOwners.map(x=>x.name);
@@ -304,6 +305,7 @@ async function ensureDbTasks(date){
 }
 
 async function loadTasks(){
+ if(!SB){render();return}
  await ensureDbTasks(current);
  const k=iso(current);
  const r=await SB.from('dp_tasks').select('*,dp_owners(name,whatsapp),dp_daily_templates(weekday,title)').eq('task_date',k).order('created_at');
@@ -333,12 +335,14 @@ function fillOwners(selected){
 }
 
 async function toggleById(id){
+ if(!SB){toast('Database is still connecting — try again in a moment');return}
  const t=dbTasks.find(x=>x.id===id);if(!t)return;
  const r=await SB.from('dp_tasks').update({is_completed:!t.is_completed,updated_at:new Date().toISOString()}).eq('id',id);
  if(r.error)toast('Could not update task');else await loadTasks();
 }
 
 async function deleteTaskById(id,section,carry){
+ if(!SB){toast('Database is still connecting — try again in a moment');return}
  if(carry){toast('Carried-forward items are preserved in history');return}
  const t=dbTasks.find(x=>x.id===id);if(!t)return;
  if(!confirm('Delete this task?'))return;
@@ -362,6 +366,7 @@ function renderOwnerList(){
 }
 
 async function editOwner(id){
+ if(!SB){toast('Database is still connecting — try again in a moment');return}
  const o=dbOwners.find(x=>x.id===id);if(!o)return;
  const name=prompt('Owner name',o.name);if(name===null)return;
  const phone=prompt('WhatsApp number',o.whatsapp||'');if(phone===null)return;
@@ -371,6 +376,7 @@ async function editOwner(id){
  await loadOwners();await loadTasks();toast('Owner updated');
 }
 async function deleteOwner(id){
+ if(!SB){toast('Database is still connecting — try again in a moment');return}
  const o=dbOwners.find(x=>x.id===id);if(!o)return;
  if(!confirm('Delete '+o.name+' from the owner list? Existing tasks will remain unassigned.'))return;
  const r=await SB.from('dp_owners').update({active:false}).eq('id',id);
@@ -379,6 +385,7 @@ async function deleteOwner(id){
 }
 
 async function registerOwner(){
+ if(!SB){toast('Database is still connecting — try again in a moment');return}
  let name=document.getElementById('ownerName').value.trim(),phone=document.getElementById('ownerPhone').value.trim();
  if(!name||!phone){toast('Enter both name and WhatsApp number');return}
  const r=await SB.from('dp_owners').insert({name,whatsapp:phone});
@@ -388,6 +395,7 @@ async function registerOwner(){
 }
 
 async function saveTaskDb(){
+ if(!SB){toast('Database is still connecting — try again in a moment');return}
  const text=document.getElementById('taskText').value.trim(),owner=document.getElementById('taskOwner').value,section=document.getElementById('taskSection').value,id=document.getElementById('saveBtn').dataset.editId;
  if(!text)return;
  const ownerRow=dbOwners.find(x=>x.name===owner);const k=iso(current);
@@ -428,6 +436,7 @@ function openAdd(section){
 }
 
 async function carryForwardDb(){
+ if(!SB){toast('Database is still connecting — try again in a moment');return}
  const tomorrow=new Date(current);tomorrow.setDate(tomorrow.getDate()+1);
  const pending=dbTasks.filter(t=>!t.is_completed);
  for(const t of pending) await SB.from('dp_tasks').insert({task_date:iso(tomorrow),section:t.section,title:t.title,owner_id:t.owner_id,is_carried_forward:true,source_task_id:t.id});
@@ -452,8 +461,8 @@ document.getElementById('ownersBtn').onclick=openOwners;document.getElementById(
 document.getElementById('cancelBtn').onclick=()=>document.getElementById('modal').classList.remove('show');
 document.getElementById('ownerCancel').onclick=()=>document.getElementById('ownerModal').classList.remove('show');
 document.getElementById('nightAll').onclick=async()=>{for(const t of dbTasks.filter(x=>x.section==='night'))await SB.from('dp_tasks').update({is_completed:true,updated_at:new Date().toISOString()}).eq('id',t.id);await loadTasks();toast('Night clearing completed')};
-SB.channel('planner-live').on('postgres_changes',{event:'*',schema:'public',table:'dp_tasks'},()=>loadTasks()).subscribe();
-loadOwners().then(()=>render());
+if(SB)SB.channel('planner-live').on('postgres_changes',{event:'*',schema:'public',table:'dp_tasks'},()=>loadTasks()).subscribe();
+if(SB){loadOwners().then(()=>render())}else{render();toast('Planner opened offline — reconnecting to database…')}
 
 </script>
 </body>
