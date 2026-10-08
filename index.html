@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Daily Planner — Branch Operations</title>
+<style>
+:root{--bg:#f5f7fb;--card:#fff;--text:#172033;--muted:#6b7280;--line:#e7eaf0;--accent:#2563eb;--accent2:#eff6ff;--green:#16a34a;--greenbg:#ecfdf3;--orange:#d97706;--orangebg:#fff7ed;--red:#dc2626;--redbg:#fef2f2;--shadow:0 10px 30px rgba(20,31,55,.07);--r:18px}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial;color:var(--text)}
+button,input,select{font:inherit}button{cursor:pointer;border:0}.app{max-width:1180px;margin:auto;padding:18px}
+.top{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:18px}.brand{display:flex;gap:12px;align-items:center}.logo{width:44px;height:44px;border-radius:14px;background:#111827;color:#fff;display:grid;place-items:center;font-weight:800}.brand h1{font-size:20px;margin:0}.brand p{margin:2px 0 0;color:var(--muted);font-size:12px}.actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.btn{padding:10px 14px;border-radius:11px;background:#fff;border:1px solid var(--line);color:var(--text);font-weight:650}.btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}.btn.dark{background:#111827;color:#fff;border-color:#111827}.btn.small{padding:7px 10px;font-size:12px}
+.hero{background:linear-gradient(135deg,#111827,#26334d);color:#fff;border-radius:24px;padding:22px;box-shadow:var(--shadow);display:flex;justify-content:space-between;gap:18px;align-items:flex-end}.hero .eyebrow{text-transform:uppercase;letter-spacing:.12em;font-size:11px;opacity:.7}.hero h2{margin:5px 0 3px;font-size:28px}.hero p{margin:0;opacity:.75}.datebox{background:rgba(255,255,255,.1);padding:12px 15px;border-radius:14px;min-width:150px;text-align:right}.datebox strong{display:block;font-size:18px}.datebox span{font-size:11px;opacity:.7}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:14px 0}.stat{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;box-shadow:var(--shadow)}.stat .n{font-size:24px;font-weight:800}.stat .l{font-size:12px;color:var(--muted);margin-top:2px}.stat.green .n{color:var(--green)}.stat.orange .n{color:var(--orange)}.stat.red .n{color:var(--red)}
+.layout{display:grid;grid-template-columns:1.7fr .8fr;gap:14px}.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);overflow:hidden;margin-bottom:14px}.cardhead{padding:16px 18px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:10px;align-items:center}.cardhead h3{margin:0;font-size:16px}.cardhead span{font-size:11px;color:var(--muted)}.body{padding:14px 18px}.sectionTitle{display:flex;align-items:center;gap:8px;margin:18px 0 9px;font-weight:800;font-size:13px;text-transform:uppercase;letter-spacing:.05em}.sectionTitle:first-child{margin-top:0}.sectionTitle .bar{width:5px;height:18px;background:var(--accent);border-radius:10px}.task{display:grid;grid-template-columns:28px 1fr auto;align-items:center;gap:9px;padding:11px 8px;border-bottom:1px solid #f0f1f5}.task:last-child{border-bottom:0}.check{width:22px;height:22px;border-radius:7px;border:2px solid #cbd5e1;background:#fff;display:grid;place-items:center;color:#fff;font-size:13px;font-weight:900}.check.done{background:var(--green);border-color:var(--green)}.task.done .title{text-decoration:line-through;color:#7c8798}.title{font-weight:650;font-size:13px}.meta{font-size:11px;color:var(--muted);margin-top:3px}.owner{font-size:11px;padding:5px 8px;border-radius:999px;background:#f1f5f9;color:#475569;white-space:nowrap}.carry{background:var(--orangebg);border-left:3px solid #f59e0b}.carry .owner{background:#ffedd5;color:#9a3412}.new{background:#fff}.task-actions{display:flex;gap:5px}.empty{padding:18px;text-align:center;color:var(--muted);font-size:12px}
+.sidecard{background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);padding:16px;margin-bottom:14px}.sidecard h3{font-size:14px;margin:0 0 12px}.person{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #f0f1f5}.person:last-child{border-bottom:0}.person b{font-size:12px}.person small{color:var(--muted)}.pill{font-size:11px;padding:5px 8px;border-radius:999px;background:var(--greenbg);color:#15803d;font-weight:700}.pill.warn{background:var(--orangebg);color:#b45309}.progress{height:7px;background:#eef2f7;border-radius:99px;overflow:hidden;margin-top:7px}.progress i{display:block;height:100%;background:var(--green);border-radius:99px}
+.night{background:#111827;color:#fff}.night .cardhead{border-color:#2b3549}.night .task{border-color:#2b3549}.night .meta{color:#aab4c5}.night .check{background:#1f2937;border-color:#475569}.night .check.done{background:var(--green);border-color:var(--green)}
+.toast{position:fixed;right:18px;bottom:18px;background:#111827;color:#fff;padding:12px 14px;border-radius:12px;box-shadow:var(--shadow);opacity:0;transform:translateY(8px);transition:.2s;pointer-events:none;font-size:13px}.toast.show{opacity:1;transform:none}
+.modal{position:fixed;inset:0;background:rgba(15,23,42,.5);display:none;align-items:center;justify-content:center;padding:20px;z-index:20}.modal.show{display:flex}.modalbox{background:#fff;border-radius:20px;max-width:620px;width:100%;padding:20px;box-shadow:0 20px 60px rgba(0,0,0,.2)}.modalbox h3{margin-top:0}.field{margin:12px 0}.field label{display:block;font-size:12px;font-weight:700;margin-bottom:6px}.field input,.field select{width:100%;padding:11px;border:1px solid var(--line);border-radius:10px}.row{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
+@media(max-width:850px){.layout{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,1fr)}.hero{align-items:flex-start;flex-direction:column}.datebox{text-align:left}.top{align-items:flex-start;flex-direction:column}.actions{width:100%}.actions .btn{flex:1}.task{grid-template-columns:28px 1fr}.owner{display:none}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="brand"><div class="logo">DP</div><div><h1>Daily Planner</h1><p>Branch Operations • shared completion tracker</p></div></div>
+    <div class="actions"><button class="btn" id="prevBtn">← Previous</button><button class="btn" id="todayBtn">Today</button><button class="btn primary" id="addBtn">＋ Add task</button><button class="btn dark" id="carryBtn">Run 11:59 PM carry-forward</button></div>
+  </header>
+  <section class="hero"><div><div class="eyebrow">Daily operating plan</div><h2 id="dayTitle">Tuesday</h2><p>Tick your responsibility when it is actually completed. No individual deadline.</p></div><div class="datebox"><strong id="dateText">08 Oct 2026</strong><span>Day closes at 11:59 PM</span></div></section>
+  <div class="stats"><div class="stat"><div class="n" id="totalN">0</div><div class="l">Total today</div></div><div class="stat green"><div class="n" id="doneN">0</div><div class="l">Completed</div></div><div class="stat orange"><div class="n" id="pendingN">0</div><div class="l">Pending</div></div><div class="stat red"><div class="n" id="carryN">0</div><div class="l">Carried forward</div></div></div>
+  <div class="layout">
+    <main>
+      <section class="card"><div class="cardhead"><div><h3 id="dailyHead">Tuesday agenda</h3><span>Day-specific responsibilities</span></div><span id="dailyCount"></span></div><div class="body" id="dailyTasks"></div></section>
+      <section class="card"><div class="cardhead"><div><h3>Rapport Building</h3><span>Same structure every day</span></div></div><div class="body" id="rapport"></div></section>
+      <section class="card"><div class="cardhead"><div><h3>Activities</h3><span>Same every day</span></div></div><div class="body" id="activities"></div></section>
+      <section class="card"><div class="cardhead"><div><h3>Agenda</h3><span>Same every day</span></div></div><div class="body" id="agenda"></div></section>
+      <section class="card night"><div class="cardhead"><div><h3>Night Clearing</h3><span>Daily closing checklist</span></div><button class="btn small" id="nightAll">Complete all</button></div><div class="body" id="night"></div></section>
+    </main>
+    <aside>
+      <div class="sidecard"><h3>People's status</h3><div id="people"></div></div>
+      <div class="sidecard"><h3>How carry-forward works</h3><p style="font-size:12px;color:#6b7280;line-height:1.55;margin:0">At 11:59 PM, every unchecked task is preserved and appears under <b>Carried Forward</b> on the next day's list. Completion history is never deleted.</p></div>
+      <div class="sidecard"><h3>Notification preview</h3><div style="background:#f8fafc;border-radius:12px;padding:12px;font-size:12px;line-height:1.55"><b>🌅 Daily Planner</b><br>Hi Roshni, you have 3 tasks today, including 1 carried-forward task.<br><br><span style="color:#2563eb">Open planner →</span></div></div>
+    </aside>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<div class="modal" id="modal"><div class="modalbox"><h3>Add a task</h3><div class="field"><label>Task</label><input id="taskText" placeholder="e.g. Owners call" /></div><div class="field"><label>Owner</label><select id="taskOwner"></select></div><div class="field"><label>Section</label><select id="taskSection"><option value="daily">Today's agenda</option><option value="rapport">Rapport Building</option><option value="activities">Activities</option><option value="agenda">Agenda</option><option value="night">Night Clearing</option></select></div><div class="row"><button class="btn" id="cancelBtn">Cancel</button><button class="btn primary" id="saveBtn">Add task</button></div></div></div>
+<script>
+const people=['Roshni','Avinash','Gayathri','Vishnu','Ridha','Yaswanth','Ahammed','Krishna','Branch Head'];
+const recurring={
+ rapport:[['On training — Tele','Avinash'],['On training — Unicef','Gayathri'],['On training — One off field','Vishnu'],['Working for Criteria — Tele','Ridha'],['Working for Criteria — Unicef','Gayathri'],['Working for Criteria — One off field','Vishnu']],
+ activities:[['Activities','Gayathri']],
+ agenda:[['Owners call','Branch Head'],['HR evaluation call','Branch Head'],['Retrain and next day plan call','Branch Head'],['Quality call','Branch Head']],
+ night:[['Today’s all work is done','Branch Head'],['TMC done in all groups and all level, by owners','Branch Head'],['Spoke to the guys, on training','Branch Head'],['Texted working for criteria, Ridha','Branch Head'],['Zero people feedbacks and training topic sent to them?','Branch Head'],['Night routines done','Branch Head'],['New guy activities done','Branch Head'],['Next day agenda done','Branch Head'],['Inputting done / post people not submitted','Branch Head'],['Excel sheet updated','Branch Head']]
+};
+const daily={
+ Tuesday:[['Tele second layer — main leaders meeting','Branch Head'],['Non trainers on training — Tele','Branch Head'],['Post selected candidates','Branch Head'],['Roadtrip call','Yaswanth'],['HR tracker','Branch Head'],['Quality call','Roshni'],['Code 1 and Code 2 — one to one','Branch Head'],['HR one to one','Ahammed']],
+ Wednesday:[['Focus meeting — Coimbatore','Branch Head'],['Roadtrip call','Yaswanth'],['Quality call','Roshni'],['HR meeting — 1 to 1','Ahammed'],['On training — one to one','Krishna'],['WFC Field','Roshni'],['Bills','Avinash'],['How much more to go — individual','Vishnu']]
+};
+const key='daily-planner-demo-v1';
+let state=JSON.parse(localStorage.getItem(key)||'null')||{dates:{},custom:{}};
+let current=new Date('2026-10-08T12:00:00');
+function iso(d){return d.toISOString().slice(0,10)}
+function pretty(d){return d.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})}
+function dayName(d){return d.toLocaleDateString('en-US',{weekday:'long'})}
+function ensureDate(date){let k=iso(date); if(!state.dates[k])state.dates[k]={}; return state.dates[k]}
+function taskId(section,i,text,owner,carry=false){return `${section}|${i}|${text}|${owner}|${carry?'c':'n'}`}
+function getTasks(date){
+ const d=ensureDate(date), name=dayName(date); let all=[];
+ const add=(section,arr)=>arr.forEach((x,i)=>all.push({id:taskId(section,i,x[0],x[1]),section,text:x[0],owner:x[1],carry:false,done:!!d[taskId(section,i,x[0],x[1])] }));
+ (daily[name]||daily.Tuesday).forEach((x,i)=>all.push({id:taskId('daily',i,x[0],x[1]),section:'daily',text:x[0],owner:x[1],carry:false,done:!!d[taskId('daily',i,x[0],x[1])] }));
+ add('rapport',recurring.rapport);add('activities',recurring.activities);add('agenda',recurring.agenda);add('night',recurring.night);
+ (state.custom[iso(date)]||[]).forEach(x=>all.push({...x,done:!!d[x.id]}));
+ return all;
+}
+function getCarry(date){return (ensureDate(date).__carry||[]).map(x=>({...x,carry:true,done:!!ensureDate(date)[x.id]}))}
+function save(){localStorage.setItem(key,JSON.stringify(state))}
+function toggle(t){let d=ensureDate(current);d[t.id]=!d[t.id];save();render();toast(d[t.id]?'Marked complete':'Marked pending')}
+function renderList(el,tasks){el.innerHTML=tasks.length?tasks.map(t=>`<div class="task ${t.done?'done':''} ${t.carry?'carry':''}"><button class="check ${t.done?'done':''}" onclick='toggleById(${JSON.stringify(t.id)},${JSON.stringify(t.section)},${JSON.stringify(t.text)},${JSON.stringify(t.owner)},${t.carry})'>${t.done?'✓':''}</button><div><div class="title">${esc(t.text)}</div><div class="meta">${t.carry?'↪ Carried forward • ':''}Assigned to <b>${esc(t.owner)}</b></div></div><div class="owner">${esc(t.owner)}</div></div>`).join(''):`<div class="empty">No tasks</div>`}
+function toggleById(id,section,text,owner,carry){toggle({id,section,text,owner,carry})}
+function render(){
+ const name=dayName(current), all=getTasks(current), carry=getCarry(current); document.getElementById('dayTitle').textContent=name;document.getElementById('dateText').textContent=pretty(current);document.getElementById('dailyHead').textContent=name+' agenda';
+ renderList(document.getElementById('dailyTasks'),all.filter(t=>t.section==='daily'));renderList(document.getElementById('rapport'),all.filter(t=>t.section==='rapport'));renderList(document.getElementById('activities'),all.filter(t=>t.section==='activities'));renderList(document.getElementById('agenda'),all.filter(t=>t.section==='agenda'));renderList(document.getElementById('night'),all.filter(t=>t.section==='night'));
+ const currentTasks=[...all,...carry];let total=currentTasks.length,done=currentTasks.filter(t=>t.done).length,pending=total-done;document.getElementById('totalN').textContent=total;document.getElementById('doneN').textContent=done;document.getElementById('pendingN').textContent=pending;document.getElementById('carryN').textContent=carry.length;document.getElementById('dailyCount').textContent=all.filter(t=>t.section==='daily').length+' tasks';
+ const by={};currentTasks.forEach(t=>{by[t.owner]??={t:0,d:0};by[t.owner].t++;if(t.done)by[t.owner].d++});document.getElementById('people').innerHTML=Object.entries(by).sort((a,b)=>a[0].localeCompare(b[0])).map(([p,v])=>`<div class="person"><div><b>${esc(p)}</b><div class="progress"><i style="width:${v.t?Math.round(v.d/v.t*100):0}%"></i></div></div><span class="pill ${v.d<v.t?'warn':''}">${v.d}/${v.t}</span></div>`).join('');
+}
+function esc(s){return String(s).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
+function carryForward(){
+ const today=iso(current), tomorrow=new Date(current);tomorrow.setDate(tomorrow.getDate()+1);const next=ensureDate(tomorrow);const pending=getTasks(current).filter(t=>!t.done);next.__carry=[...(next.__carry||[]),...pending.map(t=>({id:'carry-'+today+'-'+t.id,text:t.text,owner:t.owner,section:t.section}))];save();toast(pending.length?`${pending.length} unfinished task(s) carried to ${dayName(tomorrow)}`:'Nothing to carry forward');}
+function toast(msg){const x=document.getElementById('toast');x.textContent=msg;x.classList.add('show');setTimeout(()=>x.classList.remove('show'),2200)}
+document.getElementById('prevBtn').onclick=()=>{current.setDate(current.getDate()-1);render()};document.getElementById('todayBtn').onclick=()=>{current=new Date();current.setHours(12,0,0,0);render()};document.getElementById('carryBtn').onclick=carryForward;
+document.getElementById('nightAll').onclick=()=>{getTasks(current).filter(t=>t.section==='night').forEach(t=>ensureDate(current)[t.id]=true);save();render();toast('Night clearing completed')};
+document.getElementById('addBtn').onclick=()=>{document.getElementById('modal').classList.add('show');document.getElementById('taskText').focus()};document.getElementById('cancelBtn').onclick=()=>document.getElementById('modal').classList.remove('show');
+document.getElementById('saveBtn').onclick=()=>{let text=document.getElementById('taskText').value.trim(),owner=document.getElementById('taskOwner').value,section=document.getElementById('taskSection').value;if(!text)return;let id='custom-'+Date.now();state.custom[iso(current)]??=[];state.custom[iso(current)].push({id,text,owner,section,carry:false});save();document.getElementById('taskText').value='';document.getElementById('modal').classList.remove('show');render();toast('Task added')};
+document.getElementById('taskOwner').innerHTML=people.map(p=>`<option>${esc(p)}</option>`).join('');render();
+</script>
+</body>
+</html>
