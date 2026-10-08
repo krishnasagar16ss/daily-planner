@@ -260,103 +260,188 @@ fillOwners(people[0]);render();
 const SB_URL='https://sqgymglyshbyqhlnmxlj.supabase.co';
 const SB_KEY='sb_publishable_55cb_Smd0gZ2l5O_qlTy9w__Y26o1ea';
 const SB=supabase.createClient(SB_URL,SB_KEY);
-let dbOwners=[], dbTasks=[];
-let backendReady=false;
+let dbOwners=[],dbTasks=[],dbTemplates=[],backendReady=false;
 
 async function loadOwners(){
-  const r=await SB.from('dp_owners').select('*').eq('active',true).order('name');
-  if(r.error){console.error(r.error);return}
-  dbOwners=r.data||[];
-  people=dbOwners.map(x=>x.name);
-  Object.keys(phones).forEach(k=>delete phones[k]);
-  dbOwners.forEach(x=>phones[x.name]=x.whatsapp||'');
-  fillOwners(people[0]||'');
+ const r=await SB.from('dp_owners').select('*').eq('active',true).order('name');
+ if(r.error){console.error(r.error);return}
+ dbOwners=r.data||[];people=dbOwners.map(x=>x.name);
+ Object.keys(phones).forEach(k=>delete phones[k]);dbOwners.forEach(x=>phones[x.name]=x.whatsapp||'');
+ fillOwners('');
+ renderOwnerList();
 }
+
+function ownerName(id){const x=dbOwners.find(o=>o.id===id);return x?x.name:''}
+
+async function ensureDailyTemplates(){
+ const wd=current.getDay(),name=dayName(current);
+ const seed=(daily[name]||[]).map(x=>x[0]);
+ const existing=await SB.from('dp_daily_templates').select('*').eq('weekday',wd).eq('active',true).order('sort_order');
+ if(existing.error){console.error(existing.error);return}
+ dbTemplates=existing.data||[];
+ if(!dbTemplates.length && seed.length){
+   const rows=seed.map((title,i)=>({weekday:wd,title,sort_order:i}));
+   const ins=await SB.from('dp_daily_templates').insert(rows).select('*');
+   if(!ins.error)dbTemplates=ins.data||[];
+ }
+}
+
 async function ensureDbTasks(date){
-  const k=iso(date), name=dayName(date);
-  const wanted=[];
-  function add(section,arr){(arr||[]).forEach(x=>wanted.push({task_date:k,section:section,title:x[0],owner_name:x[1]}))}
-  add('daily',daily[name]||[]);
-  add('rapport',recurring.rapport);add('activities',recurring.activities);add('agenda',recurring.agenda);add('night',recurring.night);
-  if(!wanted.length)return;
-  const byName=Object.fromEntries(dbOwners.map(o=>[o.name,o.id]));
-  const rows=wanted.filter(x=>byName[x.owner_name]).map(x=>({task_date:x.task_date,section:x.section,title:x.title,owner_id:byName[x.owner_name]}));
-  if(rows.length) await SB.from('dp_tasks').upsert(rows,{onConflict:'task_date,section,title,owner_id',ignoreDuplicates:true});
+ const k=iso(date);
+ await ensureDailyTemplates();
+ const byName=Object.fromEntries(dbOwners.map(o=>[o.name,o.id]));
+ const recurringRows=[];
+ function add(section,arr){(arr||[]).forEach(x=>{if(byName[x[1]])recurringRows.push({task_date:k,section,title:x[0],owner_id:byName[x[1]]})})}
+ add('rapport',recurring.rapport);add('activities',recurring.activities);add('agenda',recurring.agenda);add('night',recurring.night);
+ for(const row of recurringRows){
+   const q=await SB.from('dp_tasks').select('id').eq('task_date',k).eq('section',row.section).eq('title',row.title).limit(1);
+   if(!q.data?.length) await SB.from('dp_tasks').insert(row);
+ }
+ for(const t of dbTemplates){
+   const q=await SB.from('dp_tasks').select('id').eq('task_date',k).eq('template_id',t.id).limit(1);
+   if(!q.data?.length) await SB.from('dp_tasks').insert({task_date:k,section:'daily',title:t.title,template_id:t.id,owner_id:null});
+ }
 }
+
 async function loadTasks(){
-  await ensureDbTasks(current);
-  const k=iso(current);
-  const r=await SB.from('dp_tasks').select('*,dp_owners(name,whatsapp)').eq('task_date',k).order('created_at');
-  if(r.error){console.error(r.error);toast('Database connection error');return}
-  dbTasks=r.data||[]; backendReady=true; renderDb();
+ await ensureDbTasks(current);
+ const k=iso(current);
+ const r=await SB.from('dp_tasks').select('*,dp_owners(name,whatsapp),dp_daily_templates(weekday,title)').eq('task_date',k).order('created_at');
+ if(r.error){console.error(r.error);toast('Database connection error');return}
+ dbTasks=r.data||[];backendReady=true;renderDb();
 }
-function dbTaskView(t){return {id:t.id,section:t.section,text:t.title,owner:t.dp_owners?.name||'Unassigned',carry:t.is_carried_forward,done:t.is_completed}}
+
+function dbTaskView(t){return {id:t.id,section:t.section,text:t.title,owner:t.dp_owners?.name||'',carry:t.is_carried_forward,done:t.is_completed,template_id:t.template_id}}
+
 function renderDb(){
-  const all=dbTasks.map(dbTaskView),name=dayName(current);
-  document.getElementById('dayTitle').textContent=name;document.getElementById('dateText').textContent=pretty(current);document.getElementById('dailyHead').textContent=name+' agenda';
-  renderList(document.getElementById('dailyTasks'),all.filter(t=>t.section==='daily'));
-  renderList(document.getElementById('rapport'),all.filter(t=>t.section==='rapport'));
-  renderList(document.getElementById('activities'),all.filter(t=>t.section==='activities'));
-  renderList(document.getElementById('agenda'),all.filter(t=>t.section==='agenda'));
-  renderList(document.getElementById('night'),all.filter(t=>t.section==='night'));
-  const total=all.length,done=all.filter(t=>t.done).length,carry=all.filter(t=>t.carry).length;
-  document.getElementById('totalN').textContent=total;document.getElementById('doneN').textContent=done;document.getElementById('pendingN').textContent=total-done;document.getElementById('carryN').textContent=carry;document.getElementById('dailyCount').textContent=all.filter(t=>t.section==='daily').length+' tasks';
-  const by={};all.forEach(t=>{by[t.owner]??={t:0,d:0};by[t.owner].t++;if(t.done)by[t.owner].d++});
-  document.getElementById('people').innerHTML=Object.entries(by).sort((a,b)=>a[0].localeCompare(b[0])).map(([p,v])=>'<div class="person"><div><b>'+esc(p)+'</b><div class="progress"><i style="width:'+(v.t?Math.round(v.d/v.t*100):0)+'%"></i></div></div><span class="pill '+(v.d<v.t?'warn':'')+'">'+v.d+'/'+v.t+'</span></div>').join('');
-  document.getElementById('glance').innerHTML='<b>'+(total?Math.round(done/total*100):0)+'%</b> of today’s work completed<br><b>'+dbOwners.length+'</b> registered owners<br><b>'+carry+'</b> carried-forward items';
+ const all=dbTasks.map(dbTaskView),name=dayName(current);
+ document.getElementById('dayTitle').textContent=name;document.getElementById('dateText').textContent=pretty(current);document.getElementById('dailyHead').textContent=name+' agenda';
+ renderList(document.getElementById('dailyTasks'),all.filter(t=>t.section==='daily'));
+ renderList(document.getElementById('rapport'),all.filter(t=>t.section==='rapport'));
+ renderList(document.getElementById('activities'),all.filter(t=>t.section==='activities'));
+ renderList(document.getElementById('agenda'),all.filter(t=>t.section==='agenda'));
+ renderList(document.getElementById('night'),all.filter(t=>t.section==='night'));
+ const total=all.length,done=all.filter(t=>t.done).length,carry=all.filter(t=>t.carry).length;
+ document.getElementById('totalN').textContent=total;document.getElementById('doneN').textContent=done;document.getElementById('pendingN').textContent=total-done;document.getElementById('carryN').textContent=carry;document.getElementById('dailyCount').textContent=all.filter(t=>t.section==='daily').length+' tasks';
+ const by={};all.forEach(t=>{const p=t.owner||'Unassigned';by[p]??={t:0,d:0};by[p].t++;if(t.done)by[p].d++});
+ document.getElementById('people').innerHTML=Object.entries(by).sort((a,b)=>a[0].localeCompare(b[0])).map(([p,v])=>'<div class="person"><div><b>'+esc(p)+'</b><div class="progress"><i style="width:'+(v.t?Math.round(v.d/v.t*100):0)+'%"></i></div></div><span class="pill '+(v.d<v.t?'warn':'')+'">'+v.d+'/'+v.t+'</span></div>').join('');
+ document.getElementById('glance').innerHTML='<b>'+(total?Math.round(done/total*100):0)+'%</b> of today’s work completed<br><b>'+dbOwners.length+'</b> registered owners<br><b>'+carry+'</b> carried-forward items';
 }
+
+function fillOwners(selected){
+ document.getElementById('taskOwner').innerHTML='<option value="">— Owner not assigned —</option>'+dbOwners.map(p=>'<option value="'+esc(p.name)+'" '+(p.name===selected?'selected':'')+'>'+esc(p.name)+'</option>').join('');
+}
+
 async function toggleById(id){
-  const t=dbTasks.find(x=>x.id===id);if(!t)return;
-  const r=await SB.from('dp_tasks').update({is_completed:!t.is_completed,updated_at:new Date().toISOString()}).eq('id',id);
-  if(r.error)toast('Could not update task');else await loadTasks();
+ const t=dbTasks.find(x=>x.id===id);if(!t)return;
+ const r=await SB.from('dp_tasks').update({is_completed:!t.is_completed,updated_at:new Date().toISOString()}).eq('id',id);
+ if(r.error)toast('Could not update task');else await loadTasks();
 }
+
 async function deleteTaskById(id,section,carry){
-  if(carry){toast('Carried-forward items are preserved in history');return}
-  if(!confirm('Delete this task?'))return;
-  const r=await SB.from('dp_tasks').delete().eq('id',id);
-  if(r.error)toast('Could not delete task');else {await loadTasks();toast('Task deleted')}
+ if(carry){toast('Carried-forward items are preserved in history');return}
+ const t=dbTasks.find(x=>x.id===id);if(!t)return;
+ if(!confirm('Delete this task?'))return;
+ let r=await SB.from('dp_tasks').delete().eq('id',id);
+ if(r.error){toast('Could not delete task');return}
+ if(section==='daily'&&t.template_id) await SB.from('dp_daily_templates').update({active:false,updated_at:new Date().toISOString()}).eq('id',t.template_id);
+ await loadTasks();toast('Task deleted');
 }
+
 async function editTaskById(id,section,text,owner,carry){
-  if(carry){toast('Carried-forward items are preserved in history');return}
-  document.getElementById('modalTitle').textContent='Edit task';document.getElementById('taskText').value=text;fillOwners(owner);document.getElementById('taskSection').value=section;
-  document.getElementById('saveBtn').textContent='Save changes';document.getElementById('saveBtn').dataset.editId=id;document.getElementById('modal').classList.add('show');
+ if(carry){toast('Carried-forward items are preserved in history');return}
+ document.getElementById('modalTitle').textContent='Edit task';
+ document.getElementById('taskText').value=text;fillOwners(owner);document.getElementById('taskSection').value=section;
+ document.getElementById('saveBtn').textContent='Save changes';document.getElementById('saveBtn').dataset.editId=id;document.getElementById('modal').classList.add('show');
 }
+
+function renderOwnerList(){
+ document.getElementById('ownerListModal').innerHTML=dbOwners.map(function(p){
+  return '<div class="owner-row"><div><b>'+esc(p.name)+'</b><small>'+esc(p.whatsapp||'WhatsApp number not added')+'</small></div><div class="task-actions"><button class="btn" onclick="editOwner('+JSON.stringify(p.id)+')">Edit</button><button class="btn" onclick="deleteOwner('+JSON.stringify(p.id)+')">Delete</button></div></div>';
+ }).join('');
+}
+
+async function editOwner(id){
+ const o=dbOwners.find(x=>x.id===id);if(!o)return;
+ const name=prompt('Owner name',o.name);if(name===null)return;
+ const phone=prompt('WhatsApp number',o.whatsapp||'');if(phone===null)return;
+ if(!name.trim()||!phone.trim()){toast('Name and WhatsApp number are required');return}
+ const r=await SB.from('dp_owners').update({name:name.trim(),whatsapp:phone.trim()}).eq('id',id);
+ if(r.error){toast(r.error.code==='23505'?'That owner name already exists':'Could not update owner');return}
+ await loadOwners();await loadTasks();toast('Owner updated');
+}
+async function deleteOwner(id){
+ const o=dbOwners.find(x=>x.id===id);if(!o)return;
+ if(!confirm('Delete '+o.name+' from the owner list? Existing tasks will remain unassigned.'))return;
+ const r=await SB.from('dp_owners').update({active:false}).eq('id',id);
+ if(r.error){toast('Could not delete owner');return}
+ await loadOwners();await loadTasks();toast('Owner removed');
+}
+
 async function registerOwner(){
-  let name=document.getElementById('ownerName').value.trim(),phone=document.getElementById('ownerPhone').value.trim();
-  if(!name||!phone){toast('Enter both name and WhatsApp number');return}
-  const r=await SB.from('dp_owners').insert({name,whatsapp:phone});
-  if(r.error){toast(r.error.code==='23505'?'Owner already registered':'Could not register owner');return}
-  document.getElementById('ownerName').value='';document.getElementById('ownerPhone').value='';await loadOwners();renderOwnerList();await loadTasks();toast(name+' registered successfully')
+ let name=document.getElementById('ownerName').value.trim(),phone=document.getElementById('ownerPhone').value.trim();
+ if(!name||!phone){toast('Enter both name and WhatsApp number');return}
+ const r=await SB.from('dp_owners').insert({name,whatsapp:phone});
+ if(r.error){toast(r.error.code==='23505'?'Owner already registered':'Could not register owner');return}
+ document.getElementById('ownerName').value='';document.getElementById('ownerPhone').value='';
+ await loadOwners();await loadTasks();toast(name+' registered successfully');
 }
+
 async function saveTaskDb(){
-  let text=document.getElementById('taskText').value.trim(),owner=document.getElementById('taskOwner').value,section=document.getElementById('taskSection').value,id=document.getElementById('saveBtn').dataset.editId;
-  if(!text)return;
-  const ownerRow=dbOwners.find(x=>x.name===owner);if(!ownerRow){toast('Select a registered owner');return}
-  let r;
-  if(id) r=await SB.from('dp_tasks').update({title:text,owner_id:ownerRow.id,section:section,updated_at:new Date().toISOString()}).eq('id',id);
-  else r=await SB.from('dp_tasks').insert({task_date:iso(current),section:section,title:text,owner_id:ownerRow.id});
-  if(r.error){toast('Could not save task');return}
-  delete document.getElementById('saveBtn').dataset.editId;document.getElementById('modal').classList.remove('show');await loadTasks();toast(id?'Task updated':'Task added');
+ const text=document.getElementById('taskText').value.trim(),owner=document.getElementById('taskOwner').value,section=document.getElementById('taskSection').value,id=document.getElementById('saveBtn').dataset.editId;
+ if(!text)return;
+ const ownerRow=dbOwners.find(x=>x.name===owner);const k=iso(current);
+ let r;
+ if(id){
+   const old=dbTasks.find(x=>x.id===id);
+   if(!old)return;
+   if(section==='daily'){
+     let template=old.template_id?dbTemplates.find(x=>x.id===old.template_id):null;
+     if(!template){
+       const ins=await SB.from('dp_daily_templates').insert({weekday:current.getDay(),title:text,sort_order:dbTemplates.length}).select('*').single();template=ins.data;
+     } else if(template.title!==text){
+       await SB.from('dp_daily_templates').update({title:text,updated_at:new Date().toISOString()}).eq('id',template.id);
+     }
+     r=await SB.from('dp_tasks').update({title:text,owner_id:ownerRow?.id||null,section:'daily',template_id:template?.id||old.template_id,updated_at:new Date().toISOString()}).eq('id',id);
+   }else{
+     if(!ownerRow){toast('Select an owner for recurring tasks');return}
+     r=await SB.from('dp_tasks').update({title:text,owner_id:ownerRow.id,section:section,updated_at:new Date().toISOString()}).eq('id',id);
+   }
+ }else{
+   if(section==='daily'){
+     const ins=await SB.from('dp_daily_templates').insert({weekday:current.getDay(),title:text,sort_order:dbTemplates.length}).select('*').single();
+     if(ins.error){toast('Could not create weekly task');return}
+     r=await SB.from('dp_tasks').insert({task_date:k,section:'daily',title:text,owner_id:ownerRow?.id||null,template_id:ins.data.id});
+   }else{
+     if(!ownerRow){toast('Select an owner for recurring tasks');return}
+     r=await SB.from('dp_tasks').insert({task_date:k,section:section,title:text,owner_id:ownerRow.id});
+   }
+ }
+ if(r?.error){toast('Could not save task');return}
+ delete document.getElementById('saveBtn').dataset.editId;document.getElementById('modal').classList.remove('show');await loadTasks();toast(id?'Task updated':'Task added');
 }
+
+function openAdd(section){
+ document.getElementById('modalTitle').textContent='Add a task';document.getElementById('taskText').value='';fillOwners('');
+ document.getElementById('taskSection').value=section||'daily';document.getElementById('saveBtn').textContent='Add task';delete document.getElementById('saveBtn').dataset.editId;
+ document.getElementById('modal').classList.add('show');document.getElementById('taskText').focus();
+}
+
 async function carryForwardDb(){
-  const tomorrow=new Date(current);tomorrow.setDate(tomorrow.getDate()+1);
-  const pending=dbTasks.filter(t=>!t.is_completed);
-  for(const t of pending){
-    await SB.from('dp_tasks').insert({task_date:iso(tomorrow),section:t.section,title:t.title,owner_id:t.owner_id,is_carried_forward:true,source_task_id:t.id});
-  }
-  await loadTasks();toast(pending.length?pending.length+' unfinished task(s) carried forward':'Nothing to carry forward');
+ const tomorrow=new Date(current);tomorrow.setDate(tomorrow.getDate()+1);
+ const pending=dbTasks.filter(t=>!t.is_completed);
+ for(const t of pending) await SB.from('dp_tasks').insert({task_date:iso(tomorrow),section:t.section,title:t.title,owner_id:t.owner_id,is_carried_forward:true,source_task_id:t.id});
+ await loadTasks();toast(pending.length?pending.length+' unfinished task(s) carried forward':'Nothing to carry forward');
 }
+
 async function sundayResetDb(){
-  if(current.getDay()!==0)return;
-  await SB.from('dp_tasks').update({is_completed:false,updated_at:new Date().toISOString()}).gte('task_date',iso(new Date(current.getFullYear(),current.getMonth(),current.getDate()-6))).lte('task_date',iso(current));
+ if(current.getDay()!==0)return;
+ await SB.from('dp_tasks').update({is_completed:false,updated_at:new Date().toISOString()}).gte('task_date',iso(new Date(current.getFullYear(),current.getMonth(),current.getDate()-6))).lte('task_date',iso(current));
 }
-async function render(){
-  if(backendReady) return loadTasks();
-  try{await loadOwners();await sundayResetDb();await loadTasks();}catch(e){console.error(e);toast('Starting planner…')}
-}
+
+async function render(){try{await loadOwners();await sundayResetDb();await loadTasks()}catch(e){console.error(e);toast('Starting planner…')}}
 document.getElementById('saveBtn').onclick=saveTaskDb;
 document.getElementById('ownerSave').onclick=registerOwner;
-document.getElementById('carryBtn').onclick=carryForwardDb;
 document.getElementById('prevBtn').onclick=async()=>{current.setDate(current.getDate()-1);await loadTasks()};
 document.getElementById('todayBtn').onclick=async()=>{current=new Date();current.setHours(12,0,0,0);await loadTasks()};
 document.getElementById('mPrev').onclick=()=>document.getElementById('prevBtn').click();
@@ -364,9 +449,11 @@ document.getElementById('mToday').onclick=()=>document.getElementById('todayBtn'
 document.getElementById('mAdd').onclick=()=>openAdd('daily');
 document.getElementById('addBtn').onclick=()=>openAdd('daily');
 document.getElementById('ownersBtn').onclick=openOwners;document.getElementById('ownersSideBtn').onclick=openOwners;
+document.getElementById('cancelBtn').onclick=()=>document.getElementById('modal').classList.remove('show');
+document.getElementById('ownerCancel').onclick=()=>document.getElementById('ownerModal').classList.remove('show');
 document.getElementById('nightAll').onclick=async()=>{for(const t of dbTasks.filter(x=>x.section==='night'))await SB.from('dp_tasks').update({is_completed:true,updated_at:new Date().toISOString()}).eq('id',t.id);await loadTasks();toast('Night clearing completed')};
 SB.channel('planner-live').on('postgres_changes',{event:'*',schema:'public',table:'dp_tasks'},()=>loadTasks()).subscribe();
-loadOwners().then(()=>sundayResetDb()).then(()=>loadTasks());
+loadOwners().then(()=>render());
 
 </script>
 </body>
