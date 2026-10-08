@@ -205,19 +205,18 @@ async function action(fn,successMsg){
 }
 function openTask(section='daily',task=null){
  if(!requireReady())return;
+ const raw=task?dbTasks.find(x=>x.id===task.id):null;
+ const taskTitle=raw?.title??task?.text??task?.title??'';
+ const selectedOwner=raw?.owner_id??task?.owner_id??'';
  editingTaskId=task?.id||null;
- const taskTitle=task?.text||task?.title||'';
  $('modalTitle').textContent=task?'Edit task':'Add a task';
  $('taskText').value=taskTitle;
- fillOwners(task?.owner_id||'');
+ $('taskText').placeholder=task?'Task is pre-filled — change or clear it if needed':'e.g. Owners call';
+ fillOwners(selectedOwner);
  $('taskSection').value=section;
  $('saveBtn').textContent=task?'Save changes':'Save task';
  $('taskModal').classList.add('show');
- if(task){
-   setTimeout(()=>$('taskOwner').focus(),50);
- }else{
-   setTimeout(()=>$('taskText').focus(),50);
- }
+ setTimeout(()=>(task?$('taskOwner'):$('taskText')).focus(),50);
 }
 function closeTask(){$('taskModal').classList.remove('show');editingTaskId=null}
 function openOwners(){if(!requireReady())return;editingOwnerId=null;$('ownerName').value='';$('ownerPhone').value='';$('ownerSave').textContent='Register owner';renderOwnerList();$('ownerModal').classList.add('show')}
