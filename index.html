@@ -205,7 +205,19 @@ async function action(fn,successMsg){
 }
 function openTask(section='daily',task=null){
  if(!requireReady())return;
- editingTaskId=task?.id||null;$('modalTitle').textContent=task?'Edit task':'Add a task';$('taskText').value=task?.text||'';fillOwners(task?.owner_id||'');$('taskSection').value=section;$('saveBtn').textContent=task?'Save changes':'Save task';$('taskModal').classList.add('show');setTimeout(()=>$('taskText').focus(),50)
+ editingTaskId=task?.id||null;
+ const taskTitle=task?.text||task?.title||'';
+ $('modalTitle').textContent=task?'Edit task':'Add a task';
+ $('taskText').value=taskTitle;
+ fillOwners(task?.owner_id||'');
+ $('taskSection').value=section;
+ $('saveBtn').textContent=task?'Save changes':'Save task';
+ $('taskModal').classList.add('show');
+ if(task){
+   setTimeout(()=>$('taskOwner').focus(),50);
+ }else{
+   setTimeout(()=>$('taskText').focus(),50);
+ }
 }
 function closeTask(){$('taskModal').classList.remove('show');editingTaskId=null}
 function openOwners(){if(!requireReady())return;editingOwnerId=null;$('ownerName').value='';$('ownerPhone').value='';$('ownerSave').textContent='Register owner';renderOwnerList();$('ownerModal').classList.add('show')}
@@ -215,24 +227,26 @@ function renderOwnerList(){
 function closeOwners(){$('ownerModal').classList.remove('show');editingOwnerId=null}
 async function saveTask(){
  const title=$('taskText').value.trim(),ownerId=$('taskOwner').value,section=$('taskSection').value;
- if(!title){toast('Enter a task name first.','error');return}
+ const existingTask=editingTaskId?dbTasks.find(t=>t.id===editingTaskId):null;
+ const finalTitle=title||existingTask?.title||'';
+ if(!finalTitle){toast('Enter a task name first.','error');return}
  if(section!=='daily'&&!ownerId){toast('Select an owner for this section.','error');return}
  await action(async()=>{
    if(editingTaskId){
      const old=dbTasks.find(t=>t.id===editingTaskId);if(!old)throw new Error('Task not found');
      if(section==='daily'){
        let template=old.template_id?dbTemplates.find(t=>t.id===old.template_id):null;
-       if(!template){const ins=await SB.from('dp_daily_templates').insert({weekday:current.getDay(),title,sort_order:dbTemplates.length,active:true}).select('*').single();if(ins.error)throw ins.error;template=ins.data}
-       else if(template.title!==title){const u=await SB.from('dp_daily_templates').update({title,updated_at:new Date().toISOString()}).eq('id',template.id);if(u.error)throw u.error}
-       const u=await SB.from('dp_tasks').update({title,owner_id:ownerId||null,section:'daily',template_id:template.id,updated_at:new Date().toISOString()}).eq('id',editingTaskId);if(u.error)throw u.error;
+       if(!template){const ins=await SB.from('dp_daily_templates').insert({weekday:current.getDay(),title:finalTitle,sort_order:dbTemplates.length,active:true}).select('*').single();if(ins.error)throw ins.error;template=ins.data}
+       else if(template.title!==title){const u=await SB.from('dp_daily_templates').update({title:finalTitle,updated_at:new Date().toISOString()}).eq('id',template.id);if(u.error)throw u.error}
+       const u=await SB.from('dp_tasks').update({title:finalTitle,owner_id:ownerId||null,section:'daily',template_id:template.id,updated_at:new Date().toISOString()}).eq('id',editingTaskId);if(u.error)throw u.error;
      }else{
        const u=await SB.from('dp_tasks').update({title,owner_id:ownerId,section,updated_at:new Date().toISOString()}).eq('id',editingTaskId);if(u.error)throw u.error;
      }
    }else if(section==='daily'){
-     const insT=await SB.from('dp_daily_templates').insert({weekday:current.getDay(),title,sort_order:dbTemplates.length,active:true}).select('*').single();if(insT.error)throw insT.error;
+     const insT=await SB.from('dp_daily_templates').insert({weekday:current.getDay(),title:finalTitle,sort_order:dbTemplates.length,active:true}).select('*').single();if(insT.error)throw insT.error;
      const ins=await SB.from('dp_tasks').insert({task_date:iso(current),section:'daily',title,owner_id:ownerId||null,template_id:insT.data.id,is_carried_forward:false});if(ins.error)throw ins.error;
    }else{
-     const ins=await SB.from('dp_tasks').insert({task_date:iso(current),section,title,owner_id:ownerId,is_carried_forward:false});if(ins.error)throw ins.error;
+     const ins=await SB.from('dp_tasks').insert({task_date:iso(current),section,title:finalTitle,owner_id:ownerId,is_carried_forward:false});if(ins.error)throw ins.error;
    }
    closeTask();
  },editingTaskId?'Task updated and saved':'Task added and saved');
