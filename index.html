@@ -151,6 +151,21 @@ function getTasks(date){
 }
 function getCarry(date){return (ensureDate(date).__carry||[]).map(function(x){return {...x,carry:true,done:!!ensureDate(date)[x.id]}})}
 function save(){localStorage.setItem(key,JSON.stringify(state));localStorage.setItem('dp-people-v2',JSON.stringify(people));localStorage.setItem('dp-phones-v2',JSON.stringify(phones))}
+function sundayReset(){
+  const today=new Date(current);
+  if(today.getDay()!==0 || state.lastSundayReset===iso(today)) return;
+  for(let i=1;i<=7;i++){
+    const d=new Date(today); d.setDate(d.getDate()-i);
+    const k=iso(d);
+    if(state.dates[k]){
+      const carry=state.dates[k].__carry;
+      state.dates[k]={};
+      if(carry) state.dates[k].__carry=carry;
+    }
+  }
+  state.lastSundayReset=iso(today);
+  save();
+}
 function toggle(t){let d=ensureDate(current);d[t.id]=!d[t.id];save();render();toast(d[t.id]?'Marked complete':'Marked pending')}
 function renderList(el,tasks){
  if(!tasks.length){el.innerHTML='<div class="empty">No tasks in this section</div>';return}
@@ -188,6 +203,7 @@ function openAdd(section){
 }
 function addToSection(section){openAdd(section)}
 function render(){
+ sundayReset();
  let name=dayName(current),all=getTasks(current),carry=getCarry(current),currentTasks=all.concat(carry);
  document.getElementById('dayTitle').textContent=name;document.getElementById('dateText').textContent=pretty(current);document.getElementById('dailyHead').textContent=name+' agenda';
  renderList(document.getElementById('dailyTasks'),all.filter(function(t){return t.section==='daily'}));
