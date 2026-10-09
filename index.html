@@ -13,7 +13,7 @@
 button,input,select{font:inherit}button{cursor:pointer}.app{max-width:1160px;margin:auto;padding:16px}
 .top{display:flex;align-items:center;justify-content:space-between;gap:14px;background:#fff;border:1px solid var(--line);border-radius:20px;padding:13px 15px;box-shadow:var(--shadow);margin-bottom:14px}
 .brand{display:flex;gap:11px;align-items:center}.logo{width:44px;height:44px;border-radius:14px;background:#111827;color:#fff;display:grid;place-items:center;font-weight:800}.brand h1{font-size:19px;margin:0}.brand p{margin:2px 0 0;color:var(--muted);font-size:11px}
-.actions,.mobile-actions{display:flex;gap:7px;align-items:center;flex-wrap:wrap}.btn{padding:9px 12px;border-radius:10px;background:#fff;border:1px solid var(--line);color:var(--text);font-weight:650;font-size:12px}.btn.primary{background:var(--blue);color:#fff;border-color:var(--blue)}.btn.danger{color:var(--red)}.btn:disabled{opacity:.5;cursor:not-allowed}
+.actions,.mobile-actions{display:flex;gap:7px;align-items:center;flex-wrap:wrap}.dashboard-picker{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:750;color:var(--muted)}.dashboard-picker select{max-width:150px;padding:9px 10px;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--text);font-weight:700;font-size:12px}.btn{padding:9px 12px;border-radius:10px;background:#fff;border:1px solid var(--line);color:var(--text);font-weight:650;font-size:12px}.btn.primary{background:var(--blue);color:#fff;border-color:var(--blue)}.btn.danger{color:var(--red)}.btn:disabled{opacity:.5;cursor:not-allowed}
 .status{display:flex;align-items:center;gap:6px;padding:7px 10px;border-radius:999px;font-size:11px;font-weight:750;background:var(--orange2);color:var(--orange);white-space:nowrap}.status .dot{width:7px;height:7px;border-radius:50%;background:currentColor}.status.online{background:var(--green2);color:var(--green)}.status.offline{background:var(--red2);color:var(--red)}
 .hero{background:linear-gradient(135deg,#111827,#293650);color:#fff;border-radius:22px;padding:20px 22px;display:flex;justify-content:space-between;align-items:flex-end;gap:18px;min-height:135px;box-shadow:var(--shadow)}.kicker{font-size:10px;text-transform:uppercase;letter-spacing:.1em;opacity:.65}.hero h2{font-size:29px;margin:5px 0 3px}.hero p{margin:0;opacity:.72;font-size:12px}.datebox{background:rgba(255,255,255,.1);padding:11px 14px;border-radius:13px;min-width:145px;text-align:right}.datebox strong{display:block;font-size:17px}.datebox span{font-size:10px;opacity:.7}
 .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:12px 0}.stat{background:#fff;border:1px solid var(--line);border-radius:15px;padding:12px 14px;box-shadow:var(--shadow)}.stat .n{font-size:22px;font-weight:800}.stat .l{font-size:11px;color:var(--muted)}.green .n{color:var(--green)}.orange .n{color:var(--orange)}.red .n{color:var(--red)}
@@ -44,6 +44,7 @@ button,input,select{font:inherit}button{cursor:pointer}.app{max-width:1160px;mar
   <div class="brand"><div class="logo">DP</div><div><h1>Daily Planner</h1><p>Branch Operations · shared online dashboard</p></div></div>
   <div class="actions">
     <span class="status" id="status"><i class="dot"></i><span>Connecting…</span></span>
+    <label class="dashboard-picker" for="dashboardOwner">Dashboard <select id="dashboardOwner"><option value="">All owners</option></select></label>
     <button class="btn" id="prevBtn">← Previous</button>
     <button class="btn" id="todayBtn">Today</button>
     <button class="btn" id="ownersBtn">＋ Owners</button>
@@ -106,10 +107,62 @@ const SB_KEY='sb_publishable_55cb_Smd0gZ2l5O_qlTy9w__Y26o1ea';
 const SB=window.supabase&&window.supabase.createClient?window.supabase.createClient(SB_URL,SB_KEY):null;
 
 const recurring={
- rapport:[['On training — Tele','Avinash'],['On training — Unicef','Gayathri'],['On training — One off field','Vishnu'],['Working for Criteria — Tele','Ridha'],['Working for Criteria — Unicef','Gayathri'],['Working for Criteria — One off field','Vishnu']],
- activities:[['Activities','Gayathri']],
- agenda:[['Owners call','Branch Head'],['HR evaluation call','Branch Head'],['Retrain and next day plan call','Branch Head'],['Quality call','Branch Head']],
- night:[['Today’s all work is done','Branch Head'],['TMC done in all groups and all level, by owners','Branch Head'],['Spoke to the guys, on training','Branch Head'],['Texted working for criteria, Ridha','Branch Head'],['Zero people feedbacks and training topic sent to them?','Branch Head'],['Night routines done','Branch Head'],['New guy activities done','Branch Head'],['Next day agenda done','Branch Head'],['Inputting done / post people not submitted','Branch Head'],['Excel sheet updated','Branch Head']]
+ rapport:[],
+ activities:[
+  ['Text and call people who train new guys — one to one','Krishna'],
+  ['Speak to guys on field at 2:30 PM — check how the pair is doing','Krishna'],
+  ['Call two-days-zero people','Krishna'],
+  ['Post daily to-do list','Krishna'],
+  ['Add missing routines from yesterday to today’s plan','Krishna'],
+  ['Check training trackers, training progress and training assignments','Krishna'],
+  ['Check whether all groups are active','Krishna'],
+  ['Personal goal + DEDI + KC video','Vishnu'],
+  ['Different client score review','Vishnu'],
+  ['Play music — everywhere','Vishnu'],
+  ['Airport score','Vishnu'],
+  ['Send all score reports to boss','Vishnu'],
+  ['Post scores in all groups','Vishnu'],
+  ['Post “How Much More” in all groups','Vishnu'],
+  ['Post client posters','Vishnu'],
+  ['Send event rules message to retrains','Vishnu'],
+  ['Triangle tips','Vishnu'],
+  ['Competition poster','Vishnu'],
+  ['Afternoon Highroller poster','Vishnu'],
+  ['Special 5 Forms & Above poster','Vishnu'],
+  ['Quality call','Vishnu'],
+  ['Post posters in respective groups','Vishnu'],
+  ['Team TMC poster','Vishnu'],
+  ['Training report — 9:00 AM','Gayathri'],
+  ['Two-days-zero people — 9:00 AM','Gayathri'],
+  ['Leave list','Gayathri'],
+  ['UNICEF weekly score list','Gayathri'],
+  ['UNICEF weekly topper picture','Gayathri'],
+  ['UNICEF monthly topper','Gayathri'],
+  ['Scores — same day at 4:00 PM','Gayathri'],
+  ['UNICEF duck list — 6:00 PM','Gayathri'],
+  ['Check everyone is dressed well and wearing an ID card','Ridha'],
+  ['Team leaders and above are wearing suits','Ridha'],
+  ['Check score','Ridha'],
+  ['Update leave list','Ridha'],
+  ['Speak to non-trainers — WFC','Ridha']
+ ],
+ agenda:[
+  ['Owners call — remind AAP','Krishna'],
+  ['HR evaluation call — remind AAP','Krishna'],
+  ['Retrain and next-day plan call — Gayathri + tele leaders','Krishna'],
+  ['Quality call — Gayathri','Krishna']
+ ],
+ night:[
+  ['Confirm today’s work is done — Vishnu, Gayathri, daily routines and Ridha','Krishna'],
+  ['Confirm TMC is done in all groups and all levels — remind everyone to update in TMC app','Krishna'],
+  ['Confirm spoke to guys on training — Avinash, Vishnu, Gayathri and Ridha','Krishna'],
+  ['Confirm “working for criteria” text sent — Ridha','Krishna'],
+  ['Send zero-people feedback and training topic','Krishna'],
+  ['Confirm new-guy activities are done — Gayathri and respective HRs','Krishna'],
+  ['Confirm next-day agenda is done — ask AAP','Krishna'],
+  ['Confirm inputting is done / post people who have not submitted — Gayathri and Avinash','Krishna'],
+  ['Confirm Excel sheet is updated — Vishnu','Krishna']
+ ]
 };
 const daily={
  Tuesday:['Tele second layer — main leaders meeting','Non trainers on training — Tele','Post selected candidates','Roadtrip call','HR tracker','Quality call','Code 1 and Code 2 — one to one','HR one to one'],
@@ -118,7 +171,7 @@ const daily={
 
 let current=new Date();current.setHours(12,0,0,0);
 let dbOwners=[],dbTasks=[],dbTemplates=[];
-let ready=false,loading=false,editingOwnerId=null,editingTaskId=null,realtimeChannel=null;
+let ready=false,loading=false,editingOwnerId=null,editingTaskId=null,realtimeChannel=null,selectedDashboardOwner='';
 
 const $=id=>document.getElementById(id);
 function iso(d){return d.toISOString().slice(0,10)}
@@ -195,8 +248,14 @@ async function fetchTasks(){
  if(r.error)throw r.error;dbTasks=r.data||[]
 }
 function ownerName(id){return dbOwners.find(o=>o.id===id)?.name||''}
-function taskView(t){return {id:t.id,section:t.section,text:t.title,owner:ownerName(t.owner_id),carry:!!t.is_carried_forward,done:!!t.is_completed,template_id:t.template_id}}
+function taskView(t){return {id:t.id,section:t.section,text:t.title,owner:ownerName(t.owner_id),owner_id:t.owner_id,carry:!!t.is_carried_forward,done:!!t.is_completed,template_id:t.template_id}}
 function fillOwners(selected=''){ $('taskOwner').innerHTML='<option value="">— Owner not assigned —</option>'+dbOwners.map(o=>'<option value="'+esc(o.id)+'" '+(o.id===selected?'selected':'')+'>'+esc(o.name)+'</option>').join('') }
+function fillDashboardOwners(){
+ const sel=$('dashboardOwner');if(!sel)return;
+ const previous=selectedDashboardOwner;
+ sel.innerHTML='<option value="">All owners</option>'+dbOwners.filter(o=>['Krishna','Gayathri','Vishnu','Ridha'].includes(o.name)).map(o=>'<option value="'+esc(o.id)+'">'+esc(o.name)+' dashboard</option>').join('');
+ if(previous&&dbOwners.some(o=>o.id===previous))sel.value=previous;else{selectedDashboardOwner='';sel.value=''}
+}
 function renderList(el,tasks){
  if(!tasks.length){el.innerHTML='<div class="empty">No tasks in this section</div>';return}
  el.innerHTML=tasks.map(t=>'<div class="task '+(t.done?'done ':'')+(t.carry?'carry':'')+'">'+
@@ -205,21 +264,28 @@ function renderList(el,tasks){
  '<div class="task-actions"><button class="btn" data-action="edit" data-id="'+esc(t.id)+'">Edit</button><button class="btn danger" data-action="delete" data-id="'+esc(t.id)+'">Delete</button></div></div>').join('')
 }
 function render(){
- const all=dbTasks.map(taskView),name=dayName(current);
- $('dayTitle').textContent=name;$('dateText').textContent=pretty(current);$('dailyHead').textContent=name+' agenda';
- renderList($('dailyTasks'),all.filter(t=>t.section==='daily'));renderList($('rapport'),all.filter(t=>t.section==='rapport'));renderList($('activities'),all.filter(t=>t.section==='activities'));renderList($('agenda'),all.filter(t=>t.section==='agenda'));renderList($('night'),all.filter(t=>t.section==='night'));
- const total=all.length,done=all.filter(t=>t.done).length,carry=all.filter(t=>t.carry).length;
- $('totalN').textContent=total;$('doneN').textContent=done;$('pendingN').textContent=total-done;$('carryN').textContent=carry;$('dailyCount').textContent=all.filter(t=>t.section==='daily').length+' tasks';
- const by={};all.forEach(t=>{const p=t.owner||'Unassigned';by[p]??={t:0,d:0};by[p].t++;if(t.done)by[p].d++});
+ const all=dbTasks.map(taskView);
+ const view=selectedDashboardOwner?all.filter(t=>t.owner_id===selectedDashboardOwner):all;
+ const name=dayName(current);
+ $('dayTitle').textContent=selectedDashboardOwner?(dbOwners.find(o=>o.id===selectedDashboardOwner)?.name||'Owner')+' — '+name:name;
+ $('dateText').textContent=pretty(current);$('dailyHead').textContent=name+' agenda';
+ renderList($('dailyTasks'),view.filter(t=>t.section==='daily'));
+ renderList($('rapport'),view.filter(t=>t.section==='rapport'));
+ renderList($('activities'),view.filter(t=>t.section==='activities'));
+ renderList($('agenda'),view.filter(t=>t.section==='agenda'));
+ renderList($('night'),view.filter(t=>t.section==='night'));
+ const total=view.length,done=view.filter(t=>t.done).length,carry=view.filter(t=>t.carry).length;
+ $('totalN').textContent=total;$('doneN').textContent=done;$('pendingN').textContent=total-done;$('carryN').textContent=carry;$('dailyCount').textContent=view.filter(t=>t.section==='daily').length+' tasks';
+ const by={};view.forEach(t=>{const p=t.owner||'Unassigned';by[p]??={t:0,d:0};by[p].t++;if(t.done)by[p].d++});
  $('people').innerHTML=Object.entries(by).sort((a,b)=>a[0].localeCompare(b[0])).map(([p,v])=>'<div class="person"><div><b>'+esc(p)+'</b><div class="progress"><i style="width:'+(v.t?Math.round(v.d/v.t*100):0)+'%"></i></div></div><span class="pill '+(v.d<v.t?'warn':'')+'">'+v.d+'/'+v.t+'</span></div>').join('');
- $('glance').innerHTML='<b>'+(total?Math.round(done/total*100):0)+'%</b> of today’s work completed<br><b>'+dbOwners.length+'</b> registered owners<br><b>'+carry+'</b> carried-forward items';
+ $('glance').innerHTML='<b>'+(total?Math.round(done/total*100):0)+'%</b> of '+(selectedDashboardOwner?'this owner’s':'today’s')+' work completed<br><b>'+dbOwners.length+'</b> registered owners<br><b>'+carry+'</b> carried-forward items';
 }
 async function refresh(){
  if(!SB){showOffline('Planner could not start','The database client could not be loaded. Please reconnect and reload the planner.');return}
  if(!navigator.onLine){showOffline();return}
  try{
    setStatus('Connecting…','connecting');setButtons(true);
-   await queryOwners();await ensureTasks();await fetchTasks();ready=true;hideOffline();render();
+   await queryOwners();fillDashboardOwners();await ensureTasks();await fetchTasks();ready=true;hideOffline();render();
  }catch(e){console.error(e);ready=false;showOffline('Reconnect to Daily Planner','The planner could not reach its online database. Check your internet connection and tap Reconnect.');}
 }
 async function action(fn,successMsg){
@@ -349,7 +415,7 @@ function bind(){
  $('todayBtn').onclick=async()=>{if(!requireReady())return;current=new Date();current.setHours(12,0,0,0);await refresh()};
  $('mPrev').onclick=()=>$('prevBtn').click();$('mToday').onclick=()=>$('todayBtn').click();
  $('mAdd').onclick=()=>openTask('daily');$('addBtn').onclick=()=>openTask('daily');$('dailyAdd').onclick=()=>openTask('daily');$('rapportAdd').onclick=()=>openTask('rapport');$('activitiesAdd').onclick=()=>openTask('activities');$('agendaAdd').onclick=()=>openTask('agenda');$('nightAll').onclick=completeNight;
- $('ownersBtn').onclick=openOwners;$('ownersSideBtn').onclick=openOwners;$('cancelBtn').onclick=closeTask;$('ownerCancel').onclick=closeOwners;$('saveBtn').onclick=saveTask;$('ownerSave').onclick=saveOwner;
+ $('dashboardOwner').onchange=e=>{selectedDashboardOwner=e.target.value;render()};$('ownersBtn').onclick=openOwners;$('ownersSideBtn').onclick=openOwners;$('cancelBtn').onclick=closeTask;$('ownerCancel').onclick=closeOwners;$('saveBtn').onclick=saveTask;$('ownerSave').onclick=saveOwner;
  $('reconnectBtn').onclick=()=>{if(navigator.onLine)refresh();else toast('Your device is still offline.','error')};
  document.addEventListener('click',e=>{
    const b=e.target.closest('[data-action]');if(b){const id=b.dataset.id;if(b.dataset.action==='toggle')toggleTask(id);if(b.dataset.action==='edit'){const t=dbTasks.find(x=>x.id===id);if(t)openTask(t.section,t)}if(b.dataset.action==='delete')deleteTask(id);return}
