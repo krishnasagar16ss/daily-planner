@@ -3,6 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>Daily Planner — Branch Operations</title>
 <style>
 :root{--bg:#f5f7fb;--card:#fff;--text:#172033;--muted:#6b7280;--line:#e6eaf0;--blue:#2563eb;--blue2:#eff6ff;--green:#16a34a;--green2:#ecfdf3;--red:#dc2626;--red2:#fef2f2;--orange:#d97706;--orange2:#fff7ed;--shadow:0 10px 30px rgba(20,31,55,.07);--r:18px}
@@ -163,6 +166,8 @@ async function ensureTasks(){
  if(prior.error)throw prior.error;
  const latestByRoot=new Map();
  for(const t of (prior.data||[])){
+   // Never re-carry an old task chain if its most recent copy is not yesterday.
+   if(t.is_carried_forward && t.source_task_id) continue;
    const root=t.source_task_id||t.id;
    if(!latestByRoot.has(root))latestByRoot.set(root,t);
  }
