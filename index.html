@@ -302,7 +302,7 @@ async function refresh(){
  try{
    setStatus('Connecting…','connecting');setButtons(true);
    await queryOwners();fillDashboardOwners();await ensureTasks();await fetchTasks();ready=true;hideOffline();render();
- }catch(e){console.error(e);ready=false;showOffline('Reconnect to Daily Planner','The planner could not reach its online database. Check your internet connection and tap Reconnect.');}
+ }catch(e){console.error('Daily Planner refresh failed:',e);ready=false;const detail=(e&&e.message)?String(e.message):'Unknown database error';showOffline('Reconnect to Daily Planner','Database error: '+detail+'. Please screenshot this message if it continues.');}
 }
 async function action(fn,successMsg){
  if(!requireReady())return;
