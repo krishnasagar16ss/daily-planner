@@ -135,12 +135,8 @@ async function queryOwners(){const r=await SB.from('dp_owners').select('*').eq('
 async function queryTemplates(wd){const r=await SB.from('dp_daily_templates').select('*').eq('weekday',wd).eq('active',true).order('sort_order');if(r.error)throw r.error;return r.data||[]}
 async function ensureTemplates(){
  const wd=current.getDay(),name=dayName(current);
- let rows=await queryTemplates(wd);
- if(!rows.length && daily[name]?.length){
-   const payload=daily[name].map((title,i)=>({weekday:wd,title,sort_order:i,active:true}));
-   const ins=await SB.from('dp_daily_templates').insert(payload).select('*').order('sort_order');
-   if(ins.error)throw ins.error;rows=ins.data||[];
- }
+ const rows=await queryTemplates(wd);
+ // Weekday agendas are created only by the user. Never seed example tasks into other days.
  dbTemplates=rows;
 }
 async function ensureTasks(){
@@ -162,7 +158,8 @@ async function ensureTasks(){
 
  // Bring forward the latest unfinished day-specific task chain to this date.
  // Keep the old task untouched and prevent duplicates if the page is refreshed.
- const prior=await SB.from('dp_tasks').select('*').eq('section','daily').eq('is_completed',false).lt('task_date',k).order('task_date',{ascending:false});
+ const yesterday=new Date(current);yesterday.setDate(yesterday.getDate()-1);
+ const prior=await SB.from('dp_tasks').select('*').eq('section','daily').eq('is_completed',false).eq('task_date',iso(yesterday)).order('created_at',{ascending:true});
  if(prior.error)throw prior.error;
  const latestByRoot=new Map();
  for(const t of (prior.data||[])){
