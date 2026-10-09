@@ -24,7 +24,7 @@ button,input,select{font:inherit}button{cursor:pointer}.app{max-width:1160px;mar
 .modal{position:fixed;inset:0;background:rgba(15,23,42,.55);display:none;align-items:center;justify-content:center;padding:18px;z-index:50}.modal.show{display:flex}.modalbox{background:#fff;border-radius:20px;max-width:560px;width:100%;padding:19px;box-shadow:0 25px 70px rgba(0,0,0,.25)}.modalbox h3{margin:0 0 6px;font-size:18px}.field{margin:12px 0}.field label{display:block;font-size:11px;font-weight:750;margin-bottom:5px}.field input,.field select{width:100%;padding:10px 11px;border:1px solid var(--line);border-radius:10px;outline:none}.field input:focus,.field select:focus{border-color:#93c5fd;box-shadow:0 0 0 3px #eff6ff}.row{display:flex;justify-content:flex-end;gap:7px;margin-top:15px}.owner-list-modal{max-height:260px;overflow:auto;border:1px solid var(--line);border-radius:12px;padding:0 11px;margin-top:10px}.owner-row{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid var(--line)}.owner-row:last-child{border-bottom:0}.owner-row b{font-size:12px}.owner-row small{display:block;color:var(--muted);font-size:10px;margin-top:2px}
 .offline-screen{position:fixed;inset:0;z-index:200;background:rgba(245,247,251,.98);display:none;align-items:center;justify-content:center;padding:22px}.offline-screen.show{display:flex}.offline-box{max-width:390px;width:100%;background:#fff;border:1px solid var(--line);border-radius:24px;padding:28px;text-align:center;box-shadow:0 20px 70px rgba(15,23,42,.12)}.offline-icon{width:62px;height:62px;border-radius:20px;background:var(--red2);color:var(--red);display:grid;place-items:center;font-size:28px;margin:0 auto 15px}.offline-box h2{margin:0 0 7px;font-size:20px}.offline-box p{margin:0;color:var(--muted);font-size:12px;line-height:1.6}.offline-box .btn{margin-top:18px;width:100%;padding:12px}.small-note{font-size:10px;color:var(--muted);margin-top:8px}
 .mobile-actions{display:none}
-@media(max-width:850px){.app{padding:11px}.top{padding:12px;align-items:flex-start}.top .actions{display:none}.mobile-actions{display:grid;grid-template-columns:1fr 1fr 1fr;margin:9px 0}.mobile-actions .btn{min-height:42px}.status{font-size:10px}.hero{padding:18px;flex-direction:column;align-items:flex-start}.datebox{text-align:left}.stats{grid-template-columns:repeat(2,1fr)}.layout{grid-template-columns:1fr}.layout aside{order:2}.task{grid-template-columns:28px minmax(0,1fr) auto}.owner{display:none}.progress{width:105px}}
+@media(max-width:850px){.app{padding:11px}.top{padding:12px;align-items:flex-start}.top .actions{display:none}.mobile-actions{display:grid;grid-template-columns:1fr 1fr 1fr;margin:9px 0}.mobile-dashboard-picker{grid-column:1/-1;justify-content:space-between;background:#fff;border:1px solid var(--line);border-radius:10px;padding:9px 12px}.mobile-dashboard-picker select{max-width:65%;flex:1}.mobile-actions .btn{min-height:42px}.status{font-size:10px}.hero{padding:18px;flex-direction:column;align-items:flex-start}.datebox{text-align:left}.stats{grid-template-columns:repeat(2,1fr)}.layout{grid-template-columns:1fr}.layout aside{order:2}.task{grid-template-columns:28px minmax(0,1fr) auto}.owner{display:none}.progress{width:105px}}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.0"></script>
 </head>
@@ -44,7 +44,6 @@ button,input,select{font:inherit}button{cursor:pointer}.app{max-width:1160px;mar
   <div class="brand"><div class="logo">DP</div><div><h1>Daily Planner</h1><p>Branch Operations · shared online dashboard</p></div></div>
   <div class="actions">
     <span class="status" id="status"><i class="dot"></i><span>Connecting…</span></span>
-    <label class="dashboard-picker" for="dashboardOwner">Open dashboard <select id="dashboardOwner"><option value="">Common dashboard</option></select></label>
     <button class="btn" id="prevBtn">← Previous</button>
     <button class="btn" id="todayBtn">Today</button>
     <button class="btn" id="ownersBtn">＋ Owners</button>
@@ -52,6 +51,7 @@ button,input,select{font:inherit}button{cursor:pointer}.app{max-width:1160px;mar
   </div>
 </header>
 <div class="mobile-actions">
+  <label class="dashboard-picker mobile-dashboard-picker" for="dashboardOwner">Choose dashboard <select id="dashboardOwner"><option value="">Common dashboard</option></select></label>
   <button class="btn" id="mPrev">← Previous</button><button class="btn" id="mToday">Today</button><button class="btn primary" id="mAdd">＋ Add task</button>
 </div>
 
