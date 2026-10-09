@@ -364,9 +364,23 @@ async function saveTask(){
    closeTask();
  },editingTaskId?'Task updated and saved':'Task added and saved');
 }
+const savingTaskIds=new Set();
 async function toggleTask(id){
- const t=dbTasks.find(x=>x.id===id);if(!t)return;
- await action(async()=>{const u=await SB.from('dp_tasks').update({is_completed:!t.is_completed,updated_at:new Date().toISOString()}).eq('id',id);if(u.error)throw u.error},t.is_completed?'Task marked pending':'Task marked complete');
+ const t=dbTasks.find(x=>x.id===id);if(!t||savingTaskIds.has(id)||!requireReady())return;
+ const previous=!!t.is_completed, next=!previous;
+ savingTaskIds.add(id);
+ t.is_completed=next;
+ render();
+ toast(next?'Saving completion…':'Saving pending status…','info');
+ try{
+   const u=await SB.from('dp_tasks').update({is_completed:next,updated_at:new Date().toISOString()}).eq('id',id);
+   if(u.error)throw u.error;
+   toast(next?'Task marked complete':'Task marked pending','success');
+ }catch(e){
+   t.is_completed=previous;
+   render();
+   toast(e?.message||'Could not save the change. Please try again.','error');
+ }finally{savingTaskIds.delete(id)}
 }
 async function deleteTask(id){
  const t=dbTasks.find(x=>x.id===id);if(!t)return;
@@ -444,7 +458,11 @@ function bind(){
 }
 async function initRealtime(){
  if(realtimeChannel)SB.removeChannel(realtimeChannel);
- realtimeChannel=SB.channel('daily-planner-live').on('postgres_changes',{event:'*',schema:'public',table:'dp_tasks'},()=>{if(ready)refresh()}).on('postgres_changes',{event:'*',schema:'public',table:'dp_owners'},()=>{if(ready)refresh()}).on('postgres_changes',{event:'*',schema:'public',table:'dp_daily_templates'},()=>{if(ready)refresh()});
+ // Task changes only fetch the current day's rows; do not rerun seeding/carry-forward checks.
+ realtimeChannel=SB.channel('daily-planner-live')
+ .on('postgres_changes',{event:'*',schema:'public',table:'dp_tasks'},async()=>{if(!ready||!navigator.onLine)return;try{await fetchTasks();render()}catch(e){console.error('Realtime task refresh failed:',e)}})
+ .on('postgres_changes',{event:'*',schema:'public',table:'dp_owners'},async()=>{if(!ready||!navigator.onLine)return;try{await queryOwners();fillDashboardOwners();await fetchTasks();render()}catch(e){console.error('Realtime owner refresh failed:',e)}})
+ .on('postgres_changes',{event:'*',schema:'public',table:'dp_daily_templates'},async()=>{if(!ready||!navigator.onLine)return;try{await ensureTemplates();await fetchTasks();render()}catch(e){console.error('Realtime template refresh failed:',e)}});
  realtimeChannel.subscribe();
 }
 bind();
