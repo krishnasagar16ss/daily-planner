@@ -303,7 +303,7 @@ function openTask(section='daily',task=null){
  if(!requireReady())return;
  const raw=task?dbTasks.find(x=>x.id===task.id):null;
  const taskTitle=raw?.title??task?.text??task?.title??'';
- const selectedOwner=raw?.owner_id??task?.owner_id??'';
+ const selectedOwner=raw?.owner_id??task?.owner_id??selectedDashboardOwner??'';
  editingTaskId=task?.id||null;
  $('modalTitle').textContent=task?'Edit task':'Add a task';
  $('taskText').value=taskTitle;
