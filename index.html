@@ -330,9 +330,16 @@ async function completeNight(){
  await action(async()=>{for(const t of pending){const u=await SB.from('dp_tasks').update({is_completed:true,updated_at:new Date().toISOString()}).eq('id',t.id);if(u.error)throw u.error}},'Night clearing saved as complete');
 }
 async function carryForwardNow(){
- const pending=dbTasks.filter(t=>!t.is_completed&&!t.is_carried_forward);if(!pending.length){toast('Nothing is pending to carry forward.','info');return}
+ // Carry-forward applies only to the day-specific agenda, never the daily recurring sections.
+ const pending=dbTasks.filter(t=>t.section==='daily'&&!t.is_completed&&!t.is_carried_forward);
+ if(!pending.length){toast('No unfinished day-specific agenda tasks to carry forward.','info');return}
  const d=new Date(current);d.setDate(d.getDate()+1);
- await action(async()=>{for(const t of pending){const i=await SB.from('dp_tasks').insert({task_date:iso(d),section:t.section,title:t.title,owner_id:t.owner_id,is_carried_forward:true,source_task_id:t.id});if(i.error)throw i.error}},pending.length+' task(s) carried to '+dayName(d));
+ await action(async()=>{
+   for(const t of pending){
+     const i=await SB.from('dp_tasks').insert({task_date:iso(d),section:'daily',title:t.title,owner_id:t.owner_id,template_id:t.template_id||null,is_carried_forward:true,source_task_id:t.source_task_id||t.id});
+     if(i.error)throw i.error;
+   }
+ },pending.length+' day-specific task(s) carried to '+dayName(d));
 }
 function bind(){
  $('prevBtn').onclick=async()=>{if(!requireReady())return;current.setDate(current.getDate()-1);await refresh()};
