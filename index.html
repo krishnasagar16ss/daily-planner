@@ -147,17 +147,44 @@ async function ensureTasks(){
  const k=iso(current);
  await ensureTemplates();
  const byName=Object.fromEntries(dbOwners.map(o=>[o.name,o.id]));
- const recurringRows=[];
- for(const [section,arr] of Object.entries(recurring))for(const [title,owner] of arr)if(byName[owner])recurringRows.push({task_date:k,section,title,owner_id:byName[owner],is_carried_forward:false});
- for(const row of recurringRows){
-   const q=await SB.from('dp_tasks').select('id').eq('task_date',k).eq('section',row.section).eq('title',row.title).limit(1);
-   if(q.error)throw q.error;
-   if(!q.data?.length){const ins=await SB.from('dp_tasks').insert(row);if(ins.error)throw ins.error}
+
+ // Create the fixed daily sections even if their usual owner has not been registered.
+ for(const [section,arr] of Object.entries(recurring)){
+   for(const [title,owner] of arr){
+     const q=await SB.from('dp_tasks').select('id').eq('task_date',k).eq('section',section).eq('title',title).eq('is_carried_forward',false).limit(1);
+     if(q.error)throw q.error;
+     if(!q.data?.length){
+       const ins=await SB.from('dp_tasks').insert({task_date:k,section,title,owner_id:byName[owner]||null,is_carried_forward:false});
+       if(ins.error)throw ins.error;
+     }
+   }
  }
+
+ // Bring forward the latest unfinished day-specific task chain to this date.
+ // Keep the old task untouched and prevent duplicates if the page is refreshed.
+ const prior=await SB.from('dp_tasks').select('*').eq('section','daily').eq('is_completed',false).lt('task_date',k).order('task_date',{ascending:false});
+ if(prior.error)throw prior.error;
+ const latestByRoot=new Map();
+ for(const t of (prior.data||[])){
+   const root=t.source_task_id||t.id;
+   if(!latestByRoot.has(root))latestByRoot.set(root,t);
+ }
+ const existing=await SB.from('dp_tasks').select('source_task_id').eq('task_date',k).eq('is_carried_forward',true);
+ if(existing.error)throw existing.error;
+ const already=new Set((existing.data||[]).map(t=>t.source_task_id).filter(Boolean));
+ for(const [root,t] of latestByRoot){
+   if(already.has(root))continue;
+   const ins=await SB.from('dp_tasks').insert({task_date:k,section:'daily',title:t.title,owner_id:t.owner_id||null,is_carried_forward:true,source_task_id:root,template_id:t.template_id||null});
+   if(ins.error)throw ins.error;
+ }
+
  for(const t of dbTemplates){
    const q=await SB.from('dp_tasks').select('id').eq('task_date',k).eq('template_id',t.id).limit(1);
    if(q.error)throw q.error;
-   if(!q.data?.length){const ins=await SB.from('dp_tasks').insert({task_date:k,section:'daily',title:t.title,template_id:t.id,owner_id:null,is_carried_forward:false});if(ins.error)throw ins.error}
+   if(!q.data?.length){
+     const ins=await SB.from('dp_tasks').insert({task_date:k,section:'daily',title:t.title,template_id:t.id,owner_id:null,is_carried_forward:false});
+     if(ins.error)throw ins.error;
+   }
  }
 }
 async function fetchTasks(){
