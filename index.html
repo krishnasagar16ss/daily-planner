@@ -190,61 +190,74 @@ async function ensureTasks(){
  await ensureTemplates();
  const byName=Object.fromEntries(dbOwners.map(o=>[o.name,o.id]));
 
- // Create the fixed daily sections even if their usual owner has not been registered.
+ // Fetch this date's tasks once, then determine all missing rows locally.
+ const currentRes=await SB.from('dp_tasks')
+   .select('id,section,title,template_id,is_carried_forward,source_task_id')
+   .eq('task_date',k);
+ if(currentRes.error)throw currentRes.error;
+ const currentRows=currentRes.data||[];
+ const existingKeys=new Set(currentRows.filter(t=>!t.is_carried_forward)
+   .map(t=>t.section+'|'+t.title));
+ const existingTemplateIds=new Set(currentRows.map(t=>t.template_id).filter(Boolean));
+ const alreadyCarried=new Set(currentRows.filter(t=>t.is_carried_forward)
+   .map(t=>t.source_task_id).filter(Boolean));
+ const toInsert=[];
+
+ // Fixed daily sections: match the original idempotency rules without per-task queries.
  for(const [section,arr] of Object.entries(recurring)){
    for(const [title,owner] of arr){
-     const q=await SB.from('dp_tasks').select('id').eq('task_date',k).eq('section',section).eq('title',title).eq('is_carried_forward',false).limit(1);
-     if(q.error)throw q.error;
-     if(!q.data?.length){
-       const ins=await SB.from('dp_tasks').insert({task_date:k,section,title,owner_id:byName[owner]||null,is_carried_forward:false});
-       if(ins.error)throw ins.error;
+     const key=section+'|'+title;
+     if(!existingKeys.has(key)){
+       toInsert.push({task_date:k,section,title,owner_id:byName[owner]||null,is_carried_forward:false});
+       existingKeys.add(key);
      }
    }
  }
 
- // Carry forward only original, unfinished day-specific tasks from yesterday.
- // A task that was itself carried forward must never be carried again.
+ // Carry forward only unfinished, original day-specific tasks from yesterday.
  const yesterday=new Date(current);yesterday.setDate(yesterday.getDate()-1);
- const prior=await SB.from('dp_tasks').select('*')
-   .eq('section','daily')
-   .eq('task_date',iso(yesterday))
-   .eq('is_completed',false)
-   .eq('is_carried_forward',false);
+ const prior=await SB.from('dp_tasks').select('id,title,owner_id,template_id')
+   .eq('section','daily').eq('task_date',iso(yesterday))
+   .eq('is_completed',false).eq('is_carried_forward',false);
  if(prior.error)throw prior.error;
- const existing=await SB.from('dp_tasks').select('source_task_id')
-   .eq('task_date',k).eq('is_carried_forward',true);
- if(existing.error)throw existing.error;
- const already=new Set((existing.data||[]).map(t=>t.source_task_id).filter(Boolean));
  for(const t of (prior.data||[])){
-   if(already.has(t.id))continue;
-   const ins=await SB.from('dp_tasks').insert({
+   if(alreadyCarried.has(t.id))continue;
+   toInsert.push({
      task_date:k,section:'daily',title:t.title,owner_id:t.owner_id||null,
      is_carried_forward:true,source_task_id:t.id,template_id:t.template_id||null
    });
-   if(ins.error)throw ins.error;
+   alreadyCarried.add(t.id);
  }
 
- // Seed each owner's routines into isolated owner_* sections, never into common sections.
+ // Seed personal routines only in their dedicated owner_* sections.
  for(const [ownerName,titles] of Object.entries(ownerRoutines)){
    const owner=dbOwners.find(o=>o.name===ownerName);
    if(!owner)continue;
    const section='owner_'+ownerName.toLowerCase();
    for(const title of titles){
-     const q=await SB.from('dp_tasks').select('id').eq('task_date',k).eq('section',section).eq('title',title).eq('is_carried_forward',false).limit(1);
-     if(q.error)throw q.error;
-     if(!q.data?.length){
-       const ins=await SB.from('dp_tasks').insert({task_date:k,section,title,owner_id:owner.id,is_carried_forward:false});
-       if(ins.error)throw ins.error;
+     const key=section+'|'+title;
+     if(!existingKeys.has(key)){
+       toInsert.push({task_date:k,section,title,owner_id:owner.id,is_carried_forward:false});
+       existingKeys.add(key);
      }
    }
  }
+
+ // Weekly agenda templates are also checked from the one in-memory snapshot.
  for(const t of dbTemplates){
-   const q=await SB.from('dp_tasks').select('id').eq('task_date',k).eq('template_id',t.id).limit(1);
-   if(q.error)throw q.error;
-   if(!q.data?.length){
-     const ins=await SB.from('dp_tasks').insert({task_date:k,section:'daily',title:t.title,template_id:t.id,owner_id:null,is_carried_forward:false});
-     if(ins.error)throw ins.error;
-   }
+   if(existingTemplateIds.has(t.id))continue;
+   toInsert.push({
+     task_date:k,section:'daily',title:t.title,template_id:t.id,
+     owner_id:null,is_carried_forward:false
+   });
+   existingTemplateIds.add(t.id);
+ }
+
+ // One bulk insert replaces dozens of sequential insert calls.
+ for(let i=0;i<toInsert.length;i+=100){
+   const batch=toInsert.slice(i,i+100);
+   const ins=await SB.from('dp_tasks').insert(batch);
+   if(ins.error)throw ins.error;
  }
 }
 async function fetchTasks(){
