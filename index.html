@@ -162,6 +162,7 @@ const daily={
 let current=new Date();current.setHours(12,0,0,0);
 let dbOwners=[],dbTasks=[],dbTemplates=[];
 let ready=false,loading=false,editingOwnerId=null,editingTaskId=null,realtimeChannel=null,selectedDashboardOwner='';
+let realtimeRefreshTimer=null,realtimeRefreshing=false,realtimeRefreshQueued=false;
 
 const $=id=>document.getElementById(id);
 function iso(d){return d.toISOString().slice(0,10)}
@@ -469,13 +470,36 @@ function bind(){
  window.addEventListener('online',()=>{toast('Internet connection restored. Reconnecting…','info');refresh()});
  window.addEventListener('offline',()=>{ready=false;showOffline()});
 }
+function scheduleTaskRealtimeRefresh(){
+ if(!ready||!navigator.onLine)return;
+ if(realtimeRefreshTimer)clearTimeout(realtimeRefreshTimer);
+ realtimeRefreshTimer=setTimeout(async()=>{
+   realtimeRefreshTimer=null;
+   if(realtimeRefreshing){realtimeRefreshQueued=true;return}
+   realtimeRefreshing=true;
+   try{await fetchTasks();render()}
+   catch(e){console.error('Realtime task refresh failed:',e)}
+   finally{
+     realtimeRefreshing=false;
+     if(realtimeRefreshQueued){realtimeRefreshQueued=false;scheduleTaskRealtimeRefresh()}
+   }
+ },180);
+}
 async function initRealtime(){
  if(realtimeChannel)SB.removeChannel(realtimeChannel);
- // Task changes only fetch the current day's rows; do not rerun seeding/carry-forward checks.
+ // Debounce bursts (e.g. seeding many owner tasks) into one fetch/render cycle.
  realtimeChannel=SB.channel('daily-planner-live')
- .on('postgres_changes',{event:'*',schema:'public',table:'dp_tasks'},async()=>{if(!ready||!navigator.onLine)return;try{await fetchTasks();render()}catch(e){console.error('Realtime task refresh failed:',e)}})
- .on('postgres_changes',{event:'*',schema:'public',table:'dp_owners'},async()=>{if(!ready||!navigator.onLine)return;try{await queryOwners();fillDashboardOwners();await fetchTasks();render()}catch(e){console.error('Realtime owner refresh failed:',e)}})
- .on('postgres_changes',{event:'*',schema:'public',table:'dp_daily_templates'},async()=>{if(!ready||!navigator.onLine)return;try{await ensureTemplates();await fetchTasks();render()}catch(e){console.error('Realtime template refresh failed:',e)}});
+ .on('postgres_changes',{event:'*',schema:'public',table:'dp_tasks'},()=>scheduleTaskRealtimeRefresh())
+ .on('postgres_changes',{event:'*',schema:'public',table:'dp_owners'},async()=>{
+   if(!ready||!navigator.onLine)return;
+   try{await queryOwners();fillDashboardOwners();await fetchTasks();render()}
+   catch(e){console.error('Realtime owner refresh failed:',e)}
+ })
+ .on('postgres_changes',{event:'*',schema:'public',table:'dp_daily_templates'},async()=>{
+   if(!ready||!navigator.onLine)return;
+   try{await ensureTemplates();await fetchTasks();render()}
+   catch(e){console.error('Realtime template refresh failed:',e)}
+ });
  realtimeChannel.subscribe();
 }
 bind();
