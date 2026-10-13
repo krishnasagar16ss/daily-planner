@@ -36,7 +36,7 @@ button,input,select{font:inherit}button{cursor:pointer}.app{max-width:1160px;mar
 .pitch-section h3{margin:0;padding:10px 12px;background:#b7ddeb;color:#10243b;font-size:14px}
 .pitch-section .inside{padding:11px 12px}
 .pitch-input,.pitch-textarea{width:100%;border:1px solid #b7d2e1;border-radius:8px;padding:10px;font:inherit;font-size:13px;background:#fff;color:#172033}
-.pitch-textarea{min-height:68px;resize:vertical}.pitch-qa{min-height:96px;resize:vertical;line-height:1.5}.pitch-field-top{align-items:start}.pitch-field-top>span{padding-top:10px}
+.pitch-textarea{min-height:68px;resize:vertical}.pitch-qa{min-height:96px;resize:vertical;line-height:1.5}.pitch-service-details{min-height:145px;resize:vertical;line-height:1.5}.pitch-field-top{align-items:start}.pitch-field-top>span{padding-top:10px}
 .pitch-field{display:grid;grid-template-columns:110px minmax(0,1fr);gap:8px;align-items:center;margin:7px 0;font-size:12px}
 .pitch-check{display:flex;gap:9px;align-items:flex-start;margin:10px 0;font-size:13px;line-height:1.35}
 .pitch-check input{width:17px;height:17px;accent-color:#2563eb;flex:0 0 auto}
@@ -104,10 +104,9 @@ button,input,select{font:inherit}button{cursor:pointer}.app{max-width:1160px;mar
     <label class="pitch-field">PPT <input class="pitch-input" id="pitchPpt" placeholder="Presentation / link"></label>
    </div></section>
    <section class="pitch-section"><h3>④ Competition</h3><div class="inside"><textarea class="pitch-textarea" id="pitchCompetition" placeholder="Competition details"></textarea></div></section>
-   <section class="pitch-section"><h3>⑤ Customer Service</h3><div class="inside">
-    <label class="pitch-field">SOS <input class="pitch-input" id="pitchSOS" placeholder="Updates"></label>
-    <label class="pitch-field">CRY <input class="pitch-input" id="pitchCRY" placeholder="Updates"></label>
-    <label class="pitch-field">UNICEF — Quality <input class="pitch-input" id="pitchUNICEF" placeholder="Quality focus"></label>
+   <section class="pitch-section"><h3>⑤ Customer Service <span style="font-size:11px;font-weight:650;opacity:.8">(Default for the day)</span></h3><div class="inside">
+    <label class="pitch-field pitch-field-top">Topic <input class="pitch-input" id="pitchServiceTopic" placeholder="Today's customer service focus"></label>
+    <label class="pitch-field pitch-field-top">Key points <textarea class="pitch-input pitch-service-details" id="pitchServiceDetails" rows="5" placeholder="One point per line"></textarea></label>
    </div></section>
    <section class="pitch-section"><h3>⑥ Excited Title</h3><div class="inside"><input class="pitch-input" id="pitchTitle" placeholder="Today's title"></div></section>
   </div>
@@ -344,9 +343,25 @@ function renderList(el,tasks){
  '<div class="task-actions"><button class="btn" data-action="edit" data-id="'+esc(t.id)+'">Edit</button><button class="btn danger" data-action="delete" data-id="'+esc(t.id)+'">Delete</button></div></div>').join('')
 }
 
-const pitchIds=['pitchType','pitchFun','pitchConductor','pitchTopic','pitchQA','pitchPpt','pitchCompetition','pitchSOS','pitchCRY','pitchUNICEF','pitchTitle','pitchNotes','pitchAAPTele','pitchAAPCRY','pitchAAPRoad','pitchAAPOneOff','pitchOwnTeam','pitchCommon','pitchHighroller','pitchShuffle','pitchOwnerPractice'];
+const pitchIds=['pitchType','pitchFun','pitchConductor','pitchTopic','pitchQA','pitchPpt','pitchCompetition','pitchServiceTopic','pitchServiceDetails','pitchTitle','pitchNotes','pitchAAPTele','pitchAAPCRY','pitchAAPRoad','pitchAAPOneOff','pitchOwnTeam','pitchCommon','pitchHighroller','pitchShuffle','pitchOwnerPractice'];
 function deviceDateKey(){return deviceDateKeyFromDate(new Date())}
 function deviceDateKeyFromDate(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function defaultCustomerService(d=new Date()){
+ const map={
+  1:{topic:'Common + Cash collection',details:'COMMON\n1. Close right people\n2. Maintain balance\n3. Good LIA\n4. Long term\n5. For children\n6. Quality table\n\nCASH COLLECTION\n1. Wrong information\n2. Fraud cheque\n3. Wrong screenshot\n4. Repeated submission'},
+  2:{topic:'Being polite with people',details:'1. Be humble with people\n2. Be welcoming — say “Thank you”\n3. Be polite and confident\n4. Follow up properly — never irritate'},
+  3:{topic:'Product knowledge',details:'1. Explain the organisation very well\n2. Maintain the TMC app properly'},
+  4:{topic:'Giving assurance',details:'1. Child details\n2. Welcome kits\n3. Form and brochure'},
+  5:{topic:'Red Flags',details:'1. How to calm frustrated customers'},
+  6:{topic:'Feedback and leaving happy',details:'1. Get feedbacks'}
+ };
+ return map[d.getDay()]||{topic:'Holiday',details:''};
+}
+function applyCustomerServiceDefault(key,data={}){
+ const d=pitchDateObject(key),defaults=defaultCustomerService(d);
+ if(!Object.prototype.hasOwnProperty.call(data,'pitchServiceTopic'))$('pitchServiceTopic').value=defaults.topic;
+ if(!Object.prototype.hasOwnProperty.call(data,'pitchServiceDetails'))$('pitchServiceDetails').value=defaults.details;
+}
 function defaultPitchType(d=new Date()){
  const map={1:'Own team',2:'Own team',3:'Common meeting',4:'Highroller pitch practice',5:'Shuffle pitch practice',6:'Owner pitch practice',0:'Holiday'};
  return map[d.getDay()];
@@ -357,7 +372,8 @@ async function loadRemotePitchPlan(key){
  pitchRemoteLoading=true;
  try{const r=await SB.from('dp_aham_pitch_plans').select('plan_data').eq('plan_date',key).maybeSingle();if(r.error)throw r.error;
   if(pitchDateObject(key).getDay()===0){localStorage.removeItem('dp_aham_pitch_'+key);if(r.data)await SB.from('dp_aham_pitch_plans').delete().eq('plan_date',key);pitchRemoteLoaded.add(key);if(key===pitchSelectedDate){pitchIds.forEach(id=>{const el=$(id);if(el){if(el.type==='checkbox')el.checked=false;else el.value=''}});$('pitchType').value='Holiday';$('pitchSaved').textContent='Sunday holiday · saved plan cleared'}return}
-  if(r.data&&r.data.plan_data&&key===pitchSelectedDate){const data=r.data.plan_data;pitchIds.forEach(id=>{const el=$(id);if(el&&Object.prototype.hasOwnProperty.call(data,id)){if(el.type==='checkbox')el.checked=!!data[id];else el.value=data[id]??''}});localStorage.setItem('dp_aham_pitch_'+key,JSON.stringify(data));}
+  if(r.data&&r.data.plan_data&&key===pitchSelectedDate){const data=r.data.plan_data;pitchIds.forEach(id=>{const el=$(id);if(el&&Object.prototype.hasOwnProperty.call(data,id)){if(el.type==='checkbox')el.checked=!!data[id];else el.value=data[id]??''}});applyCustomerServiceDefault(key,data);localStorage.setItem('dp_aham_pitch_'+key,JSON.stringify(data));}
+  else if(key===pitchSelectedDate)applyCustomerServiceDefault(key,{});
   pitchRemoteLoaded.add(key);if(selectedDashboardOwner==='__aham')updatePitchChecks();
  }catch(e){console.error('Pitch plan sync failed:',e);$('pitchSaved').textContent='Online sync failed — local copy retained'}finally{pitchRemoteLoading=false}
 }
@@ -372,6 +388,7 @@ function renderPitchDashboard(){
  const storeKey='dp_aham_pitch_'+key;
  let data={};try{data=JSON.parse(localStorage.getItem(storeKey)||'{}')}catch{}
  pitchIds.forEach(id=>{const el=$(id);if(!el)return;if(el.type==='checkbox')el.checked=!!data[id];else el.value=data[id]??''});
+ if(!holiday)applyCustomerServiceDefault(key,data);
  if(holiday){pitchIds.forEach(id=>{const el=$(id);if(el){if(el.type==='checkbox')el.checked=false;else el.value=''}});$('pitchType').value='Holiday';localStorage.removeItem(storeKey);if(SB&&navigator.onLine)SB.from('dp_aham_pitch_plans').delete().eq('plan_date',key).then(()=>pitchRemoteLoaded.add(key));$('pitchSaved').textContent='Sunday holiday · planner is cleared';return}
  if(!data.pitchType)$('pitchType').value=defaultPitchType(d);
  updatePitchChecks();
@@ -390,84 +407,63 @@ function savePitchDashboard(){
 }
 function downloadPitchImage(){
  const d=pitchDateObject(),key=pitchSelectedDate,holiday=d.getDay()===0;
- const canvas=document.createElement('canvas'),ctx=canvas.getContext('2d');
- const W=1200,pad=38,gap=24,colW=(W-pad*2-gap)/2,cardPad=20,innerW=colW-cardPad*2;
+ const canvas=document.createElement('canvas'),ctx=canvas.getContext('2d'),W=1200,pad=38,gap=24,colW=(W-pad*2-gap)/2;
  const dateLabel=d.toLocaleDateString('en-IN',{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
- const value=id=>{const el=$(id);if(!el)return '';if(el.type==='checkbox')return (el.checked?'☑  ':'☐  ')+el.parentElement.textContent.trim();return String(el.value||'').trim()};
- const colors={blue:['#a9e7ff','#dff8ff','#0879ba'],green:['#baf4d6','#eafff3','#12866a'],pink:['#ffc8df','#fff0f6','#c43f78'],purple:['#d9ccff','#f5f0ff','#6946bd'],orange:['#ffe0ad','#fff7e8','#c65b18'],cyan:['#a8e8f5','#e9fbff','#087b91']};
+ const value=id=>{const el=$(id);return el?String(el.value||'').trim():''};
+ const checked=id=>{const el=$(id);return el&&el.checked};
+ const colors={blue:['#a9e7ff','#e4faff','#0879ba'],green:['#baf4d6','#eafff3','#12866a'],pink:['#ffc8df','#fff0f6','#c43f78'],purple:['#d9ccff','#f5f0ff','#6946bd'],orange:['#ffe0ad','#fff7e8','#c65b18'],cyan:['#a8e8f5','#e9fbff','#087b91']};
  const wrap=(text,maxWidth,font)=>{ctx.font=font;const out=[];String(text||'—').split('\n').forEach(par=>{if(!par.trim()){out.push('');return}let line='';par.split(/\s+/).forEach(word=>{const test=line?line+' '+word:word;if(line&&ctx.measureText(test).width>maxWidth){out.push(line);line=word}else line=test});out.push(line||'—')});return out};
- const textFont='500 21px Arial', smallFont='500 19px Arial', titleFont='800 24px Arial';
- const cardHeight=items=>{let h=72;items.forEach(it=>{const lines=wrap(it.text,innerW-4,it.small?smallFont:textFont);h+=Math.max(1,lines.length)*(it.small?26:30)+it.gapAfter??0});return h+cardPad};
- const drawCard=(x,y,w,title,items,palette,icon='')=>{
-   const c=colors[palette]||colors.blue;let h=76;
-   items.forEach(it=>{const lines=wrap(it.text,innerW-4,it.small?smallFont:textFont);h+=Math.max(1,lines.length)*(it.small?27:31)+(it.gapAfter||10)});
-   h+=cardPad;
-   ctx.save();ctx.shadowColor='rgba(13,45,79,.10)';ctx.shadowBlur=15;ctx.shadowOffsetY=5;ctx.fillStyle='#fff';ctx.beginPath();ctx.roundRect(x,y,w,h,20);ctx.fill();ctx.restore();
-   ctx.save();ctx.beginPath();ctx.roundRect(x,y,w,70,20);ctx.clip();const grad=ctx.createLinearGradient(x,y,x+w,y+70);grad.addColorStop(0,c[0]);grad.addColorStop(1,c[1]);ctx.fillStyle=grad;ctx.fillRect(x,y,w,70);ctx.restore();
-   ctx.fillStyle=c[2];ctx.beginPath();ctx.arc(x+37,y+35,23,0,Math.PI*2);ctx.fill();
-   ctx.fillStyle='#fff';ctx.font='800 24px Arial';ctx.textAlign='center';ctx.fillText(icon||'•',x+37,y+43);ctx.textAlign='left';
-   ctx.fillStyle='#071d49';ctx.font=titleFont;
-   let titleLines=wrap(title,w-95,titleFont);titleLines.slice(0,2).forEach((line,i)=>ctx.fillText(line,x+72,y+31+i*26));
-   let ty=y+99;
-   items.forEach(it=>{
-     if(it.bullet){ctx.fillStyle=c[2];ctx.beginPath();ctx.arc(x+cardPad+4,ty-7,4,0,Math.PI*2);ctx.fill()}
-     const tx=x+cardPad+(it.bullet?18:0),lines=wrap(it.text,w-(tx-x)-cardPad,it.small?smallFont:textFont);
-     ctx.fillStyle=it.muted?'#63748a':'#17233f';ctx.font=it.small?smallFont:textFont;
-     lines.forEach(line=>{ctx.fillText(line||' ',tx,ty);ty+=it.small?27:31});
-     ty+=(it.gapAfter===undefined?10:it.gapAfter);
-   });
-   return y+h;
- };
- const items=(...vals)=>vals.map(v=>({text:v||'—'}));
+ const bodyFont='500 21px Arial',smallFont='600 17px Arial',headFont='800 24px Arial',cardPad=20;
+ const serviceTopic=value('pitchServiceTopic')||defaultCustomerService(d).topic;
+ const serviceLines=(value('pitchServiceDetails')||defaultCustomerService(d).details).split('\n').filter(line=>line.trim());
+ const section=(title,icon,color,lines)=>({title,icon,color,lines:lines.map(line=>typeof line==='string'?{text:line}:line)});
  const leftCards=holiday?[]:[
-  {title:'Type of Pitch Practice',icon:'1',color:'blue',items:items(value('pitchType'))},
-  {title:'Morning Meeting Fun',icon:'2',color:'cyan',items:items(value('pitchFun'))},
-  {title:'Morning Brainstorm',icon:'3',color:'green',items:[
-   {text:'PERSON CONDUCTING',small:true,muted:true,gapAfter:2},{text:value('pitchConductor')||'—',gapAfter:8},
-   {text:'TOPIC',small:true,muted:true,gapAfter:2},{text:value('pitchTopic')||'—',gapAfter:8},
-   {text:'Q&A',small:true,muted:true,gapAfter:2},{text:value('pitchQA')||'—',gapAfter:8},
-   {text:'PPT / PRESENTATION',small:true,muted:true,gapAfter:2},{text:value('pitchPpt')||'—',gapAfter:0}
-  ]},
-  {title:'Competition',icon:'4',color:'pink',items:items(value('pitchCompetition'))},
-  {title:'Excited Title',icon:'★',color:'purple',items:items(value('pitchTitle'))}
+  section('Type of Pitch Practice','1','blue',[value('pitchType')]),
+  section('Morning Meeting Fun','2','cyan',[value('pitchFun')]),
+  section('Morning Brainstorm','3','green',[
+   {text:'PERSON CONDUCTING',small:true,muted:true},{text:value('pitchConductor')||'—',gap:7},
+   {text:'TOPIC',small:true,muted:true},{text:value('pitchTopic')||'—',gap:7},
+   {text:'Q&A',small:true,muted:true},{text:value('pitchQA')||'—',gap:7},
+   {text:'PPT / PRESENTATION',small:true,muted:true},{text:value('pitchPpt')||'—',gap:0}
+  ]),
+  section('Competition','4','pink',[value('pitchCompetition')]),
+  section('Excited Title','★','purple',[value('pitchTitle')])
  ];
  const rightCards=holiday?[]:[
-  {title:'AAP with',icon:'✓',color:'purple',items:['pitchAAPTele','pitchAAPCRY','pitchAAPRoad','pitchAAPOneOff'].map(id=>({text:value(id),bullet:false,gapAfter:4}))},
-  {title:'Pitch Practice Session',icon:'↗',color:'orange',items:['pitchOwnTeam','pitchCommon','pitchHighroller','pitchShuffle','pitchOwnerPractice'].map(id=>({text:value(id),bullet:false,gapAfter:5}))},
-  {title:'Customer Service',icon:'✦',color:'green',items:[
-   {text:'SOS',small:true,muted:true,gapAfter:1},{text:value('pitchSOS')||'—',gapAfter:7},
-   {text:'CRY',small:true,muted:true,gapAfter:1},{text:value('pitchCRY')||'—',gapAfter:7},
-   {text:'UNICEF — QUALITY',small:true,muted:true,gapAfter:1},{text:value('pitchUNICEF')||'—',gapAfter:0}
-  ]},
-  {title:'Notes',icon:'✎',color:'blue',items:items(value('pitchNotes'))}
+  section('AAP with','✓','purple',['pitchAAPTele','pitchAAPCRY','pitchAAPRoad','pitchAAPOneOff'].map((id,i)=>({text:(checked(id)?'☑  ':'☐  ')+['Tele trainers','CRY','Road trip','ONE OFF trainers'][i],gap:4}))),
+  section('Customer Service · Default for Today','✦','orange',[
+   {text:serviceTopic,large:true,gap:10},
+   ...serviceLines.map((line,i)=>({text:/^\d+[.)]/.test(line)?'➜  '+line:line,bullet:!(/^\d+[.)]/.test(line)),gap:5}))
+  ]),
+  section('Notes','✎','blue',[value('pitchNotes')])
  ];
- const measureCard=(w,card)=>{let h=76;card.items.forEach(it=>{const lines=wrap(it.text,w-cardPad*2-4,it.small?smallFont:textFont);h+=Math.max(1,lines.length)*(it.small?27:31)+(it.gapAfter===undefined?10:it.gapAfter)});return h+cardPad};
- const colHeight=cards=>cards.reduce((sum,c)=>sum+measureCard(colW,c)+18,0);
- const bodyHeight=holiday?260:Math.max(colHeight(leftCards),colHeight(rightCards));
- const headerH=215,footerH=130;
- canvas.width=W;canvas.height=headerH+bodyHeight+footerH+pad*2;
- // Soft, colorful page background
- const bg=ctx.createLinearGradient(0,0,W,canvas.height);bg.addColorStop(0,'#f1fbff');bg.addColorStop(.55,'#ffffff');bg.addColorStop(1,'#e9f8ff');ctx.fillStyle=bg;ctx.fillRect(0,0,W,canvas.height);
- // Premium navy-to-cyan masthead
+ const measureCard=(card,w)=>{let h=78;card.lines.forEach(it=>{if(typeof it==='string')it={text:it};const font=it.large?'800 25px Arial':it.small?smallFont:bodyFont;const lines=wrap(it.text,w-cardPad*2-5,font);h+=Math.max(1,lines.length)*(it.large?35:it.small?24:30)+(it.gap===undefined?8:it.gap)});return h+cardPad};
+ const colHeight=cards=>cards.reduce((sum,c)=>sum+measureCard(c,colW)+18,0);
+ const headerH=205,footerH=120,bodyH=holiday?250:Math.max(colHeight(leftCards),colHeight(rightCards));
+ canvas.width=W;canvas.height=headerH+bodyH+footerH+pad*2;
+ const bg=ctx.createLinearGradient(0,0,W,canvas.height);bg.addColorStop(0,'#f1fbff');bg.addColorStop(.55,'#fff');bg.addColorStop(1,'#e9f8ff');ctx.fillStyle=bg;ctx.fillRect(0,0,W,canvas.height);
  const hg=ctx.createLinearGradient(0,0,W,headerH);hg.addColorStop(0,'#071b43');hg.addColorStop(.55,'#0d4f8c');hg.addColorStop(1,'#68d8f4');ctx.fillStyle=hg;ctx.fillRect(0,0,W,headerH);
  ctx.fillStyle='rgba(255,255,255,.07)';ctx.beginPath();ctx.moveTo(770,0);ctx.lineTo(930,0);ctx.lineTo(1100,headerH);ctx.lineTo(960,headerH);ctx.fill();
- ctx.fillStyle='#fff';ctx.font='800 24px Arial';ctx.fillText('AHAMMED’S DAILY DASHBOARD',48,48);
- ctx.font='900 61px Arial';ctx.fillStyle='#fff';ctx.fillText('STITCH',46,119);const stitchW=ctx.measureText('STITCH ').width;const gradTitle=ctx.createLinearGradient(46+stitchW,75,730,130);gradTitle.addColorStop(0,'#8ff0ff');gradTitle.addColorStop(1,'#fff');ctx.fillStyle=gradTitle;ctx.fillText('YOUR PITCH',46+stitchW,119);
- ctx.fillStyle='#a7f2ff';ctx.fillRect(49,142,80,5);ctx.fillStyle='#e9f7ff';ctx.font='italic 22px Arial';ctx.fillText('Plan Today. Practice Better. Create Bigger Impact.',148,155);
- ctx.save();ctx.shadowColor='rgba(0,0,0,.12)';ctx.shadowBlur=14;ctx.fillStyle='#fff';ctx.beginPath();ctx.roundRect(760,46,395,112,20);ctx.fill();ctx.restore();
- ctx.fillStyle='#0b2350';ctx.font='800 21px Arial';ctx.fillText(d.toLocaleDateString('en-IN',{weekday:'long'}),785,83);
- ctx.fillStyle='#0878bb';ctx.font='800 25px Arial';ctx.fillText(d.toLocaleDateString('en-IN',{day:'2-digit',month:'long',year:'numeric'}),785,121);
- let contentY=headerH+pad;
- if(holiday){
-   ctx.fillStyle='#fff';ctx.beginPath();ctx.roundRect(70,contentY+30,W-140,170,25);ctx.fill();
-   ctx.fillStyle='#0d6385';ctx.font='900 44px Arial';ctx.textAlign='center';ctx.fillText('☀  SUNDAY — HOLIDAY',W/2,contentY+100);ctx.font='22px Arial';ctx.fillText('Rest, reset, and return ready to grow.',W/2,contentY+145);ctx.textAlign='left';
- }else{
-   let ly=contentY,ry=contentY;
-   leftCards.forEach(card=>{ly=drawCard(pad,ly,colW,card.title,card.items,card.color,card.icon)+18});
-   rightCards.forEach(card=>{ry=drawCard(pad+colW+gap,ry,colW,card.title,card.items,card.color,card.icon)+18});
- }
- // Decorative footer with abstract mountain layers
- const fy=canvas.height-footerH;const fg=ctx.createLinearGradient(0,fy,0,canvas.height);fg.addColorStop(0,'#d8f5ff');fg.addColorStop(1,'#071b43');ctx.fillStyle=fg;ctx.fillRect(0,fy,W,footerH);
+ ctx.fillStyle='#fff';ctx.font='800 24px Arial';ctx.fillText('AHAMMED’S DAILY DASHBOARD',48,45);
+ ctx.font='900 61px Arial';ctx.fillStyle='#fff';ctx.fillText('STITCH',46,115);const stitchW=ctx.measureText('STITCH ').width;const gt=ctx.createLinearGradient(46+stitchW,70,730,125);gt.addColorStop(0,'#8ff0ff');gt.addColorStop(1,'#fff');ctx.fillStyle=gt;ctx.fillText('YOUR PITCH',46+stitchW,115);
+ ctx.fillStyle='#a7f2ff';ctx.fillRect(49,137,80,5);ctx.fillStyle='#e9f7ff';ctx.font='italic 22px Arial';ctx.fillText('Plan Today. Practice Better. Create Bigger Impact.',148,150);
+ ctx.save();ctx.shadowColor='rgba(0,0,0,.12)';ctx.shadowBlur=14;ctx.fillStyle='#fff';ctx.beginPath();ctx.roundRect(760,42,395,112,20);ctx.fill();ctx.restore();
+ ctx.fillStyle='#0b2350';ctx.font='800 21px Arial';ctx.fillText(d.toLocaleDateString('en-IN',{weekday:'long'}),785,79);
+ ctx.fillStyle='#0878bb';ctx.font='800 25px Arial';ctx.fillText(d.toLocaleDateString('en-IN',{day:'2-digit',month:'long',year:'numeric'}),785,117);
+ const drawCard=(x,y,card)=>{
+  const w=colW,c=colors[card.color];const h=measureCard(card,w);
+  ctx.save();ctx.shadowColor='rgba(13,45,79,.11)';ctx.shadowBlur=15;ctx.shadowOffsetY=5;ctx.fillStyle='#fff';ctx.beginPath();ctx.roundRect(x,y,w,h,20);ctx.fill();ctx.restore();
+  ctx.save();ctx.beginPath();ctx.roundRect(x,y,w,70,20);ctx.clip();const g=ctx.createLinearGradient(x,y,x+w,y+70);g.addColorStop(0,c[0]);g.addColorStop(1,c[1]);ctx.fillStyle=g;ctx.fillRect(x,y,w,70);ctx.restore();
+  ctx.fillStyle=c[2];ctx.beginPath();ctx.arc(x+36,y+35,23,0,Math.PI*2);ctx.fill();ctx.fillStyle='#fff';ctx.font='800 23px Arial';ctx.textAlign='center';ctx.fillText(card.icon,x+36,y+43);ctx.textAlign='left';
+  ctx.fillStyle='#071d49';ctx.font='800 22px Arial';const titleLines=wrap(card.title,w-90,'800 22px Arial');titleLines.slice(0,2).forEach((line,i)=>ctx.fillText(line,x+72,y+30+i*25));
+  let ty=y+98;
+  card.lines.forEach(raw=>{const it=typeof raw==='string'?{text:raw}:raw;const font=it.large?'800 25px Arial':it.small?smallFont:bodyFont;const tx=x+cardPad+(it.bullet?13:0);const lines=wrap(it.text,w-(tx-x)-cardPad,font);if(it.bullet){ctx.fillStyle=c[2];ctx.beginPath();ctx.arc(x+cardPad+3,ty-7,4,0,Math.PI*2);ctx.fill()}ctx.fillStyle=it.muted?'#65748b':'#17233f';ctx.font=font;lines.forEach(line=>{ctx.fillText(line||' ',tx,ty);ty+=it.large?35:it.small?24:30});ty+=(it.gap===undefined?8:it.gap)});
+  return y+h;
+ };
+ const contentY=headerH+pad;
+ if(holiday){ctx.fillStyle='#fff';ctx.beginPath();ctx.roundRect(70,contentY+30,W-140,170,25);ctx.fill();ctx.fillStyle='#0d6385';ctx.font='900 44px Arial';ctx.textAlign='center';ctx.fillText('☀  SUNDAY — HOLIDAY',W/2,contentY+100);ctx.font='22px Arial';ctx.fillText('Rest, reset, and return ready to grow.',W/2,contentY+145);ctx.textAlign='left'}
+ else{let ly=contentY,ry=contentY;leftCards.forEach(card=>{ly=drawCard(pad,ly,card)+18});rightCards.forEach(card=>{ry=drawCard(pad+colW+gap,ry,card)+18})}
+ const fy=canvas.height-footerH,fg=ctx.createLinearGradient(0,fy,0,canvas.height);fg.addColorStop(0,'#d8f5ff');fg.addColorStop(1,'#071b43');ctx.fillStyle=fg;ctx.fillRect(0,fy,W,footerH);
  ctx.fillStyle='#0c3e77';ctx.beginPath();ctx.moveTo(0,fy+65);ctx.lineTo(160,fy+28);ctx.lineTo(290,fy+70);ctx.lineTo(430,fy+20);ctx.lineTo(610,fy+72);ctx.lineTo(790,fy+25);ctx.lineTo(950,fy+73);ctx.lineTo(1080,fy+34);ctx.lineTo(W,fy+65);ctx.lineTo(W,canvas.height);ctx.lineTo(0,canvas.height);ctx.fill();
  ctx.fillStyle='#08264e';ctx.beginPath();ctx.moveTo(0,fy+90);ctx.lineTo(190,fy+55);ctx.lineTo(350,fy+100);ctx.lineTo(520,fy+58);ctx.lineTo(710,fy+103);ctx.lineTo(900,fy+57);ctx.lineTo(W,fy+95);ctx.lineTo(W,canvas.height);ctx.lineTo(0,canvas.height);ctx.fill();
  ctx.fillStyle='#fff';ctx.font='italic 29px Georgia';ctx.textAlign='center';ctx.fillText('Optimize Your Day, Perfect Your Pitch',W/2,canvas.height-39);ctx.textAlign='left';
