@@ -357,10 +357,16 @@ function defaultCustomerService(d=new Date()){
  };
  return map[d.getDay()]||{topic:'Holiday',details:''};
 }
-function applyCustomerServiceDefault(key,data={}){
- const d=pitchDateObject(key),defaults=defaultCustomerService(d);
- if(!Object.prototype.hasOwnProperty.call(data,'pitchServiceTopic'))$('pitchServiceTopic').value=defaults.topic;
- if(!Object.prototype.hasOwnProperty.call(data,'pitchServiceDetails'))$('pitchServiceDetails').value=defaults.details;
+function applyPitchDefaults(key,data={}){
+ const d=pitchDateObject(key);
+ if(d.getDay()===0)return false;
+ let changed=false;
+ const pitchType=String(data.pitchType??'').trim();
+ if(!pitchType){$('pitchType').value=defaultPitchType(d);changed=true}
+ const service=defaultCustomerService(d);
+ if(!String(data.pitchServiceTopic??'').trim()){$('pitchServiceTopic').value=service.topic;changed=true}
+ if(!String(data.pitchServiceDetails??'').trim()){$('pitchServiceDetails').value=service.details;changed=true}
+ return changed;
 }
 function defaultPitchType(d=new Date()){
  const map={1:'Own team',2:'Own team',3:'Common meeting',4:'Highroller pitch practice',5:'Shuffle pitch practice',6:'Owner pitch practice',0:'Holiday'};
@@ -372,8 +378,18 @@ async function loadRemotePitchPlan(key){
  pitchRemoteLoading=true;
  try{const r=await SB.from('dp_aham_pitch_plans').select('plan_data').eq('plan_date',key).maybeSingle();if(r.error)throw r.error;
   if(pitchDateObject(key).getDay()===0){localStorage.removeItem('dp_aham_pitch_'+key);if(r.data)await SB.from('dp_aham_pitch_plans').delete().eq('plan_date',key);pitchRemoteLoaded.add(key);if(key===pitchSelectedDate){pitchIds.forEach(id=>{const el=$(id);if(el){if(el.type==='checkbox')el.checked=false;else el.value=''}});$('pitchType').value='Holiday';$('pitchSaved').textContent='Sunday holiday · saved plan cleared'}return}
-  if(r.data&&r.data.plan_data&&key===pitchSelectedDate){const data=r.data.plan_data;pitchIds.forEach(id=>{const el=$(id);if(el&&Object.prototype.hasOwnProperty.call(data,id)){if(el.type==='checkbox')el.checked=!!data[id];else el.value=data[id]??''}});applyCustomerServiceDefault(key,data);localStorage.setItem('dp_aham_pitch_'+key,JSON.stringify(data));}
-  else if(key===pitchSelectedDate)applyCustomerServiceDefault(key,{});
+  if(r.data&&r.data.plan_data&&key===pitchSelectedDate){
+   const data=r.data.plan_data;
+   pitchIds.forEach(id=>{const el=$(id);if(el&&Object.prototype.hasOwnProperty.call(data,id)){if(el.type==='checkbox')el.checked=!!data[id];else el.value=data[id]??''}});
+   const defaultsChanged=applyPitchDefaults(key,data);
+   const merged={...data};
+   pitchIds.forEach(id=>{const el=$(id);if(el)merged[id]=el.type==='checkbox'?el.checked:el.value});
+   localStorage.setItem('dp_aham_pitch_'+key,JSON.stringify(merged));
+   if(defaultsChanged)savePitchDashboard();
+  }else if(key===pitchSelectedDate){
+   const defaultsChanged=applyPitchDefaults(key,{});
+   if(defaultsChanged)savePitchDashboard();
+  }
   pitchRemoteLoaded.add(key);if(selectedDashboardOwner==='__aham')updatePitchChecks();
  }catch(e){console.error('Pitch plan sync failed:',e);$('pitchSaved').textContent='Online sync failed — local copy retained'}finally{pitchRemoteLoading=false}
 }
@@ -388,11 +404,12 @@ function renderPitchDashboard(){
  const storeKey='dp_aham_pitch_'+key;
  let data={};try{data=JSON.parse(localStorage.getItem(storeKey)||'{}')}catch{}
  pitchIds.forEach(id=>{const el=$(id);if(!el)return;if(el.type==='checkbox')el.checked=!!data[id];else el.value=data[id]??''});
- if(!holiday)applyCustomerServiceDefault(key,data);
+ let defaultsChanged=false;
+ if(!holiday)defaultsChanged=applyPitchDefaults(key,data);
  if(holiday){pitchIds.forEach(id=>{const el=$(id);if(el){if(el.type==='checkbox')el.checked=false;else el.value=''}});$('pitchType').value='Holiday';localStorage.removeItem(storeKey);if(SB&&navigator.onLine)SB.from('dp_aham_pitch_plans').delete().eq('plan_date',key).then(()=>pitchRemoteLoaded.add(key));$('pitchSaved').textContent='Sunday holiday · planner is cleared';return}
- if(!data.pitchType)$('pitchType').value=defaultPitchType(d);
  updatePitchChecks();
  $('pitchSaved').textContent='Auto-saves and syncs online';
+ if(defaultsChanged){savePitchDashboard()}
  if(SB&&!pitchRemoteLoaded.has(key))loadRemotePitchPlan(key);
 }
 function savePitchDashboard(){
