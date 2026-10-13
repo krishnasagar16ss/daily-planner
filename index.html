@@ -471,7 +471,7 @@ function downloadPitchImage(){
  ];
  const rightCards=holiday?[]:[
   section('AAP with','✓','purple',['pitchAAPTele','pitchAAPCRY','pitchAAPRoad','pitchAAPOneOff'].map((id,i)=>({text:(checked(id)?'☑  ':'☐  ')+['Tele trainers','CRY','Road trip','ONE OFF trainers'][i],gap:4}))),
-  section('Customer Service · Default for Today','✦','orange',[
+  section('Customer Service','✦','orange',[
    {text:serviceTopic,large:true,gap:10},
    ...serviceLines.map((line,i)=>({text:/^\d+[.)]/.test(line)?'➜  '+line:line,bullet:!(/^\d+[.)]/.test(line)),gap:5}))
   ]),
@@ -484,7 +484,7 @@ function downloadPitchImage(){
  const bg=ctx.createLinearGradient(0,0,W,canvas.height);bg.addColorStop(0,'#f1fbff');bg.addColorStop(.55,'#fff');bg.addColorStop(1,'#e9f8ff');ctx.fillStyle=bg;ctx.fillRect(0,0,W,canvas.height);
  const hg=ctx.createLinearGradient(0,0,W,headerH);hg.addColorStop(0,'#071b43');hg.addColorStop(.55,'#0d4f8c');hg.addColorStop(1,'#68d8f4');ctx.fillStyle=hg;ctx.fillRect(0,0,W,headerH);
  ctx.fillStyle='rgba(255,255,255,.07)';ctx.beginPath();ctx.moveTo(770,0);ctx.lineTo(930,0);ctx.lineTo(1100,headerH);ctx.lineTo(960,headerH);ctx.fill();
- ctx.fillStyle='#fff';ctx.font='800 24px Arial';ctx.fillText('AHAMMED’S DAILY DASHBOARD',48,45);
+ ctx.fillStyle='#fff';ctx.font='800 24px Arial';ctx.fillText('ALZA ORG',48,45);
  ctx.font='900 61px Arial';ctx.fillStyle='#fff';ctx.fillText('STITCH',46,115);const stitchW=ctx.measureText('STITCH ').width;const gt=ctx.createLinearGradient(46+stitchW,70,730,125);gt.addColorStop(0,'#8ff0ff');gt.addColorStop(1,'#fff');ctx.fillStyle=gt;ctx.fillText('YOUR PITCH',46+stitchW,115);
  ctx.fillStyle='#a7f2ff';ctx.fillRect(49,137,80,5);ctx.fillStyle='#e9f7ff';ctx.font='italic 22px Arial';ctx.fillText('Plan Today. Practice Better. Create Bigger Impact.',148,150);
  ctx.save();ctx.shadowColor='rgba(0,0,0,.12)';ctx.shadowBlur=14;ctx.fillStyle='#fff';ctx.beginPath();ctx.roundRect(760,42,395,112,20);ctx.fill();ctx.restore();
