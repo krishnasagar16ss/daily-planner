@@ -109,6 +109,11 @@ button,input,select{font:inherit}button{cursor:pointer}.app{max-width:1160px;mar
     <label class="pitch-field pitch-field-top">Key points <textarea class="pitch-input pitch-service-details" id="pitchServiceDetails" rows="5" placeholder="One point per line"></textarea></label>
    </div></section>
    <section class="pitch-section"><h3>⑥ Excited Title</h3><div class="inside"><input class="pitch-input" id="pitchTitle" placeholder="Today's title"></div></section>
+   <section class="pitch-section"><h3>⑦ Morning Team Topic</h3><div class="inside">
+    <label class="pitch-field pitch-field-top">Topic <input class="pitch-input" id="pitchTeamTopicTitle" placeholder="Default topic for this day"></label>
+    <label class="pitch-field pitch-field-top">Details <textarea class="pitch-input pitch-service-details" id="pitchTeamTopicDetails" rows="8" placeholder="Daily topic and key points"></textarea></label>
+    <label class="pitch-field">CREW <input class="pitch-input" id="pitchCrew" placeholder="Enter responsible crew"></label>
+   </div></section>
   </div>
   <div class="pitch-col">
    <section class="pitch-section"><h3> AAP with</h3><div class="inside">
@@ -343,7 +348,7 @@ function renderList(el,tasks){
  '<div class="task-actions"><button class="btn" data-action="edit" data-id="'+esc(t.id)+'">Edit</button><button class="btn danger" data-action="delete" data-id="'+esc(t.id)+'">Delete</button></div></div>').join('')
 }
 
-const pitchIds=['pitchType','pitchFun','pitchConductor','pitchTopic','pitchQA','pitchPpt','pitchCompetition','pitchServiceTopic','pitchServiceDetails','pitchTitle','pitchNotes','pitchAAPTele','pitchAAPCRY','pitchAAPRoad','pitchAAPOneOff','pitchOwnTeam','pitchCommon','pitchHighroller','pitchShuffle','pitchOwnerPractice'];
+const pitchIds=['pitchType','pitchFun','pitchConductor','pitchTopic','pitchQA','pitchPpt','pitchCompetition','pitchServiceTopic','pitchServiceDetails','pitchTitle','pitchTeamTopicTitle','pitchTeamTopicDetails','pitchCrew','pitchNotes','pitchAAPTele','pitchAAPCRY','pitchAAPRoad','pitchAAPOneOff','pitchOwnTeam','pitchCommon','pitchHighroller','pitchShuffle','pitchOwnerPractice'];
 function deviceDateKey(){return deviceDateKeyFromDate(new Date())}
 function deviceDateKeyFromDate(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
 function defaultCustomerService(d=new Date()){
@@ -357,6 +362,17 @@ function defaultCustomerService(d=new Date()){
  };
  return map[d.getDay()]||{topic:'Holiday',details:''};
 }
+function defaultMorningTeamTopic(d=new Date()){
+ const map={
+  1:{title:'Impact on S.S., PPT & Intro',details:'Type: Own meet\nWhat to focus on\nGuidelines\nShort Story, Presentation, Intro\nKey points:\n1. Type of meeting\n2. What to focus on\n3. Presentation flow\n4. Intro structure'},
+  2:{title:'Pitch Practice',details:'How to practice effectively\nHow to create a good conversation\nPitch skills:\n1. Elevator pitch\n2. Different ice breakers\n3. Build connection\n4. How to create trust'},
+  3:{title:'FAQ',details:'Common questions\nHow to close with confidence\nHow to take control\nClosing techniques:\n1. Close\n2. 5 step close\n3. Pre-close\n4. FAQ handling\n5. Rehashing / practice'},
+  4:{title:'Banking & International',details:'Banking procedures\nProcedures and details\nType of chain works\nReference:\n1. How to work for abroad\n2. How to qualify\nBanking & theory:\n1. Bank procedures\n2. How to take A/C details\n3. L shape\n4. Eye to Eye\n5. Pen theory\n6. Contacts'},
+  5:{title:'Shuffle & Objection Handling',details:'Shuffle practice\nHandle all objections in style\nObjection mastery:\n1. Objection handling\n2. How to keep a positive attitude while you get objection\n3. Flow etc.'},
+  6:{title:'Data & Rework',details:'Data planning\nRework\nKey points:\n1. Daily data tracking\n2. Planning for next week\n3. Rework strategy\n4. Quality check'}
+ };
+ return map[d.getDay()]||{title:'Holiday',details:''};
+}
 function applyPitchDefaults(key,data={}){
  const d=pitchDateObject(key);
  if(d.getDay()===0)return false;
@@ -366,6 +382,9 @@ function applyPitchDefaults(key,data={}){
  const service=defaultCustomerService(d);
  if(!String(data.pitchServiceTopic??'').trim()){$('pitchServiceTopic').value=service.topic;changed=true}
  if(!String(data.pitchServiceDetails??'').trim()){$('pitchServiceDetails').value=service.details;changed=true}
+ const team=defaultMorningTeamTopic(d);
+ if(!String(data.pitchTeamTopicTitle??'').trim()){$('pitchTeamTopicTitle').value=team.title;changed=true}
+ if(!String(data.pitchTeamTopicDetails??'').trim()){$('pitchTeamTopicDetails').value=team.details;changed=true}
  return changed;
 }
 function defaultPitchType(d=new Date()){
@@ -456,6 +475,14 @@ function downloadPitchImage(){
  const bodyFont='500 21px Arial',smallFont='600 17px Arial',headFont='800 24px Arial',cardPad=20;
  const serviceTopic=value('pitchServiceTopic')||defaultCustomerService(d).topic;
  const serviceLines=(value('pitchServiceDetails')||defaultCustomerService(d).details).split('\n').filter(line=>line.trim());
+ const teamDefaults=defaultMorningTeamTopic(d);
+ const teamTitle=value('pitchTeamTopicTitle')||teamDefaults.title;
+ const teamDetailLines=(value('pitchTeamTopicDetails')||teamDefaults.details).split('\n').filter(line=>line.trim());
+ const teamCardLines=teamDetailLines.map(line=>{
+  const heading=/^(Key points|Pitch skills|Closing techniques|Reference|Banking & theory|Objection mastery):?$/i.test(line.trim());
+  const numbered=/^\d+[.)]/.test(line.trim());
+  return {text:numbered?'➜  '+line:line,small:heading,muted:heading,bullet:!heading&&!numbered,gap:heading?3:6};
+ });
  const section=(title,icon,color,lines)=>({title,icon,color,lines:lines.map(line=>typeof line==='string'?{text:line}:line)});
  const leftCards=holiday?[]:[
   section('Type of Pitch Practice','1','blue',[value('pitchType')]),
@@ -474,6 +501,10 @@ function downloadPitchImage(){
   section('Customer Service','✦','orange',[
    {text:serviceTopic,large:true,gap:10},
    ...serviceLines.map((line,i)=>({text:/^\d+[.)]/.test(line)?'➜  '+line:line,bullet:!(/^\d+[.)]/.test(line)),gap:5}))
+  ]),
+  section(teamTitle,'✦','pink',[
+   ...teamCardLines,
+   {text:'CREW: '+(value('pitchCrew')||'________________________'),large:true,gap:0}
   ]),
   section('Notes','✎','blue',[value('pitchNotes')])
  ];
