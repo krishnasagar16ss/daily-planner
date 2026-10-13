@@ -29,7 +29,7 @@ button,input,select{font:inherit}button{cursor:pointer}.app{max-width:1160px;mar
 .pitch-dashboard{display:none;background:#f4fbff;border:1px solid #cfe4f1;border-radius:18px;overflow:hidden;margin-bottom:14px;box-shadow:var(--shadow)}
 .pitch-head{padding:20px 18px;background:linear-gradient(135deg,#dff4ff,#a9d7eb);color:#10243b}
 .pitch-head h2{font-size:clamp(24px,4vw,38px);line-height:1.08;margin:5px 0;text-transform:uppercase;letter-spacing:-.03em}
-.pitch-date{font-weight:750;font-size:13px;color:#244d68}
+.pitch-date{font-weight:750;font-size:13px;color:#244d68}.pitch-date-tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:12px}.pitch-date-tools input{border:1px solid #8bbbd1;border-radius:9px;padding:8px 10px;font:inherit;color:#10243b;background:#fff}.pitch-date-tools .btn{background:#fff;color:#10243b}
 .pitch-content{padding:14px;display:grid;grid-template-columns:1.15fr .85fr;gap:12px}
 .pitch-col{display:grid;gap:10px;align-content:start}
 .pitch-section{background:#fff;border:1px solid #d7e7ef;border-radius:13px;overflow:hidden}
@@ -91,7 +91,7 @@ button,input,select{font:inherit}button{cursor:pointer}.app{max-width:1160px;mar
 <section class="card" id="ownerDashboard" style="display:none"><div class="cardhead"><div><h3 id="ownerDashboardTitle">Owner dashboard</h3><span>Personal daily routines — separate from the common planner</span></div><div class="section-tools"><span id="ownerDashboardCount"></span><button class="btn primary" id="ownerAddTask">＋ Add routine</button></div></div><div class="body"><div class="stats" style="margin-bottom:12px"><div class="stat"><div class="n" id="ownerTotal">0</div><div class="l">My tasks</div></div><div class="stat green"><div class="n" id="ownerDone">0</div><div class="l">Completed</div></div><div class="stat orange"><div class="n" id="ownerPending">0</div><div class="l">Pending</div></div></div><div id="ownerTasks"></div></div></section>
 
 <section class="pitch-dashboard" id="pitchDashboard">
- <header class="pitch-head"><div style="font-size:10px;letter-spacing:.13em;font-weight:800">AHAMMED’S DAILY DASHBOARD</div><h2>Day Plan:<br>Stitch Your Pitch</h2><div class="pitch-date" id="pitchDate"></div></header>
+ <header class="pitch-head"><div style="font-size:10px;letter-spacing:.13em;font-weight:800">AHAMMED’S DAILY DASHBOARD</div><h2>Day Plan:<br>Stitch Your Pitch</h2><div class="pitch-date" id="pitchDate"></div><div class="pitch-date-tools"><button class="btn" id="pitchPrevDate">← Previous day</button><input type="date" id="pitchDateSelect" aria-label="Choose planner date"><button class="btn" id="pitchNextDate">Next day →</button></div></header>
  <div id="pitchHoliday" class="pitch-holiday" style="display:none;margin:14px">☀️ SUNDAY — HOLIDAY</div>
  <div class="pitch-content" id="pitchContent">
   <div class="pitch-col">
@@ -128,7 +128,7 @@ button,input,select{font:inherit}button{cursor:pointer}.app{max-width:1160px;mar
    <section class="pitch-section"><h3>Notes for today</h3><div class="inside"><textarea class="pitch-textarea" id="pitchNotes" placeholder="Any additional notes"></textarea></div></section>
   </div>
  </div>
- <div class="pitch-actions"><button class="btn primary" id="pitchDownload">⬇ Download plan as picture</button><button class="btn" id="pitchClear">Clear today's entries</button><span class="small-note" id="pitchSaved" style="align-self:center">Saved on this device</span></div>
+ <div class="pitch-actions"><button class="btn primary" id="pitchDownload">⬇ Download plan as picture</button><button class="btn danger" id="pitchClear">Clear selected date</button><span class="small-note" id="pitchSaved" style="align-self:center">Saved on this device</span></div>
  <footer class="pitch-foot">Optimize Your Day, Perfect Your Pitch</footer>
 </section>
 <div class="layout" id="commonLayout">
@@ -345,36 +345,41 @@ function renderList(el,tasks){
 }
 
 const pitchIds=['pitchType','pitchFun','pitchConductor','pitchTopic','pitchQA','pitchPpt','pitchCompetition','pitchSOS','pitchCRY','pitchUNICEF','pitchTitle','pitchNotes','pitchAAPTele','pitchAAPCRY','pitchAAPRoad','pitchAAPOneOff','pitchOwnTeam','pitchCommon','pitchHighroller','pitchShuffle','pitchOwnerPractice'];
-function deviceDateKey(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function deviceDateKey(){return deviceDateKeyFromDate(new Date())}
+function deviceDateKeyFromDate(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
 function defaultPitchType(d=new Date()){
  const map={1:'Own team',2:'Own team',3:'Common meeting',4:'Highroller pitch practice',5:'Shuffle pitch practice',6:'Owner pitch practice',0:'Holiday'};
  return map[d.getDay()];
 }
-let pitchSaveTimer=null,pitchRemoteLoaded=new Set(),pitchRemoteLoading=false;
+let pitchSaveTimer=null,pitchRemoteLoaded=new Set(),pitchRemoteLoading=false;let pitchSelectedDate=deviceDateKey();
 async function loadRemotePitchPlan(key){
  if(!SB||pitchRemoteLoaded.has(key)||pitchRemoteLoading)return;
  pitchRemoteLoading=true;
  try{const r=await SB.from('dp_aham_pitch_plans').select('plan_data').eq('plan_date',key).maybeSingle();if(r.error)throw r.error;
+  if(pitchDateObject(key).getDay()===0){localStorage.removeItem('dp_aham_pitch_'+key);if(r.data)await SB.from('dp_aham_pitch_plans').delete().eq('plan_date',key);pitchRemoteLoaded.add(key);if(key===pitchSelectedDate){pitchIds.forEach(id=>{const el=$(id);if(el){if(el.type==='checkbox')el.checked=false;else el.value=''}});$('pitchType').value='Holiday';$('pitchSaved').textContent='Sunday holiday · saved plan cleared'}return}
   if(r.data&&r.data.plan_data){const data=r.data.plan_data;pitchIds.forEach(id=>{const el=$(id);if(el&&Object.prototype.hasOwnProperty.call(data,id)){if(el.type==='checkbox')el.checked=!!data[id];else el.value=data[id]??''}});localStorage.setItem('dp_aham_pitch_'+key,JSON.stringify(data));}
   pitchRemoteLoaded.add(key);if(selectedDashboardOwner==='__aham')updatePitchChecks();
  }catch(e){console.error('Pitch plan sync failed:',e);$('pitchSaved').textContent='Online sync failed — local copy retained'}finally{pitchRemoteLoading=false}
 }
 function updatePitchChecks(){const type=String($('pitchType').value).toLowerCase();const map=[['pitchOwnTeam','own team'],['pitchCommon','common meeting'],['pitchHighroller','highroller pitch practice'],['pitchShuffle','shuffle pitch practice'],['pitchOwnerPractice','owner pitch practice']];map.forEach(([id,label])=>{if(type===label)$(id).checked=true})}
+function pitchDateObject(key=pitchSelectedDate){const parts=key.split('-').map(Number);return new Date(parts[0],parts[1]-1,parts[2],12,0,0,0)}
 function renderPitchDashboard(){
- const d=new Date(),key=deviceDateKey(),holiday=d.getDay()===0;
+ const d=pitchDateObject(),key=pitchSelectedDate,holiday=d.getDay()===0;
+ $('pitchDateSelect').value=key;
  $('pitchDate').textContent=d.toLocaleDateString('en-IN',{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
  $('pitchHoliday').style.display=holiday?'block':'none';
  $('pitchContent').style.display=holiday?'none':'grid';
  const storeKey='dp_aham_pitch_'+key;
  let data={};try{data=JSON.parse(localStorage.getItem(storeKey)||'{}')}catch{}
  pitchIds.forEach(id=>{const el=$(id);if(!el)return;if(el.type==='checkbox')el.checked=!!data[id];else el.value=data[id]??''});
+ if(holiday){pitchIds.forEach(id=>{const el=$(id);if(el){if(el.type==='checkbox')el.checked=false;else el.value=''}});$('pitchType').value='Holiday';localStorage.removeItem(storeKey);if(SB&&navigator.onLine)SB.from('dp_aham_pitch_plans').delete().eq('plan_date',key).then(()=>pitchRemoteLoaded.add(key));$('pitchSaved').textContent='Sunday holiday · planner is cleared';return}
  if(!data.pitchType)$('pitchType').value=defaultPitchType(d);
  updatePitchChecks();
  $('pitchSaved').textContent='Auto-saves and syncs online';
  if(SB&&!pitchRemoteLoaded.has(key))loadRemotePitchPlan(key);
 }
 function savePitchDashboard(){
- const key=deviceDateKey(),data={};pitchIds.forEach(id=>{const el=$(id);if(el)data[id]=el.type==='checkbox'?el.checked:el.value});
+ const key=pitchSelectedDate,data={};if(pitchDateObject(key).getDay()===0){$('pitchSaved').textContent='Sunday is a holiday — entries are disabled';return}pitchIds.forEach(id=>{const el=$(id);if(el)data[id]=el.type==='checkbox'?el.checked:el.value});
  try{localStorage.setItem('dp_aham_pitch_'+key,JSON.stringify(data));$('pitchSaved').textContent='Saving…'}
  catch(e){$('pitchSaved').textContent='Could not save on this device'}
  if(pitchSaveTimer)clearTimeout(pitchSaveTimer);
@@ -384,7 +389,7 @@ function savePitchDashboard(){
  },500);
 }
 function downloadPitchImage(){
- const d=new Date(),holiday=d.getDay()===0;
+ const d=pitchDateObject(),key=pitchSelectedDate,holiday=d.getDay()===0;
  const canvas=document.createElement('canvas'),ctx=canvas.getContext('2d');
  canvas.width=1200;canvas.height=holiday?520:1800;
  ctx.fillStyle='#f4fbff';ctx.fillRect(0,0,canvas.width,canvas.height);
@@ -408,12 +413,16 @@ function downloadPitchImage(){
   });
  }
  ctx.fillStyle='#d9f0fa';ctx.fillRect(0,canvas.height-72,canvas.width,72);ctx.fillStyle='#123451';ctx.font='italic 24px Georgia';ctx.fillText('Optimize Your Day, Perfect Your Pitch',canvas.width/2-205,canvas.height-28);
- const a=document.createElement('a');a.download='Stitch-Your-Pitch-'+deviceDateKey()+'.png';a.href=canvas.toDataURL('image/png');a.click();
+ const a=document.createElement('a');a.download='Stitch-Your-Pitch-'+key+'.png';a.href=canvas.toDataURL('image/png');a.click();
 }
 function bindPitchDashboard(){
+ $('pitchDateSelect').value=pitchSelectedDate;
+ $('pitchDateSelect').addEventListener('change',()=>{pitchSelectedDate=$('pitchDateSelect').value||deviceDateKey();renderPitchDashboard()});
+ $('pitchPrevDate').onclick=()=>{const d=pitchDateObject();d.setDate(d.getDate()-1);pitchSelectedDate=deviceDateKeyFromDate(d);renderPitchDashboard()};
+ $('pitchNextDate').onclick=()=>{const d=pitchDateObject();d.setDate(d.getDate()+1);pitchSelectedDate=deviceDateKeyFromDate(d);renderPitchDashboard()};
  pitchIds.forEach(id=>{const el=$(id);if(el){el.addEventListener('input',savePitchDashboard);el.addEventListener('change',savePitchDashboard)}});
  $('pitchDownload').onclick=()=>{savePitchDashboard();downloadPitchImage()};
- $('pitchClear').onclick=()=>{if(!confirm("Clear today's Stitch Your Pitch entries?"))return;localStorage.removeItem('dp_aham_pitch_'+deviceDateKey());if(SB&&navigator.onLine)SB.from('dp_aham_pitch_plans').delete().eq('plan_date',deviceDateKey()).then(r=>{if(r.error)console.error(r.error)});renderPitchDashboard();toast("Today's pitch plan cleared","success")};
+ $('pitchClear').onclick=async()=>{const key=pitchSelectedDate,d=pitchDateObject(key);if(!confirm('Clear all Stitch Your Pitch entries for '+d.toLocaleDateString('en-IN',{weekday:'long',day:'2-digit',month:'long',year:'numeric'})+'? This cannot be undone.'))return;localStorage.removeItem('dp_aham_pitch_'+key);pitchRemoteLoaded.delete(key);if(SB&&navigator.onLine){const r=await SB.from('dp_aham_pitch_plans').delete().eq('plan_date',key);if(r.error){toast('Could not clear online copy: '+r.error.message,'error');return}}renderPitchDashboard();toast('Planner cleared for '+key,'success')};
  ['dashboardOwner','dashboardOwnerDesktop'].forEach(id=>{const el=$(id);if(el)el.addEventListener('change',()=>{selectedDashboardOwner=el.value;['dashboardOwner','dashboardOwnerDesktop'].forEach(other=>{if($(other))$(other).value=selectedDashboardOwner});render()})});
 }
 
