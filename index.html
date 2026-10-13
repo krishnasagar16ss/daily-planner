@@ -372,26 +372,38 @@ function defaultPitchType(d=new Date()){
  const map={1:'Own team',2:'Own team',3:'Common meeting',4:'Highroller pitch practice',5:'Shuffle pitch practice',6:'Owner pitch practice',0:'Holiday'};
  return map[d.getDay()];
 }
-let pitchSaveTimer=null,pitchRemoteLoaded=new Set(),pitchRemoteLoading=false;let pitchSelectedDate=deviceDateKey();
+const pitchSaveTimers=new Map(),pitchRemoteLoaded=new Set(),pitchRemoteLoadingKeys=new Set();let pitchSelectedDate=deviceDateKey();
 async function loadRemotePitchPlan(key){
- if(!SB||pitchRemoteLoaded.has(key)||pitchRemoteLoading)return;
- pitchRemoteLoading=true;
- try{const r=await SB.from('dp_aham_pitch_plans').select('plan_data').eq('plan_date',key).maybeSingle();if(r.error)throw r.error;
-  if(pitchDateObject(key).getDay()===0){localStorage.removeItem('dp_aham_pitch_'+key);if(r.data)await SB.from('dp_aham_pitch_plans').delete().eq('plan_date',key);pitchRemoteLoaded.add(key);if(key===pitchSelectedDate){pitchIds.forEach(id=>{const el=$(id);if(el){if(el.type==='checkbox')el.checked=false;else el.value=''}});$('pitchType').value='Holiday';$('pitchSaved').textContent='Sunday holiday · saved plan cleared'}return}
-  if(r.data&&r.data.plan_data&&key===pitchSelectedDate){
-   const data=r.data.plan_data;
-   pitchIds.forEach(id=>{const el=$(id);if(el&&Object.prototype.hasOwnProperty.call(data,id)){if(el.type==='checkbox')el.checked=!!data[id];else el.value=data[id]??''}});
-   const defaultsChanged=applyPitchDefaults(key,data);
-   const merged={...data};
-   pitchIds.forEach(id=>{const el=$(id);if(el)merged[id]=el.type==='checkbox'?el.checked:el.value});
-   localStorage.setItem('dp_aham_pitch_'+key,JSON.stringify(merged));
-   if(defaultsChanged)savePitchDashboard();
-  }else if(key===pitchSelectedDate){
-   const defaultsChanged=applyPitchDefaults(key,{});
-   if(defaultsChanged)savePitchDashboard();
+ if(!SB||pitchRemoteLoaded.has(key)||pitchRemoteLoadingKeys.has(key)||!navigator.onLine)return;
+ pitchRemoteLoadingKeys.add(key);
+ try{
+  const r=await SB.from('dp_aham_pitch_plans').select('plan_data').eq('plan_date',key).maybeSingle();
+  if(r.error)throw r.error;
+  if(pitchDateObject(key).getDay()===0){
+   localStorage.removeItem('dp_aham_pitch_'+key);
+   if(r.data){const del=await SB.from('dp_aham_pitch_plans').delete().eq('plan_date',key);if(del.error)throw del.error}
+   pitchRemoteLoaded.add(key);
+   if(key===pitchSelectedDate){pitchIds.forEach(id=>{const el=$(id);if(el){if(el.type==='checkbox')el.checked=false;else el.value=''}});$('pitchType').value='Holiday';$('pitchSaved').textContent='Sunday holiday · saved plan cleared'}
+   return;
   }
-  pitchRemoteLoaded.add(key);if(selectedDashboardOwner==='__aham')updatePitchChecks();
- }catch(e){console.error('Pitch plan sync failed:',e);$('pitchSaved').textContent='Online sync failed — local copy retained'}finally{pitchRemoteLoading=false}
+  if(key!==pitchSelectedDate){pitchRemoteLoaded.add(key);return}
+  let data={};
+  if(r.data&&r.data.plan_data&&typeof r.data.plan_data==='object'){
+   data=r.data.plan_data;
+   pitchIds.forEach(id=>{const el=$(id);if(el&&Object.prototype.hasOwnProperty.call(data,id)){if(el.type==='checkbox')el.checked=!!data[id];else el.value=data[id]??''}});
+  }else{
+   // No plan exists for this date: start fresh, with only the weekday defaults.
+   pitchIds.forEach(id=>{const el=$(id);if(!el)return;if(el.type==='checkbox')el.checked=false;else el.value=''});
+  }
+  const defaultsChanged=applyPitchDefaults(key,data);
+  const merged={...data};
+  pitchIds.forEach(id=>{const el=$(id);if(el)merged[id]=el.type==='checkbox'?el.checked:el.value});
+  localStorage.setItem('dp_aham_pitch_'+key,JSON.stringify(merged));
+  pitchRemoteLoaded.add(key);
+  if(defaultsChanged||!r.data)savePitchDashboard();
+  updatePitchChecks();
+ }catch(e){console.error('Pitch plan sync failed:',e);if(key===pitchSelectedDate)$('pitchSaved').textContent='Online sync failed — local copy retained'}
+ finally{pitchRemoteLoadingKeys.delete(key)}
 }
 function updatePitchChecks(){const type=String($('pitchType').value).toLowerCase();const map=[['pitchOwnTeam','own team'],['pitchCommon','common meeting'],['pitchHighroller','highroller pitch practice'],['pitchShuffle','shuffle pitch practice'],['pitchOwnerPractice','owner pitch practice']];map.forEach(([id,label])=>{if(type===label)$(id).checked=true})}
 function pitchDateObject(key=pitchSelectedDate){const parts=key.split('-').map(Number);return new Date(parts[0],parts[1]-1,parts[2],12,0,0,0)}
@@ -409,18 +421,29 @@ function renderPitchDashboard(){
  if(holiday){pitchIds.forEach(id=>{const el=$(id);if(el){if(el.type==='checkbox')el.checked=false;else el.value=''}});$('pitchType').value='Holiday';localStorage.removeItem(storeKey);if(SB&&navigator.onLine)SB.from('dp_aham_pitch_plans').delete().eq('plan_date',key).then(()=>pitchRemoteLoaded.add(key));$('pitchSaved').textContent='Sunday holiday · planner is cleared';return}
  updatePitchChecks();
  $('pitchSaved').textContent='Auto-saves and syncs online';
- if(defaultsChanged){savePitchDashboard()}
+ if(defaultsChanged&&(!SB||!navigator.onLine||pitchRemoteLoaded.has(key))){savePitchDashboard()}
  if(SB&&!pitchRemoteLoaded.has(key))loadRemotePitchPlan(key);
 }
 function savePitchDashboard(){
- const key=pitchSelectedDate,data={};if(pitchDateObject(key).getDay()===0){$('pitchSaved').textContent='Sunday is a holiday — entries are disabled';return}pitchIds.forEach(id=>{const el=$(id);if(el)data[id]=el.type==='checkbox'?el.checked:el.value});
+ const key=pitchSelectedDate,data={};
+ if(pitchDateObject(key).getDay()===0){$('pitchSaved').textContent='Sunday is a holiday — entries are disabled';return}
+ pitchIds.forEach(id=>{const el=$(id);if(el)data[id]=el.type==='checkbox'?el.checked:el.value});
  try{localStorage.setItem('dp_aham_pitch_'+key,JSON.stringify(data));$('pitchSaved').textContent='Saving…'}
  catch(e){$('pitchSaved').textContent='Could not save on this device'}
- if(pitchSaveTimer)clearTimeout(pitchSaveTimer);
- pitchSaveTimer=setTimeout(async()=>{if(!SB||!navigator.onLine){$('pitchSaved').textContent='Saved on this device · waiting for internet';return}
-  try{const r=await SB.from('dp_aham_pitch_plans').upsert({plan_date:key,plan_data:data,updated_at:new Date().toISOString()},{onConflict:'plan_date'});if(r.error)throw r.error;pitchRemoteLoaded.add(key);$('pitchSaved').textContent='Saved online · '+new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'})}
-  catch(e){console.error('Pitch plan save failed:',e);$('pitchSaved').textContent='Saved locally · online sync failed'}
+ // Never push an uninitialised/default-only screen over a remote plan while its load is pending.
+ if(SB&&navigator.onLine&&!pitchRemoteLoaded.has(key)){loadRemotePitchPlan(key);return}
+ if(pitchSaveTimers.has(key))clearTimeout(pitchSaveTimers.get(key));
+ const timer=setTimeout(async()=>{
+  pitchSaveTimers.delete(key);
+  if(!SB||!navigator.onLine){if(key===pitchSelectedDate)$('pitchSaved').textContent='Saved on this device · waiting for internet';return}
+  try{
+   const r=await SB.from('dp_aham_pitch_plans').upsert({plan_date:key,plan_data:data,updated_at:new Date().toISOString()},{onConflict:'plan_date'});
+   if(r.error)throw r.error;
+   pitchRemoteLoaded.add(key);
+   if(key===pitchSelectedDate)$('pitchSaved').textContent='Saved online · '+new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+  }catch(e){console.error('Pitch plan save failed:',e);if(key===pitchSelectedDate)$('pitchSaved').textContent='Saved locally · online sync failed'}
  },500);
+ pitchSaveTimers.set(key,timer);
 }
 function downloadPitchImage(){
  const d=pitchDateObject(),key=pitchSelectedDate,holiday=d.getDay()===0;
