@@ -25,6 +25,26 @@ button,input,select{font:inherit}button{cursor:pointer}.app{max-width:1160px;mar
 .offline-screen{position:fixed;inset:0;z-index:200;background:rgba(245,247,251,.98);display:none;align-items:center;justify-content:center;padding:22px}.offline-screen.show{display:flex}.offline-box{max-width:390px;width:100%;background:#fff;border:1px solid var(--line);border-radius:24px;padding:28px;text-align:center;box-shadow:0 20px 70px rgba(15,23,42,.12)}.offline-icon{width:62px;height:62px;border-radius:20px;background:var(--red2);color:var(--red);display:grid;place-items:center;font-size:28px;margin:0 auto 15px}.offline-box h2{margin:0 0 7px;font-size:20px}.offline-box p{margin:0;color:var(--muted);font-size:12px;line-height:1.6}.offline-box .btn{margin-top:18px;width:100%;padding:12px}.small-note{font-size:10px;color:var(--muted);margin-top:8px}
 .mobile-actions{display:none}
 @media(max-width:850px){.app{padding:11px}.top{padding:12px;align-items:flex-start}.top .actions{display:none}.mobile-actions{display:grid;grid-template-columns:1fr 1fr 1fr;margin:9px 0}.mobile-dashboard-picker{grid-column:1/-1;justify-content:space-between;background:#fff;border:1px solid var(--line);border-radius:10px;padding:9px 12px}.mobile-dashboard-picker select{max-width:65%;flex:1}.mobile-actions .btn{min-height:42px}.status{font-size:10px}.hero{padding:18px;flex-direction:column;align-items:flex-start}.datebox{text-align:left}.stats{grid-template-columns:repeat(2,1fr)}.layout{grid-template-columns:1fr}.layout aside{order:2}.task{grid-template-columns:28px minmax(0,1fr) auto}.owner{display:none}.progress{width:105px}}
+
+.pitch-dashboard{display:none;background:#f4fbff;border:1px solid #cfe4f1;border-radius:18px;overflow:hidden;margin-bottom:14px;box-shadow:var(--shadow)}
+.pitch-head{padding:20px 18px;background:linear-gradient(135deg,#dff4ff,#a9d7eb);color:#10243b}
+.pitch-head h2{font-size:clamp(24px,4vw,38px);line-height:1.08;margin:5px 0;text-transform:uppercase;letter-spacing:-.03em}
+.pitch-date{font-weight:750;font-size:13px;color:#244d68}
+.pitch-content{padding:14px;display:grid;grid-template-columns:1.15fr .85fr;gap:12px}
+.pitch-col{display:grid;gap:10px;align-content:start}
+.pitch-section{background:#fff;border:1px solid #d7e7ef;border-radius:13px;overflow:hidden}
+.pitch-section h3{margin:0;padding:10px 12px;background:#b7ddeb;color:#10243b;font-size:14px}
+.pitch-section .inside{padding:11px 12px}
+.pitch-input,.pitch-textarea{width:100%;border:1px solid #b7d2e1;border-radius:8px;padding:10px;font:inherit;font-size:13px;background:#fff;color:#172033}
+.pitch-textarea{min-height:68px;resize:vertical}
+.pitch-field{display:grid;grid-template-columns:110px minmax(0,1fr);gap:8px;align-items:center;margin:7px 0;font-size:12px}
+.pitch-check{display:flex;gap:9px;align-items:flex-start;margin:10px 0;font-size:13px;line-height:1.35}
+.pitch-check input{width:17px;height:17px;accent-color:#2563eb;flex:0 0 auto}
+.pitch-actions{display:flex;gap:8px;flex-wrap:wrap;padding:0 14px 14px}
+.pitch-holiday{padding:24px;text-align:center;background:#fff;border:1px dashed #7ebbd4;border-radius:12px;font-weight:800;color:#24536c}
+.pitch-foot{text-align:center;padding:13px;background:#d9f0fa;color:#123451;font-style:italic;font-weight:700}
+@media(max-width:700px){.pitch-content{grid-template-columns:1fr}.pitch-head{padding:17px}.pitch-field{grid-template-columns:95px minmax(0,1fr)}}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.0"></script>
 </head>
@@ -43,6 +63,7 @@ button,input,select{font:inherit}button{cursor:pointer}.app{max-width:1160px;mar
 <header class="top">
   <div class="brand"><div class="logo">DP</div><div><h1>Daily Planner</h1><p>Branch Operations · shared online dashboard</p></div></div>
   <div class="actions">
+    <label class="dashboard-picker" for="dashboardOwnerDesktop">Dashboard <select id="dashboardOwnerDesktop"><option value="">Common dashboard</option><option value="__aham">Ahammed — Stitch Your Pitch</option></select></label>
     <span class="status" id="status"><i class="dot"></i><span>Connecting…</span></span>
     <button class="btn" id="prevBtn">← Previous</button>
     <button class="btn" id="todayBtn">Today</button>
@@ -51,7 +72,7 @@ button,input,select{font:inherit}button{cursor:pointer}.app{max-width:1160px;mar
   </div>
 </header>
 <div class="mobile-actions">
-  <label class="dashboard-picker mobile-dashboard-picker" for="dashboardOwner">Choose dashboard <select id="dashboardOwner"><option value="">Common dashboard</option></select></label>
+  <label class="dashboard-picker mobile-dashboard-picker" for="dashboardOwner">Choose dashboard <select id="dashboardOwner"><option value="">Common dashboard</option><option value="__aham">Ahammed — Stitch Your Pitch</option></select></label>
   <button class="btn" id="mPrev">← Previous</button><button class="btn" id="mToday">Today</button><button class="btn primary" id="mAdd">＋ Add task</button>
 </div>
 
@@ -60,7 +81,7 @@ button,input,select{font:inherit}button{cursor:pointer}.app{max-width:1160px;mar
   <div class="datebox"><strong id="dateText">—</strong><span>Day closes at 11:59 PM</span></div>
 </section>
 
-<div class="stats">
+<div class="stats" id="stats">
   <div class="stat"><div class="n" id="totalN">0</div><div class="l">Tasks today</div></div>
   <div class="stat green"><div class="n" id="doneN">0</div><div class="l">Completed</div></div>
   <div class="stat orange"><div class="n" id="pendingN">0</div><div class="l">Still pending</div></div>
@@ -68,6 +89,47 @@ button,input,select{font:inherit}button{cursor:pointer}.app{max-width:1160px;mar
 </div>
 
 <section class="card" id="ownerDashboard" style="display:none"><div class="cardhead"><div><h3 id="ownerDashboardTitle">Owner dashboard</h3><span>Personal daily routines — separate from the common planner</span></div><div class="section-tools"><span id="ownerDashboardCount"></span><button class="btn primary" id="ownerAddTask">＋ Add routine</button></div></div><div class="body"><div class="stats" style="margin-bottom:12px"><div class="stat"><div class="n" id="ownerTotal">0</div><div class="l">My tasks</div></div><div class="stat green"><div class="n" id="ownerDone">0</div><div class="l">Completed</div></div><div class="stat orange"><div class="n" id="ownerPending">0</div><div class="l">Pending</div></div></div><div id="ownerTasks"></div></div></section>
+
+<section class="pitch-dashboard" id="pitchDashboard">
+ <header class="pitch-head"><div style="font-size:10px;letter-spacing:.13em;font-weight:800">AHAMMED’S DAILY DASHBOARD</div><h2>Day Plan:<br>Stitch Your Pitch</h2><div class="pitch-date" id="pitchDate"></div></header>
+ <div id="pitchHoliday" class="pitch-holiday" style="display:none;margin:14px">☀️ SUNDAY — HOLIDAY</div>
+ <div class="pitch-content" id="pitchContent">
+  <div class="pitch-col">
+   <section class="pitch-section"><h3>① Type of Pitch Practice</h3><div class="inside"><input class="pitch-input" id="pitchType" placeholder="Today's pitch practice"></div></section>
+   <section class="pitch-section"><h3>② Morning Meeting Fun</h3><div class="inside"><textarea class="pitch-textarea" id="pitchFun" placeholder="Type today's morning meeting fun"></textarea></div></section>
+   <section class="pitch-section"><h3>③ Morning Brainstorm</h3><div class="inside">
+    <label class="pitch-field">Person conducting <input class="pitch-input" id="pitchConductor" placeholder="Name"></label>
+    <label class="pitch-field">Topic <input class="pitch-input" id="pitchTopic" placeholder="Brainstorm topic"></label>
+    <label class="pitch-field">Q&A <input class="pitch-input" id="pitchQA" placeholder="Questions and answers"></label>
+    <label class="pitch-field">PPT <input class="pitch-input" id="pitchPpt" placeholder="Presentation / link"></label>
+   </div></section>
+   <section class="pitch-section"><h3>④ Competition</h3><div class="inside"><textarea class="pitch-textarea" id="pitchCompetition" placeholder="Competition details"></textarea></div></section>
+   <section class="pitch-section"><h3>⑤ Customer Service</h3><div class="inside">
+    <label class="pitch-field">SOS <input class="pitch-input" id="pitchSOS" placeholder="Updates"></label>
+    <label class="pitch-field">CRY <input class="pitch-input" id="pitchCRY" placeholder="Updates"></label>
+    <label class="pitch-field">UNICEF — Quality <input class="pitch-input" id="pitchUNICEF" placeholder="Quality focus"></label>
+   </div></section>
+   <section class="pitch-section"><h3>⑥ Excited Title</h3><div class="inside"><input class="pitch-input" id="pitchTitle" placeholder="Today's title"></div></section>
+  </div>
+  <div class="pitch-col">
+   <section class="pitch-section"><h3> AAP with</h3><div class="inside">
+    <label class="pitch-check"><input type="checkbox" id="pitchAAPTele"> Tele trainers</label>
+    <label class="pitch-check"><input type="checkbox" id="pitchAAPCRY"> CRY</label>
+    <label class="pitch-check"><input type="checkbox" id="pitchAAPRoad"> Road trip</label>
+    <label class="pitch-check"><input type="checkbox" id="pitchAAPOneOff"> ONE OFF trainers</label>
+   </div></section>
+   <section class="pitch-section"><h3>Type of Pitch Practice — Session</h3><div class="inside">
+    <label class="pitch-check"><input type="checkbox" id="pitchOwnTeam"> OWN Team</label>
+    <label class="pitch-check"><input type="checkbox" id="pitchCommon"> Direct Meeting / Common Practice</label>
+    <label class="pitch-check"><input type="checkbox" id="pitchHighroller"> Highroller pitch practice</label>
+    <label class="pitch-check"><input type="checkbox" id="pitchShuffle"> SHUFFLE</label>
+   </div></section>
+   <section class="pitch-section"><h3>Notes for today</h3><div class="inside"><textarea class="pitch-textarea" id="pitchNotes" placeholder="Any additional notes"></textarea></div></section>
+  </div>
+ </div>
+ <div class="pitch-actions"><button class="btn primary" id="pitchDownload">⬇ Download plan as picture</button><button class="btn" id="pitchClear">Clear today's entries</button><span class="small-note" id="pitchSaved" style="align-self:center">Saved on this device</span></div>
+ <footer class="pitch-foot">Optimize Your Day, Perfect Your Pitch</footer>
+</section>
 <div class="layout" id="commonLayout">
 <main>
 <section class="card"><div class="cardhead"><div><h3 id="dailyHead">Agenda</h3><span>Day-specific responsibilities · weekly template</span></div><div class="section-tools"><span id="dailyCount"></span><button class="btn" id="dailyAdd">＋</button></div></div><div class="body" id="dailyTasks"></div></section>
@@ -269,10 +331,9 @@ function ownerName(id){return dbOwners.find(o=>o.id===id)?.name||''}
 function taskView(t){return {id:t.id,section:t.section,text:t.title,owner:ownerName(t.owner_id),owner_id:t.owner_id,carry:!!t.is_carried_forward,done:!!t.is_completed,template_id:t.template_id}}
 function fillOwners(selected=''){ $('taskOwner').innerHTML='<option value="">— Owner not assigned —</option>'+dbOwners.map(o=>'<option value="'+esc(o.id)+'" '+(o.id===selected?'selected':'')+'>'+esc(o.name)+'</option>').join('') }
 function fillDashboardOwners(){
- const sel=$('dashboardOwner');if(!sel)return;
  const allowed=['Krishna','Gayathri','Vishnu','Ridha'];
- sel.innerHTML='<option value="">Common dashboard</option>'+dbOwners.filter(o=>allowed.includes(o.name)).map(o=>'<option value="'+esc(o.id)+'">'+esc(o.name)+' dashboard</option>').join('');
- if(selectedDashboardOwner&&dbOwners.some(o=>o.id===selectedDashboardOwner))sel.value=selectedDashboardOwner;else{selectedDashboardOwner='';sel.value=''}
+ const options='<option value="">Common dashboard</option><option value="__aham">Ahammed — Stitch Your Pitch</option>'+dbOwners.filter(o=>allowed.includes(o.name)).map(o=>'<option value="'+esc(o.id)+'">'+esc(o.name)+' dashboard</option>').join('');
+ ['dashboardOwner','dashboardOwnerDesktop'].forEach(id=>{const sel=$(id);if(sel){sel.innerHTML=options;sel.value=selectedDashboardOwner||''}});
 }
 function renderList(el,tasks){
  if(!tasks.length){el.innerHTML='<div class="empty">No tasks in this section</div>';return}
@@ -281,12 +342,78 @@ function renderList(el,tasks){
  '<div><div class="title">'+esc(t.text)+'</div><div class="meta">'+(t.carry?'↪ Carried forward · ':'')+'Assigned to <b>'+esc(t.owner||'Owner not assigned')+'</b></div></div>'+
  '<div class="task-actions"><button class="btn" data-action="edit" data-id="'+esc(t.id)+'">Edit</button><button class="btn danger" data-action="delete" data-id="'+esc(t.id)+'">Delete</button></div></div>').join('')
 }
+
+const pitchIds=['pitchType','pitchFun','pitchConductor','pitchTopic','pitchQA','pitchPpt','pitchCompetition','pitchSOS','pitchCRY','pitchUNICEF','pitchTitle','pitchNotes','pitchAAPTele','pitchAAPCRY','pitchAAPRoad','pitchAAPOneOff','pitchOwnTeam','pitchCommon','pitchHighroller','pitchShuffle'];
+function deviceDateKey(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function defaultPitchType(d=new Date()){
+ const map={1:'Own team',2:'Own team',3:'Common meeting',4:'Highroller pitch practice',5:'Shuffle pitch practice',6:'Owner pitch practice',0:'Holiday'};
+ return map[d.getDay()];
+}
+function renderPitchDashboard(){
+ const d=new Date(),key=deviceDateKey(),holiday=d.getDay()===0;
+ $('pitchDate').textContent=d.toLocaleDateString('en-IN',{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
+ $('pitchHoliday').style.display=holiday?'block':'none';
+ $('pitchContent').style.display=holiday?'none':'grid';
+ const storeKey='dp_aham_pitch_'+key;
+ let data={};try{data=JSON.parse(localStorage.getItem(storeKey)||'{}')}catch{}
+ pitchIds.forEach(id=>{const el=$(id);if(!el)return;if(el.type==='checkbox')el.checked=!!data[id];else el.value=data[id]??''});
+ if(!data.pitchType)$('pitchType').value=defaultPitchType(d);
+ const type=String($('pitchType').value).toLowerCase();
+ $('pitchOwnTeam').checked=$('pitchOwnTeam').checked||type==='own team';
+ $('pitchCommon').checked=$('pitchCommon').checked||type==='common meeting';
+ $('pitchHighroller').checked=$('pitchHighroller').checked||type==='highroller pitch practice';
+ $('pitchShuffle').checked=$('pitchShuffle').checked||type==='shuffle pitch practice';
+ $('pitchSaved').textContent='Auto-saves on this device';
+}
+function savePitchDashboard(){
+ const data={};pitchIds.forEach(id=>{const el=$(id);if(el)data[id]=el.type==='checkbox'?el.checked:el.value});
+ try{localStorage.setItem('dp_aham_pitch_'+deviceDateKey(),JSON.stringify(data));$('pitchSaved').textContent='Saved · '+new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'})}
+ catch(e){$('pitchSaved').textContent='Could not save on this device'}
+}
+function downloadPitchImage(){
+ const d=new Date(),holiday=d.getDay()===0;
+ const canvas=document.createElement('canvas'),ctx=canvas.getContext('2d');
+ canvas.width=1200;canvas.height=holiday?520:1800;
+ ctx.fillStyle='#f4fbff';ctx.fillRect(0,0,canvas.width,canvas.height);
+ ctx.fillStyle='#b7ddeb';ctx.fillRect(0,0,canvas.width,210);
+ ctx.fillStyle='#10243b';ctx.font='bold 48px Arial';ctx.fillText('DAY PLAN: STITCH YOUR PITCH',55,82);
+ ctx.font='bold 24px Arial';ctx.fillText('AHAMMED’S DAILY DASHBOARD',58,128);
+ ctx.font='22px Arial';ctx.fillText(d.toLocaleDateString('en-IN',{weekday:'long',day:'2-digit',month:'long',year:'numeric'}),58,170);
+ if(holiday){ctx.fillStyle='#fff';ctx.fillRect(55,255,1090,150);ctx.fillStyle='#24536c';ctx.font='bold 42px Arial';ctx.fillText('SUNDAY — HOLIDAY',90,340)}
+ else{
+  const val=id=>{const el=$(id);return el?(el.type==='checkbox'?(el.checked?'☑ ':'☐ ')+el.parentElement.textContent.trim():el.value.trim()):''};
+  const sections=[
+   ['1. TYPE OF PITCH PRACTICE',[val('pitchType')]],['2. MORNING MEETING FUN',[val('pitchFun')]],
+   ['3. MORNING BRAINSTORM',['Person conducting: '+val('pitchConductor'),'Topic: '+val('pitchTopic'),'Q&A: '+val('pitchQA'),'PPT: '+val('pitchPpt')]],
+   ['4. COMPETITION',[val('pitchCompetition')]],['5. CUSTOMER SERVICE',['SOS: '+val('pitchSOS'),'CRY: '+val('pitchCRY'),'UNICEF — Quality: '+val('pitchUNICEF')]],
+   ['6. EXCITED TITLE',[val('pitchTitle')]],['AAP WITH',[val('pitchAAPTele'),val('pitchAAPCRY'),val('pitchAAPRoad'),val('pitchAAPOneOff')]],
+   ['PITCH PRACTICE SESSION',[val('pitchOwnTeam'),val('pitchCommon'),val('pitchHighroller'),val('pitchShuffle')]],['NOTES',[val('pitchNotes')]]
+  ];
+  let y=245;
+  sections.forEach(([title,lines])=>{ctx.fillStyle='#b7ddeb';ctx.fillRect(55,y,1090,43);ctx.fillStyle='#10243b';ctx.font='bold 23px Arial';ctx.fillText(title,72,y+29);y+=55;ctx.fillStyle='#172033';ctx.font='20px Arial';
+   lines.forEach(line=>{const text=String(line||'—');const words=text.split(/\s+/);let row='',count=0;for(const word of words){if((row+' '+word).length>88){ctx.fillText(row,75,y);y+=29;row=word}else row+=(row?' ':'')+word}if(row){ctx.fillText(row,75,y);y+=29}});y+=12;
+  });
+ }
+ ctx.fillStyle='#d9f0fa';ctx.fillRect(0,canvas.height-72,canvas.width,72);ctx.fillStyle='#123451';ctx.font='italic 24px Georgia';ctx.fillText('Optimize Your Day, Perfect Your Pitch',canvas.width/2-205,canvas.height-28);
+ const a=document.createElement('a');a.download='Stitch-Your-Pitch-'+deviceDateKey()+'.png';a.href=canvas.toDataURL('image/png');a.click();
+}
+function bindPitchDashboard(){
+ pitchIds.forEach(id=>{const el=$(id);if(el){el.addEventListener('input',savePitchDashboard);el.addEventListener('change',savePitchDashboard)}});
+ $('pitchDownload').onclick=()=>{savePitchDashboard();downloadPitchImage()};
+ $('pitchClear').onclick=()=>{if(!confirm("Clear today's Stitch Your Pitch entries?"))return;localStorage.removeItem('dp_aham_pitch_'+deviceDateKey());renderPitchDashboard();toast("Today's pitch plan cleared","success")};
+ ['dashboardOwner','dashboardOwnerDesktop'].forEach(id=>{const el=$(id);if(el)el.addEventListener('change',()=>{selectedDashboardOwner=el.value;['dashboardOwner','dashboardOwnerDesktop'].forEach(other=>{if($(other))$(other).value=selectedDashboardOwner});render()})});
+}
+
 function render(){
  const all=dbTasks.map(taskView),name=dayName(current);
+ const pitchMode=selectedDashboardOwner==='__aham';
  const owner=dbOwners.find(o=>o.id===selectedDashboardOwner);
  const ownerMode=!!owner;
- $('commonLayout').style.display=ownerMode?'none':'grid';
+ $('commonLayout').style.display=ownerMode||pitchMode?'none':'grid';
  $('ownerDashboard').style.display=ownerMode?'block':'none';
+ $('pitchDashboard').style.display=pitchMode?'block':'none';
+ if(pitchMode){renderPitchDashboard();$('dayTitle').textContent='Ahammed — Stitch Your Pitch';$('dateText').textContent=pretty(new Date());$('stats').style.display='none';return}
+ $('stats').style.display='grid';
  $('dayTitle').textContent=ownerMode?owner.name+' — Daily Dashboard':name;
  $('dateText').textContent=pretty(current);
  if(ownerMode){
@@ -502,7 +629,7 @@ async function initRealtime(){
  });
  realtimeChannel.subscribe();
 }
-bind();
+bind();bindPitchDashboard();
 if(navigator.onLine)refresh();else showOffline();
 if(SB)initRealtime();
 </script>
