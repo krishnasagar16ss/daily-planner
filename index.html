@@ -357,7 +357,7 @@ async function loadRemotePitchPlan(key){
  pitchRemoteLoading=true;
  try{const r=await SB.from('dp_aham_pitch_plans').select('plan_data').eq('plan_date',key).maybeSingle();if(r.error)throw r.error;
   if(pitchDateObject(key).getDay()===0){localStorage.removeItem('dp_aham_pitch_'+key);if(r.data)await SB.from('dp_aham_pitch_plans').delete().eq('plan_date',key);pitchRemoteLoaded.add(key);if(key===pitchSelectedDate){pitchIds.forEach(id=>{const el=$(id);if(el){if(el.type==='checkbox')el.checked=false;else el.value=''}});$('pitchType').value='Holiday';$('pitchSaved').textContent='Sunday holiday · saved plan cleared'}return}
-  if(r.data&&r.data.plan_data){const data=r.data.plan_data;pitchIds.forEach(id=>{const el=$(id);if(el&&Object.prototype.hasOwnProperty.call(data,id)){if(el.type==='checkbox')el.checked=!!data[id];else el.value=data[id]??''}});localStorage.setItem('dp_aham_pitch_'+key,JSON.stringify(data));}
+  if(r.data&&r.data.plan_data&&key===pitchSelectedDate){const data=r.data.plan_data;pitchIds.forEach(id=>{const el=$(id);if(el&&Object.prototype.hasOwnProperty.call(data,id)){if(el.type==='checkbox')el.checked=!!data[id];else el.value=data[id]??''}});localStorage.setItem('dp_aham_pitch_'+key,JSON.stringify(data));}
   pitchRemoteLoaded.add(key);if(selectedDashboardOwner==='__aham')updatePitchChecks();
  }catch(e){console.error('Pitch plan sync failed:',e);$('pitchSaved').textContent='Online sync failed — local copy retained'}finally{pitchRemoteLoading=false}
 }
