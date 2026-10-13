@@ -123,6 +123,7 @@ button,input,select{font:inherit}button{cursor:pointer}.app{max-width:1160px;mar
     <label class="pitch-check"><input type="checkbox" id="pitchCommon"> Direct Meeting / Common Practice</label>
     <label class="pitch-check"><input type="checkbox" id="pitchHighroller"> Highroller pitch practice</label>
     <label class="pitch-check"><input type="checkbox" id="pitchShuffle"> SHUFFLE</label>
+    <label class="pitch-check"><input type="checkbox" id="pitchOwnerPractice"> Owner pitch practice</label>
    </div></section>
    <section class="pitch-section"><h3>Notes for today</h3><div class="inside"><textarea class="pitch-textarea" id="pitchNotes" placeholder="Any additional notes"></textarea></div></section>
   </div>
@@ -343,12 +344,22 @@ function renderList(el,tasks){
  '<div class="task-actions"><button class="btn" data-action="edit" data-id="'+esc(t.id)+'">Edit</button><button class="btn danger" data-action="delete" data-id="'+esc(t.id)+'">Delete</button></div></div>').join('')
 }
 
-const pitchIds=['pitchType','pitchFun','pitchConductor','pitchTopic','pitchQA','pitchPpt','pitchCompetition','pitchSOS','pitchCRY','pitchUNICEF','pitchTitle','pitchNotes','pitchAAPTele','pitchAAPCRY','pitchAAPRoad','pitchAAPOneOff','pitchOwnTeam','pitchCommon','pitchHighroller','pitchShuffle'];
+const pitchIds=['pitchType','pitchFun','pitchConductor','pitchTopic','pitchQA','pitchPpt','pitchCompetition','pitchSOS','pitchCRY','pitchUNICEF','pitchTitle','pitchNotes','pitchAAPTele','pitchAAPCRY','pitchAAPRoad','pitchAAPOneOff','pitchOwnTeam','pitchCommon','pitchHighroller','pitchShuffle','pitchOwnerPractice'];
 function deviceDateKey(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
 function defaultPitchType(d=new Date()){
  const map={1:'Own team',2:'Own team',3:'Common meeting',4:'Highroller pitch practice',5:'Shuffle pitch practice',6:'Owner pitch practice',0:'Holiday'};
  return map[d.getDay()];
 }
+let pitchSaveTimer=null,pitchRemoteLoaded=new Set(),pitchRemoteLoading=false;
+async function loadRemotePitchPlan(key){
+ if(!SB||pitchRemoteLoaded.has(key)||pitchRemoteLoading)return;
+ pitchRemoteLoading=true;
+ try{const r=await SB.from('dp_aham_pitch_plans').select('plan_data').eq('plan_date',key).maybeSingle();if(r.error)throw r.error;
+  if(r.data&&r.data.plan_data){const data=r.data.plan_data;pitchIds.forEach(id=>{const el=$(id);if(el&&Object.prototype.hasOwnProperty.call(data,id)){if(el.type==='checkbox')el.checked=!!data[id];else el.value=data[id]??''}});localStorage.setItem('dp_aham_pitch_'+key,JSON.stringify(data));}
+  pitchRemoteLoaded.add(key);if(selectedDashboardOwner==='__aham')updatePitchChecks();
+ }catch(e){console.error('Pitch plan sync failed:',e);$('pitchSaved').textContent='Online sync failed — local copy retained'}finally{pitchRemoteLoading=false}
+}
+function updatePitchChecks(){const type=String($('pitchType').value).toLowerCase();const map=[['pitchOwnTeam','own team'],['pitchCommon','common meeting'],['pitchHighroller','highroller pitch practice'],['pitchShuffle','shuffle pitch practice'],['pitchOwnerPractice','owner pitch practice']];map.forEach(([id,label])=>{if(type===label)$(id).checked=true})}
 function renderPitchDashboard(){
  const d=new Date(),key=deviceDateKey(),holiday=d.getDay()===0;
  $('pitchDate').textContent=d.toLocaleDateString('en-IN',{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
@@ -358,17 +369,19 @@ function renderPitchDashboard(){
  let data={};try{data=JSON.parse(localStorage.getItem(storeKey)||'{}')}catch{}
  pitchIds.forEach(id=>{const el=$(id);if(!el)return;if(el.type==='checkbox')el.checked=!!data[id];else el.value=data[id]??''});
  if(!data.pitchType)$('pitchType').value=defaultPitchType(d);
- const type=String($('pitchType').value).toLowerCase();
- $('pitchOwnTeam').checked=$('pitchOwnTeam').checked||type==='own team';
- $('pitchCommon').checked=$('pitchCommon').checked||type==='common meeting';
- $('pitchHighroller').checked=$('pitchHighroller').checked||type==='highroller pitch practice';
- $('pitchShuffle').checked=$('pitchShuffle').checked||type==='shuffle pitch practice';
- $('pitchSaved').textContent='Auto-saves on this device';
+ updatePitchChecks();
+ $('pitchSaved').textContent='Auto-saves and syncs online';
+ if(SB&&!pitchRemoteLoaded.has(key))loadRemotePitchPlan(key);
 }
 function savePitchDashboard(){
- const data={};pitchIds.forEach(id=>{const el=$(id);if(el)data[id]=el.type==='checkbox'?el.checked:el.value});
- try{localStorage.setItem('dp_aham_pitch_'+deviceDateKey(),JSON.stringify(data));$('pitchSaved').textContent='Saved · '+new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'})}
+ const key=deviceDateKey(),data={};pitchIds.forEach(id=>{const el=$(id);if(el)data[id]=el.type==='checkbox'?el.checked:el.value});
+ try{localStorage.setItem('dp_aham_pitch_'+key,JSON.stringify(data));$('pitchSaved').textContent='Saving…'}
  catch(e){$('pitchSaved').textContent='Could not save on this device'}
+ if(pitchSaveTimer)clearTimeout(pitchSaveTimer);
+ pitchSaveTimer=setTimeout(async()=>{if(!SB||!navigator.onLine){$('pitchSaved').textContent='Saved on this device · waiting for internet';return}
+  try{const r=await SB.from('dp_aham_pitch_plans').upsert({plan_date:key,plan_data:data,updated_at:new Date().toISOString()},{onConflict:'plan_date'});if(r.error)throw r.error;pitchRemoteLoaded.add(key);$('pitchSaved').textContent='Saved online · '+new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'})}
+  catch(e){console.error('Pitch plan save failed:',e);$('pitchSaved').textContent='Saved locally · online sync failed'}
+ },500);
 }
 function downloadPitchImage(){
  const d=new Date(),holiday=d.getDay()===0;
@@ -387,7 +400,7 @@ function downloadPitchImage(){
    ['3. MORNING BRAINSTORM',['Person conducting: '+val('pitchConductor'),'Topic: '+val('pitchTopic'),'Q&A: '+val('pitchQA'),'PPT: '+val('pitchPpt')]],
    ['4. COMPETITION',[val('pitchCompetition')]],['5. CUSTOMER SERVICE',['SOS: '+val('pitchSOS'),'CRY: '+val('pitchCRY'),'UNICEF — Quality: '+val('pitchUNICEF')]],
    ['6. EXCITED TITLE',[val('pitchTitle')]],['AAP WITH',[val('pitchAAPTele'),val('pitchAAPCRY'),val('pitchAAPRoad'),val('pitchAAPOneOff')]],
-   ['PITCH PRACTICE SESSION',[val('pitchOwnTeam'),val('pitchCommon'),val('pitchHighroller'),val('pitchShuffle')]],['NOTES',[val('pitchNotes')]]
+   ['PITCH PRACTICE SESSION',[val('pitchOwnTeam'),val('pitchCommon'),val('pitchHighroller'),val('pitchShuffle'),val('pitchOwnerPractice')]],['NOTES',[val('pitchNotes')]]
   ];
   let y=245;
   sections.forEach(([title,lines])=>{ctx.fillStyle='#b7ddeb';ctx.fillRect(55,y,1090,43);ctx.fillStyle='#10243b';ctx.font='bold 23px Arial';ctx.fillText(title,72,y+29);y+=55;ctx.fillStyle='#172033';ctx.font='20px Arial';
@@ -400,7 +413,7 @@ function downloadPitchImage(){
 function bindPitchDashboard(){
  pitchIds.forEach(id=>{const el=$(id);if(el){el.addEventListener('input',savePitchDashboard);el.addEventListener('change',savePitchDashboard)}});
  $('pitchDownload').onclick=()=>{savePitchDashboard();downloadPitchImage()};
- $('pitchClear').onclick=()=>{if(!confirm("Clear today's Stitch Your Pitch entries?"))return;localStorage.removeItem('dp_aham_pitch_'+deviceDateKey());renderPitchDashboard();toast("Today's pitch plan cleared","success")};
+ $('pitchClear').onclick=()=>{if(!confirm("Clear today's Stitch Your Pitch entries?"))return;localStorage.removeItem('dp_aham_pitch_'+deviceDateKey());if(SB&&navigator.onLine)SB.from('dp_aham_pitch_plans').delete().eq('plan_date',deviceDateKey()).then(r=>{if(r.error)console.error(r.error)});renderPitchDashboard();toast("Today's pitch plan cleared","success")};
  ['dashboardOwner','dashboardOwnerDesktop'].forEach(id=>{const el=$(id);if(el)el.addEventListener('change',()=>{selectedDashboardOwner=el.value;['dashboardOwner','dashboardOwnerDesktop'].forEach(other=>{if($(other))$(other).value=selectedDashboardOwner});render()})});
 }
 
