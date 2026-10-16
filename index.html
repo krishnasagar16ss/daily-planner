@@ -137,7 +137,7 @@ button,input,select{font:inherit}button{cursor:pointer}.app{max-width:1160px;mar
 </section>
 <div class="layout" id="commonLayout">
 <main>
-<section class="card"><div class="cardhead"><div><h3 id="dailyHead">Agenda</h3><span>Day-specific responsibilities · weekly template</span></div><div class="section-tools"><span id="dailyCount"></span><button class="btn" id="dailyAdd">＋</button></div></div><div class="body" id="dailyTasks"></div></section>
+<section class="card"><div class="cardhead"><div><h3 id="dailyHead">Agenda</h3><span>Day-specific responsibilities · weekly template</span></div><div class="section-tools"><span id="dailyCount"></span><button class="btn primary" id="dailyDownload">⬇ Download agenda</button><button class="btn" id="dailyAdd">＋</button></div></div><div class="body" id="dailyTasks"></div></section>
 <section class="card"><div class="cardhead"><div><h3>Rapport Building</h3><span>Same structure every day</span></div><button class="btn" id="rapportAdd">＋ Add</button></div><div class="body" id="rapport"></div></section>
 <section class="card"><div class="cardhead"><div><h3>Activities</h3><span>Same every day</span></div><button class="btn" id="activitiesAdd">＋ Add</button></div><div class="body" id="activities"></div></section>
 <section class="card"><div class="cardhead"><div><h3>Agenda</h3><span>Management calls & planning</span></div><button class="btn" id="agendaAdd">＋ Add</button></div><div class="body" id="agenda"></div></section>
@@ -730,11 +730,69 @@ async function carryForwardNow(){
    }
  },pending.length+' day-specific task(s) carried to '+dayName(d));
 }
+function downloadDailyAgendaImage(){
+ if(!requireReady())return;
+ const tasks=dbTasks.filter(t=>t.section==='daily').map(taskView);
+ const d=new Date(current);d.setHours(12,0,0,0);
+ const W=1200,pad=48,cardGap=15,cardPad=24;
+ const canvas=document.createElement('canvas'),ctx=canvas.getContext('2d');
+ const dateLabel=d.toLocaleDateString('en-IN',{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
+ const wrap=(text,maxWidth,font)=>{
+  ctx.font=font;const lines=[];
+  String(text||'—').split('\n').forEach(par=>{
+   if(!par.trim()){lines.push('');return}
+   let line='';
+   par.split(/\s+/).forEach(word=>{
+    const next=line?line+' '+word:word;
+    if(line&&ctx.measureText(next).width>maxWidth){lines.push(line);line=word}else line=next;
+   });
+   lines.push(line||'—');
+  });
+  return lines;
+ };
+ const taskCards=tasks.length?tasks:[{text:'No day-specific tasks have been added yet.',owner:'Owner not assigned',carry:false,done:false}];
+ const layout=taskCards.map((t,i)=>{
+  const titleLines=wrap(t.text,W-pad*2-cardPad*2-18,'800 26px Arial');
+  const ownerLines=wrap('ASSIGNED TO  '+(t.owner||'Owner not assigned'),W-pad*2-cardPad*2-18,'600 20px Arial');
+  const carryLines=t.carry?wrap('↪ CARRIED FORWARD',W-pad*2-cardPad*2-18,'700 16px Arial'):[];
+  return {t,titleLines,ownerLines,carryLines,h:cardPad*2+titleLines.length*34+ownerLines.length*27+(carryLines.length?carryLines.length*22+7:0)+8,color:['#0b82bd','#118a72','#c24679','#6947bd','#c55c19','#087b91'][i%6]};
+ });
+ const headerH=230,footerH=104,bodyH=taskCards.reduce((sum,t,i)=>sum+layout[i].h,0)+cardGap*Math.max(0,taskCards.length-1);
+ canvas.width=W;canvas.height=headerH+bodyH+footerH+pad;
+ const bg=ctx.createLinearGradient(0,0,W,canvas.height);bg.addColorStop(0,'#eefaff');bg.addColorStop(.5,'#ffffff');bg.addColorStop(1,'#e7f7ff');ctx.fillStyle=bg;ctx.fillRect(0,0,W,canvas.height);
+ const hg=ctx.createLinearGradient(0,0,W,headerH);hg.addColorStop(0,'#071b43');hg.addColorStop(.58,'#10558d');hg.addColorStop(1,'#55cfe9');ctx.fillStyle=hg;ctx.fillRect(0,0,W,headerH);
+ ctx.fillStyle='rgba(255,255,255,.07)';ctx.beginPath();ctx.moveTo(820,0);ctx.lineTo(980,0);ctx.lineTo(1140,headerH);ctx.lineTo(1000,headerH);ctx.fill();
+ ctx.fillStyle='#fff';ctx.font='800 24px Arial';ctx.fillText('ALZA ORG',pad,48);
+ ctx.font='900 56px Arial';ctx.fillText('DAILY AGENDA',pad,118);
+ ctx.fillStyle='#a7f2ff';ctx.fillRect(pad+2,140,82,5);
+ ctx.fillStyle='#eaf8ff';ctx.font='500 22px Arial';ctx.fillText('Clear responsibilities. Strong ownership. Better execution.',pad+105,151);
+ ctx.save();ctx.shadowColor='rgba(0,0,0,.12)';ctx.shadowBlur=14;ctx.fillStyle='#fff';ctx.beginPath();ctx.roundRect(755,48,395,112,22);ctx.fill();ctx.restore();
+ ctx.fillStyle='#10234a';ctx.font='800 21px Arial';ctx.fillText(d.toLocaleDateString('en-IN',{weekday:'long'}),782,87);
+ ctx.fillStyle='#0878bb';ctx.font='800 25px Arial';ctx.fillText(d.toLocaleDateString('en-IN',{day:'2-digit',month:'long',year:'numeric'}),782,126);
+ let y=headerH+pad/2;
+ layout.forEach((item,i)=>{
+  const x=pad,w=W-pad*2,h=item.h;
+  ctx.save();ctx.shadowColor='rgba(13,45,79,.12)';ctx.shadowBlur=16;ctx.shadowOffsetY=5;ctx.fillStyle='#fff';ctx.beginPath();ctx.roundRect(x,y,w,h,20);ctx.fill();ctx.restore();
+  ctx.save();ctx.beginPath();ctx.roundRect(x,y,12,h,6);ctx.clip();ctx.fillStyle=item.color;ctx.fillRect(x,y,12,h);ctx.restore();
+  ctx.fillStyle=item.color;ctx.beginPath();ctx.arc(x+42,y+38,22,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#fff';ctx.font='800 22px Arial';ctx.textAlign='center';ctx.fillText(String(i+1),x+42,y+46);ctx.textAlign='left';
+  let ty=y+38;ctx.fillStyle='#10234a';ctx.font='800 26px Arial';
+  item.titleLines.forEach(line=>{ctx.fillText(line,x+cardPad+28,ty);ty+=34});
+  ty+=5;ctx.fillStyle='#536780';ctx.font='600 20px Arial';
+  item.ownerLines.forEach(line=>{ctx.fillText(line,x+cardPad+28,ty);ty+=27});
+  if(item.carryLines.length){ty+=3;ctx.fillStyle='#bd6500';ctx.font='700 16px Arial';item.carryLines.forEach(line=>{ctx.fillText(line,x+cardPad+28,ty);ty+=22})}
+  y+=h+cardGap;
+ });
+ const fy=canvas.height-footerH;const fg=ctx.createLinearGradient(0,fy,0,canvas.height);fg.addColorStop(0,'#dff6ff');fg.addColorStop(1,'#b8e9f7');ctx.fillStyle=fg;ctx.fillRect(0,fy,W,footerH);
+ ctx.fillStyle='#0b2c57';ctx.font='italic 24px Georgia';ctx.textAlign='center';ctx.fillText('Own the task. Deliver the result.',W/2,fy+47);ctx.textAlign='left';
+ const link=document.createElement('a');link.download='ALZA_Daily_Agenda_'+iso(d)+'.png';link.href=canvas.toDataURL('image/png');link.click();
+ toast('Daily agenda image downloaded.','success');
+}
 function bind(){
  $('prevBtn').onclick=async()=>{if(!requireReady())return;current.setDate(current.getDate()-1);await refresh()};
  $('todayBtn').onclick=async()=>{if(!requireReady())return;current=new Date();current.setHours(12,0,0,0);await refresh()};
  $('mPrev').onclick=()=>$('prevBtn').click();$('mToday').onclick=()=>$('todayBtn').click();
- $('mAdd').onclick=()=>openTask('daily');$('addBtn').onclick=()=>openTask('daily');$('dailyAdd').onclick=()=>openTask('daily');$('rapportAdd').onclick=()=>openTask('rapport');$('activitiesAdd').onclick=()=>openTask('activities');$('agendaAdd').onclick=()=>openTask('agenda');$('nightAll').onclick=completeNight;
+ $('mAdd').onclick=()=>openTask('daily');$('addBtn').onclick=()=>openTask('daily');$('dailyAdd').onclick=()=>openTask('daily');$('dailyDownload').onclick=downloadDailyAgendaImage;$('rapportAdd').onclick=()=>openTask('rapport');$('activitiesAdd').onclick=()=>openTask('activities');$('agendaAdd').onclick=()=>openTask('agenda');$('nightAll').onclick=completeNight;
  $('dashboardOwner').onchange=e=>{selectedDashboardOwner=e.target.value;render()};$('ownerAddTask').onclick=()=>openTask('owner');$('ownersBtn').onclick=openOwners;$('ownersSideBtn').onclick=openOwners;$('cancelBtn').onclick=closeTask;$('ownerCancel').onclick=closeOwners;$('saveBtn').onclick=saveTask;$('ownerSave').onclick=saveOwner;
  $('reconnectBtn').onclick=()=>{if(navigator.onLine)refresh();else toast('Your device is still offline.','error')};
  document.addEventListener('click',e=>{
