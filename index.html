@@ -813,7 +813,7 @@ function clearTerritoryPlan(){
 }
 function downloadTerritoryPlanImage(){
  const d=pitchDateObject(),key=pitchSelectedDate;
- const canvas=document.createElement('canvas'),ctx=canvas.getContext('2d),W=1200,pad=42,gap=18;
+ const canvas=document.createElement('canvas'),ctx=canvas.getContext('2d'),W=1200,pad=42,gap=18;
  const dateText=d.toLocaleDateString('en-IN',{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
  const wrap=(text,max,font)=>{ctx.font=font;const out=[];String(text||'—').split('\n').forEach(p=>{let line='';p.split(/\s+/).forEach(word=>{const test=line?line+' '+word:word;if(line&&ctx.measureText(test).width>max){out.push(line);line=word}else line=test});out.push(line||'—')});return out};
  const cards=territoryPairs.map((p,i)=>{const locs=p.territories||[];let lines=2+(p.retrains||[]).length;locs.forEach(t=>lines+=Math.max(1,wrap('PLAN '+String.fromCharCode(65)+': '+t.location+' · '+formatTerritoryTime(t.start)+' – '+formatTerritoryTime(t.end),W-pad*2-100,'500 21px Arial').length));const h=130+Math.max(0,(p.retrains||[]).length-1)*26+locs.length*38;return {p,i,h:Math.max(175,h),color:['#087bb5','#11866a','#c24679','#6947bd','#c55c19'][i%5]}}); 
