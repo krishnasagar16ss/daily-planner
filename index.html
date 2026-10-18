@@ -682,7 +682,13 @@ function renderTerritoryPlan(){
  if(local&&Array.isArray(local.pairs)&&!territoryPlanLoaded.has(key))territoryPairs=local.pairs;
  else if(!local&&!territoryPlanLoaded.has(key))territoryPairs=[];
  renderTerritoryPairList();
- if(!territoryPlanLoaded.has(key))loadRemoteTerritoryPlan(key);
+ if(!territoryPlanLoaded.has(key)&&SB&&navigator.onLine){
+  $('territoryStatus').textContent='Loading saved territory plan…';
+  ['territorySavePair','territoryDownload','territoryClear','territoryAddLocation','territoryAddRetrain'].forEach(id=>$(id).disabled=true);
+  loadRemoteTerritoryPlan(key);
+ }else{
+  ['territorySavePair','territoryDownload','territoryClear','territoryAddLocation','territoryAddRetrain'].forEach(id=>$(id).disabled=false);
+ }
  if(!territoryEditingId&&!$('territoryTrainerInput').value)resetTerritoryForm();
 }
 async function loadRemoteTerritoryPlan(key){
@@ -701,8 +707,11 @@ async function loadRemoteTerritoryPlan(key){
   territoryPlanLoaded.add(key);renderTerritoryPairList();
   if(!r.data&&territoryPairs.length)saveTerritoryPlan();
   $('territoryStatus').textContent='Loaded plan for '+key+' · changes sync online.';
- }catch(e){console.error(e);$('territoryStatus').textContent='Online load failed; local plan remains available.'}
- finally{territoryPlanLoading.delete(key)}
+ }catch(e){console.error(e);if(key===pitchSelectedDate)$('territoryStatus').textContent='Could not load saved plan. Switch tabs and retry before editing.'}
+ finally{
+  territoryPlanLoading.delete(key);
+  if(key===pitchSelectedDate&&territoryPlanLoaded.has(key))['territorySavePair','territoryDownload','territoryClear','territoryAddLocation','territoryAddRetrain'].forEach(id=>$(id).disabled=false);
+ }
 }
 function saveTerritoryPlan(){
  const key=pitchSelectedDate,data={pairs:territoryPairs};
@@ -763,6 +772,7 @@ function bindTerritoryPlan(){
  $('territoryClear').onclick=clearTerritoryPlan;
 }
 async function saveTerritoryPair(){
+ const wasEditing=!!territoryEditingId;
  const trainer=normalName($('territoryTrainerInput').value);
  if(!trainer){toast('Select or enter a trainer first','error');return}
  if(!await registerTerritoryName('trainer',trainer,true))return;
@@ -773,12 +783,13 @@ async function saveTerritoryPair(){
   if(!await registerTerritoryName('location',location,true))return;
   territories.push({location,start:row.start||'09:00',end:row.end||'17:00'});
  }
+ if(territories.length<1){toast('Add at least one territory to this pair','error');return}
  if(territories.length>3){toast('A pair can have up to 3 territories','error');return}
  const goal=$('territoryGoalInput').value;
  if(goal===''||Number(goal)<0||!Number.isFinite(Number(goal))){toast('Enter the goal in number of forms','error');return}
  const pair={id:territoryEditingId||('pair-'+Date.now()+'-'+Math.random().toString(36).slice(2,8)),trainer,retrains:[...territoryRetrainsDraft],territories,goal:Math.floor(Number(goal))};
  if(territoryEditingId){territoryPairs=territoryPairs.map(p=>p.id===territoryEditingId?pair:p)}else territoryPairs.push(pair);
- saveTerritoryPlan();renderTerritoryPairList();resetTerritoryForm();toast(territoryEditingId?'Pair updated':'Pair added');
+ saveTerritoryPlan();renderTerritoryPairList();resetTerritoryForm();toast(wasEditing?'Pair updated':'Pair added');
 }
 function editTerritoryPair(id){
  const p=territoryPairs.find(x=>x.id===id);if(!p)return;
@@ -805,30 +816,61 @@ async function manageTerritoryRegistry(e){
   await loadTerritoryRegistries(true);toast('Registered name removed');
  }
 }
-function clearTerritoryPlan(){
- const key=pitchSelectedDate;if(!confirm('Clear all territory pairs and assignments for '+key+'? This cannot be undone.'))return;
+function clearTerritoryPlan(skipConfirm=false){
+ const key=pitchSelectedDate;if(!skipConfirm&&!confirm('Clear all territory pairs and assignments for '+key+'? This cannot be undone.'))return;
  territoryPairs=[];localStorage.removeItem('dp_aham_territory_'+key);territoryPlanLoaded.delete(key);if(territorySaveTimers.has(key)){clearTimeout(territorySaveTimers.get(key));territorySaveTimers.delete(key)}
  if(SB&&navigator.onLine)SB.from('dp_aham_territory_plans').delete().eq('plan_date',key).then(r=>{if(r.error)toast('Could not clear online plan: '+r.error.message,'error');else territoryPlanLoaded.add(key)});
  resetTerritoryForm();renderTerritoryPairList();$('territoryStatus').textContent='Cleared for '+key;toast('Territory plan cleared');
 }
 function downloadTerritoryPlanImage(){
- const d=pitchDateObject(),key=pitchSelectedDate;
- const canvas=document.createElement('canvas'),ctx=canvas.getContext('2d'),W=1200,pad=42,gap=18;
+ const d=pitchDateObject(),key=pitchSelectedDate,W=1200,pad=42,gap=18;
+ const canvas=document.createElement('canvas'),ctx=canvas.getContext('2d');
  const dateText=d.toLocaleDateString('en-IN',{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
- const wrap=(text,max,font)=>{ctx.font=font;const out=[];String(text||'—').split('\n').forEach(p=>{let line='';p.split(/\s+/).forEach(word=>{const test=line?line+' '+word:word;if(line&&ctx.measureText(test).width>max){out.push(line);line=word}else line=test});out.push(line||'—')});return out};
- const cards=territoryPairs.map((p,i)=>{const locs=p.territories||[];let lines=2+(p.retrains||[]).length;locs.forEach(t=>lines+=Math.max(1,wrap('PLAN '+String.fromCharCode(65)+': '+t.location+' · '+formatTerritoryTime(t.start)+' – '+formatTerritoryTime(t.end),W-pad*2-100,'500 21px Arial').length));const h=130+Math.max(0,(p.retrains||[]).length-1)*26+locs.length*38;return {p,i,h:Math.max(175,h),color:['#087bb5','#11866a','#c24679','#6947bd','#c55c19'][i%5]}}); 
- const headerH=205,footerH=95,bodyH=cards.reduce((n,c)=>n+c.h,0)+gap*Math.max(0,cards.length-1);
+ const wrap=(text,max,font)=>{
+  ctx.font=font;const out=[];
+  String(text||'—').split('\n').forEach(par=>{
+   let line='';if(!par.trim()){out.push('');return}
+   par.split(/\s+/).forEach(word=>{const test=line?line+' '+word:word;if(line&&ctx.measureText(test).width>max){out.push(line);line=word}else line=test});
+   out.push(line||'—');
+  });return out;
+ };
+ const cards=territoryPairs.map((p,i)=>{
+  const titleLines=wrap((p.trainer||'Trainer not selected')+'  +  '+((p.retrains||[]).join(', ')||'No retrain assigned'),W-pad*2-145,'800 26px Arial');
+  const locations=(p.territories||[]).map((t,j)=>({t,j,nameLines:wrap(t.location||'Territory not selected',W-pad*2-310,'700 22px Arial'),time:formatTerritoryTime(t.start)+' – '+formatTerritoryTime(t.end)}));
+  const locHeight=locations.reduce((sum,l)=>sum+Math.max(58,l.nameLines.length*28+29),0);
+  const h=26+Math.max(1,titleLines.length)*31+31+14+locHeight+20;
+  return {p,i,titleLines,locations,h:Math.max(168,h),color:['#087bb5','#11866a','#c24679','#6947bd','#c55c19','#087b91'][i%6]};
+ });
+ const headerH=205,footerH=96,bodyH=cards.length?cards.reduce((n,c)=>n+c.h,0)+gap*(cards.length-1):180;
  canvas.width=W;canvas.height=headerH+bodyH+footerH+pad;
- const bg=ctx.createLinearGradient(0,0,W,canvas.height);bg.addColorStop(0,'#f0fbff');bg.addColorStop(1,'#e5f7ff');ctx.fillStyle=bg;ctx.fillRect(0,0,W,canvas.height);
+ const bg=ctx.createLinearGradient(0,0,W,canvas.height);bg.addColorStop(0,'#f0fbff');bg.addColorStop(.55,'#fff');bg.addColorStop(1,'#e5f7ff');ctx.fillStyle=bg;ctx.fillRect(0,0,W,canvas.height);
  const hg=ctx.createLinearGradient(0,0,W,headerH);hg.addColorStop(0,'#071b43');hg.addColorStop(.6,'#10558d');hg.addColorStop(1,'#55cfe9');ctx.fillStyle=hg;ctx.fillRect(0,0,W,headerH);
+ ctx.fillStyle='rgba(255,255,255,.07)';ctx.beginPath();ctx.moveTo(800,0);ctx.lineTo(960,0);ctx.lineTo(1130,headerH);ctx.lineTo(990,headerH);ctx.fill();
  ctx.fillStyle='#fff';ctx.font='800 23px Arial';ctx.fillText('ALZA ORG',42,44);ctx.font='900 53px Arial';ctx.fillText('TERRITORY PLAN',42,109);ctx.fillStyle='#b3f3ff';ctx.font='600 20px Arial';ctx.fillText('Trainer pairs · territories · form goals',44,146);
- ctx.fillStyle='#fff';ctx.beginPath();ctx.roundRect(760,42,395,112,18);ctx.fill();ctx.fillStyle='#10234a';ctx.font='800 20px Arial';ctx.fillText(d.toLocaleDateString('en-IN',{weekday:'long'}),782,79);ctx.fillStyle='#0878bb';ctx.font='800 25px Arial';ctx.fillText(d.toLocaleDateString('en-IN',{day:'2-digit',month:'long',year:'numeric'}),782,117);
+ ctx.save();ctx.shadowColor='rgba(0,0,0,.12)';ctx.shadowBlur=12;ctx.fillStyle='#fff';ctx.beginPath();ctx.roundRect(760,42,395,112,18);ctx.fill();ctx.restore();
+ ctx.fillStyle='#10234a';ctx.font='800 20px Arial';ctx.fillText(d.toLocaleDateString('en-IN',{weekday:'long'}),782,79);ctx.fillStyle='#0878bb';ctx.font='800 25px Arial';ctx.fillText(d.toLocaleDateString('en-IN',{day:'2-digit',month:'long',year:'numeric'}),782,117);
  let y=headerH+pad/2;
- cards.forEach(card=>{const {p,i,h,color}=card,x=pad,w=W-pad*2;ctx.save();ctx.shadowColor='rgba(13,45,79,.12)';ctx.shadowBlur=13;ctx.shadowOffsetY=4;ctx.fillStyle='#fff';ctx.beginPath();ctx.roundRect(x,y,w,h,17);ctx.fill();ctx.restore();ctx.fillStyle=color;ctx.beginPath();ctx.roundRect(x,y,11,h,6);ctx.fill();ctx.fillStyle=color;ctx.beginPath();ctx.arc(x+43,y+39,23,0,Math.PI*2);ctx.fill();ctx.fillStyle='#fff';ctx.font='800 21px Arial';ctx.textAlign='center';ctx.fillText(String(i+1),x+43,y+46);ctx.textAlign='left';ctx.fillStyle='#10234a';ctx.font='800 26px Arial';ctx.fillText(p.trainer+'  +  '+((p.retrains||[]).join(', ')||'No retrain'),x+82,y+39);ctx.fillStyle='#526a80';ctx.font='600 20px Arial';ctx.fillText('GOAL: '+p.goal+' FORMS',x+82,y+71);let ty=y+105;(p.territories||[]).forEach((t,j)=>{ctx.fillStyle=['#087bb5','#11866a','#c24679'][j];ctx.font='800 18px Arial';ctx.fillText('PLAN '+String.fromCharCode(65+j),x+82,ty);ctx.fillStyle='#10234a';ctx.font='600 21px Arial';ctx.fillText(t.location+'   ·   '+formatTerritoryTime(t.start)+' – '+formatTerritoryTime(t.end),x+190,ty);ty+=32});y+=h+gap});
+ cards.forEach(card=>{
+  const {p,i,titleLines,locations,h,color}=card,x=pad,w=W-pad*2;
+  ctx.save();ctx.shadowColor='rgba(13,45,79,.12)';ctx.shadowBlur=13;ctx.shadowOffsetY=4;ctx.fillStyle='#fff';ctx.beginPath();ctx.roundRect(x,y,w,h,17);ctx.fill();ctx.restore();
+  ctx.fillStyle=color;ctx.beginPath();ctx.roundRect(x,y,11,h,6);ctx.fill();
+  ctx.fillStyle=color;ctx.beginPath();ctx.arc(x+43,y+39,23,0,Math.PI*2);ctx.fill();ctx.fillStyle='#fff';ctx.font='800 21px Arial';ctx.textAlign='center';ctx.fillText(String(i+1),x+43,y+46);ctx.textAlign='left';
+  let ty=y+39;ctx.fillStyle='#10234a';ctx.font='800 26px Arial';titleLines.forEach(line=>{ctx.fillText(line,x+82,ty);ty+=31});
+  ty+=3;ctx.fillStyle='#087453';ctx.font='800 21px Arial';ctx.fillText('GOAL: '+String(p.goal??0)+' FORMS',x+82,ty);ty+=32;
+  locations.forEach(({t,j,nameLines,time})=>{
+   const badgeColor=['#087bb5','#11866a','#c24679'][j]||color;
+   ctx.fillStyle=badgeColor;ctx.beginPath();ctx.roundRect(x+82,ty-18,92,28,8);ctx.fill();
+   ctx.fillStyle='#fff';ctx.font='800 14px Arial';ctx.fillText('PLAN '+String.fromCharCode(65+j),x+94,ty+1);
+   ctx.fillStyle='#10234a';ctx.font='700 22px Arial';nameLines.forEach((line,n)=>{ctx.fillText(line,x+192,ty+n*27)});
+   const timeY=ty+nameLines.length*27;ctx.fillStyle='#5b6f83';ctx.font='600 17px Arial';ctx.fillText(time,x+192,timeY);
+   ty+=Math.max(58,nameLines.length*28+29);
+  });
+  y+=h+gap;
+ });
  if(!cards.length){ctx.fillStyle='#fff';ctx.beginPath();ctx.roundRect(pad,headerH+pad/2,W-pad*2,150,18);ctx.fill();ctx.fillStyle='#526a80';ctx.font='600 24px Arial';ctx.textAlign='center';ctx.fillText('No territory pairs planned for this date.',W/2,headerH+100);ctx.textAlign='left'}
- const fy=canvas.height-footerH;const fg=ctx.createLinearGradient(0,fy,0,canvas.height);fg.addColorStop(0,'#dff6ff');fg.addColorStop(1,'#b8e9f7');ctx.fillStyle=fg;ctx.fillRect(0,fy,W,footerH);ctx.fillStyle='#0b2c57';ctx.font='italic 25px Georgia';ctx.textAlign='center';ctx.fillText('Plan the territory. Own the result.',W/2,fy+50);ctx.textAlign='left';
+ const fy=canvas.height-footerH;const fg=ctx.createLinearGradient(0,fy,0,canvas.height);fg.addColorStop(0,'#dff6ff');fg.addColorStop(1,'#b8e9f7');ctx.fillStyle=fg;ctx.fillRect(0,fy,W,footerH);ctx.fillStyle='#0b2c57';ctx.font='italic 25px Georgia';ctx.textAlign='center';ctx.fillText('Plan the territory. Own the result.',W/2,fy+51);ctx.textAlign='left';
  const a=document.createElement('a');a.download='ALZA_Territory_Plan_'+key+'.png';a.href=canvas.toDataURL('image/png');a.click();
- if(territoryPairs.length&&confirm('Territory plan image downloaded. Clear the fields for '+key+' now?'))clearTerritoryPlan();
+ if(territoryPairs.length&&confirm('Territory plan image downloaded. Clear the fields for '+key+' now?'))clearTerritoryPlan(true);
 }
 function bindPitchDashboard(){
  $('pitchDateSelect').value=pitchSelectedDate;
