@@ -858,8 +858,9 @@ async function downloadTerritoryPlanImage(){
    nameLines:wrap(t.location||'Territory not selected',300,'800 21px Arial'),
    time:formatTerritoryTime(t.start)+' – '+formatTerritoryTime(t.end)
   }));
-  const locExtra=Math.max(110,...locations.map(l=>l.nameLines.length*26+58));
-  return {p,i,titleLines,locations,h:148+locExtra,color:['#087bb5','#11866a','#c24679','#6947bd','#c55c19','#087b91'][i%6]};
+  const maxNameLines=Math.max(1,...locations.map(l=>l.nameLines.length));
+  const cardHeight=Math.max(258,278+(maxNameLines-1)*25);
+  return {p,i,titleLines,locations,h:cardHeight,color:['#087bb5','#11866a','#c24679','#6947bd','#c55c19','#087b91'][i%6]};
  });
  const headerH=248,footerH=126,bodyH=cards.length?cards.reduce((n,c)=>n+c.h,0)+gap*(cards.length-1):170;
  canvas.width=W;canvas.height=headerH+bodyH+footerH+pad;
