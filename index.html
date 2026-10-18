@@ -447,7 +447,7 @@ function defaultPitchType(d=new Date()){
  return map[d.getDay()];
 }
 const pitchSaveTimers=new Map(),pitchRemoteLoaded=new Set(),pitchRemoteLoadingKeys=new Set();let pitchSelectedDate=deviceDateKey();
-let ahamTab='pitch',territoryPairs=[],territoryTrainers=[],territoryLocations=[],territoryRetrainsDraft=[],territoryRowsDraft=[],territoryEditingId=null,territoryPlanLoaded=new Set(),territoryPlanLoading=new Set(),territorySaveTimers=new Map(),territoryRegistryLoaded=false;
+let ahamTab='pitch',territoryPairs=[],territoryTrainers=[],territoryLocations=[],territoryRetrainsDraft=[],territoryRowsDraft=[],territoryEditingId=null,territoryFormDate='',territoryPlanLoaded=new Set(),territoryPlanLoading=new Set(),territorySaveTimers=new Map(),territoryRegistryLoaded=false;
 async function loadRemotePitchPlan(key){
  if(!SB||pitchRemoteLoaded.has(key)||pitchRemoteLoadingKeys.has(key)||!navigator.onLine)return;
  pitchRemoteLoadingKeys.add(key);
@@ -689,7 +689,7 @@ function renderTerritoryPlan(){
  }else{
   ['territorySavePair','territoryDownload','territoryClear','territoryAddLocation','territoryAddRetrain'].forEach(id=>$(id).disabled=false);
  }
- if(!territoryEditingId&&!$('territoryTrainerInput').value)resetTerritoryForm();
+ if(territoryFormDate!==key){resetTerritoryForm();territoryFormDate=key;}
 }
 async function loadRemoteTerritoryPlan(key){
  if(!SB||territoryPlanLoaded.has(key)||territoryPlanLoading.has(key)||!navigator.onLine)return;
