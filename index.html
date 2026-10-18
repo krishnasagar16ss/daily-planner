@@ -617,6 +617,22 @@ function renderAhamDashboard(){
  if(ahamTab==='territory')renderTerritoryPlan();
  else { $('territoryPanel').style.display='none';$('pitchContent').style.display=pitchDateObject().getDay()===0?'none':'grid';$('pitchHoliday').style.display=pitchDateObject().getDay()===0?'block':'none';$('pitchActions').style.display='flex';}
 }
+let lastObservedAhamDate=deviceDateKey();
+function resetAhamDashboardForNewDay(){
+ const today=deviceDateKey();
+ if(today===lastObservedAhamDate)return;
+ const previous=lastObservedAhamDate;
+ lastObservedAhamDate=today;
+ // Follow the calendar into the new day only when the dashboard was showing the previous current day.
+ // Historical dates remain selectable and are not deleted.
+ if(pitchSelectedDate===previous){
+  pitchSelectedDate=today;
+  renderAhamDashboard();
+ }
+}
+document.addEventListener('visibilitychange',resetAhamDashboardForNewDay);
+window.addEventListener('focus',resetAhamDashboardForNewDay);
+setInterval(resetAhamDashboardForNewDay,60000);
 function setAhamTab(tab){
  ahamTab=tab;
  $('ahamPitchTab').classList.toggle('active',tab==='pitch');$('ahamTerritoryTab').classList.toggle('active',tab==='territory');
@@ -690,9 +706,9 @@ function resetTerritoryForm(){
 function renderTerritoryPlan(){
  const key=pitchSelectedDate,d=pitchDateObject(key);
  $('territoryDateLabel').textContent=d.toLocaleDateString('en-IN',{weekday:'short',day:'2-digit',month:'short',year:'numeric'});
- let local=null;try{local=JSON.parse(localStorage.getItem(territoryKey())||'null')}catch{}
- if(local&&Array.isArray(local.pairs)&&!territoryPlanLoaded.has(key))territoryPairs=local.pairs;
- else if(!local&&!territoryPlanLoaded.has(key))territoryPairs=[];
+ let local=null;try{local=JSON.parse(localStorage.getItem('dp_aham_territory_'+key)||'null')}catch{}
+ // Always start from the selected date's own data. Never leave the previous day's pairs in memory.
+ territoryPairs=local&&Array.isArray(local.pairs)?local.pairs:[];
  renderTerritoryPairList();
  if(!territoryPlanLoaded.has(key)&&SB&&navigator.onLine){
   $('territoryStatus').textContent='Loading saved territory plan…';
