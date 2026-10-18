@@ -177,6 +177,7 @@ button,input,select{font:inherit}button{cursor:pointer}.app{max-width:1160px;mar
     <label class="pitch-check"><input type="checkbox" id="pitchAAPCRY"> CRY</label>
     <label class="pitch-check"><input type="checkbox" id="pitchAAPRoad"> Road trip</label>
     <label class="pitch-check"><input type="checkbox" id="pitchAAPOneOff"> ONE OFF trainers</label>
+    <label class="pitch-check"><input type="checkbox" id="pitchAAPUNICEF"> UNICEF</label>
    </div></section>
    <section class="pitch-section"><h3>Type of Pitch Practice — Session</h3><div class="inside">
     <label class="pitch-check"><input type="checkbox" id="pitchOwnTeam"> OWN Team</label>
@@ -404,7 +405,7 @@ function renderList(el,tasks){
  '<div class="task-actions"><button class="btn" data-action="edit" data-id="'+esc(t.id)+'">Edit</button><button class="btn danger" data-action="delete" data-id="'+esc(t.id)+'">Delete</button></div></div>').join('')
 }
 
-const pitchIds=['pitchType','pitchFun','pitchConductor','pitchTopic','pitchQA','pitchPpt','pitchCompetition','pitchServiceTopic','pitchServiceDetails','pitchTitle','pitchTeamTopicTitle','pitchTeamTopicDetails','pitchCrew','pitchNotes','pitchAAPTele','pitchAAPCRY','pitchAAPRoad','pitchAAPOneOff','pitchOwnTeam','pitchCommon','pitchHighroller','pitchShuffle','pitchOwnerPractice'];
+const pitchIds=['pitchType','pitchFun','pitchConductor','pitchTopic','pitchQA','pitchPpt','pitchCompetition','pitchServiceTopic','pitchServiceDetails','pitchTitle','pitchTeamTopicTitle','pitchTeamTopicDetails','pitchCrew','pitchNotes' ,'pitchAAPTele','pitchAAPCRY','pitchAAPRoad','pitchAAPOneOff','pitchAAPUNICEF','pitchOwnTeam','pitchCommon','pitchHighroller','pitchShuffle','pitchOwnerPractice'];
 function deviceDateKey(){return deviceDateKeyFromDate(new Date())}
 function deviceDateKeyFromDate(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
 function defaultCustomerService(d=new Date()){
@@ -568,7 +569,7 @@ async function downloadPitchImage(){
   section('Excited Title','★','purple',[value('pitchTitle')])
  ];
  const rightCards=holiday?[]:[
-  section('AAP with','✓','purple',['pitchAAPTele','pitchAAPCRY','pitchAAPRoad','pitchAAPOneOff'].map((id,i)=>({text:(checked(id)?'☑  ':'☐  ')+['Tele trainers','CRY','Road trip','ONE OFF trainers'][i],gap:4}))),
+  section('AAP with','✓','purple',['pitchAAPTele','pitchAAPCRY','pitchAAPRoad','pitchAAPOneOff','pitchAAPUNICEF'].map((id,i)=>({text:(checked(id)?'☑  ':'☐  ')+['Tele trainers','CRY','Road trip','ONE OFF trainers','UNICEF'][i],gap:4}))),
   section('Customer Service','✦','orange',[
    {text:serviceTopic,large:true,gap:10},
    ...serviceLines.map((line,i)=>({text:/^\d+[.)]/.test(line)?'➜  '+line:line,bullet:!(/^\d+[.)]/.test(line)),gap:5}))
