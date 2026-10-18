@@ -130,6 +130,11 @@ button,input,select{font:inherit}button{cursor:pointer}.app{max-width:1160px;mar
      <div class="territory-form-actions"><button class="btn primary" id="territorySavePair" type="button">＋ Add pair</button><button class="btn" id="territoryCancelEdit" type="button" style="display:none">Cancel edit</button></div>
     </div>
    </section>
+
+  </div>
+  <div class="territory-results-head"><div><h3>Daily Territory Assignments</h3><p id="territoryPairCount">0 pairs · 0 forms</p></div><div class="territory-result-actions"><button class="btn primary" id="territoryDownload" type="button">⬇ Download plan as picture</button><button class="btn danger" id="territoryClear" type="button">Clear date</button></div></div>
+  <div id="territoryPairList" class="territory-pair-list"></div>
+  <div class="territory-status" id="territoryStatus">Plans save by date and sync online.</div>
    <section class="territory-card territory-registry">
     <div class="territory-card-head"><h4>Register trainers & territories</h4><span class="territory-small">Searchable for every plan</span></div>
     <div class="territory-card-body">
@@ -141,10 +146,6 @@ button,input,select{font:inherit}button{cursor:pointer}.app{max-width:1160px;mar
      </details>
     </div>
    </section>
-  </div>
-  <div class="territory-results-head"><div><h3>Daily Territory Assignments</h3><p id="territoryPairCount">0 pairs · 0 forms</p></div><div class="territory-result-actions"><button class="btn primary" id="territoryDownload" type="button">⬇ Download plan as picture</button><button class="btn danger" id="territoryClear" type="button">Clear date</button></div></div>
-  <div id="territoryPairList" class="territory-pair-list"></div>
-  <div class="territory-status" id="territoryStatus">Plans save by date and sync online.</div>
  </div>
  <datalist id="territoryLocationOptions"></datalist>
  <div id="pitchHoliday" class="pitch-holiday" style="display:none;margin:14px">☀️ SUNDAY — HOLIDAY</div>
@@ -523,7 +524,18 @@ function savePitchDashboard(){
  },500);
  pitchSaveTimers.set(key,timer);
 }
-function downloadPitchImage(){
+let alzaLogoPromise=null;
+function loadAlzaOrgLogo(){
+ if(!alzaLogoPromise)alzaLogoPromise=new Promise(resolve=>{
+  const img=new Image();
+  img.onload=()=>resolve(img);
+  img.onerror=()=>{console.error('Could not load official ALZA ORG logo');resolve(null)};
+  img.src=new URL('alza-org-logo.svg',document.baseURI).href;
+ });
+ return alzaLogoPromise;
+}
+async function downloadPitchImage(){
+ const logo=await loadAlzaOrgLogo();
  const d=pitchDateObject(),key=pitchSelectedDate,holiday=d.getDay()===0;
  const canvas=document.createElement('canvas'),ctx=canvas.getContext('2d'),W=1200,pad=38,gap=24,colW=(W-pad*2-gap)/2;
  const dateLabel=d.toLocaleDateString('en-IN',{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
@@ -574,9 +586,9 @@ function downloadPitchImage(){
  const bg=ctx.createLinearGradient(0,0,W,canvas.height);bg.addColorStop(0,'#f1fbff');bg.addColorStop(.55,'#fff');bg.addColorStop(1,'#e9f8ff');ctx.fillStyle=bg;ctx.fillRect(0,0,W,canvas.height);
  const hg=ctx.createLinearGradient(0,0,W,headerH);hg.addColorStop(0,'#071b43');hg.addColorStop(.55,'#0d4f8c');hg.addColorStop(1,'#68d8f4');ctx.fillStyle=hg;ctx.fillRect(0,0,W,headerH);
  ctx.fillStyle='rgba(255,255,255,.07)';ctx.beginPath();ctx.moveTo(770,0);ctx.lineTo(930,0);ctx.lineTo(1100,headerH);ctx.lineTo(960,headerH);ctx.fill();
- ctx.fillStyle='#fff';ctx.font='800 24px Arial';ctx.fillText('ALZA ORG',48,45);
- ctx.font='900 61px Arial';ctx.fillStyle='#fff';ctx.fillText('STITCH',46,115);const stitchW=ctx.measureText('STITCH ').width;const gt=ctx.createLinearGradient(46+stitchW,70,730,125);gt.addColorStop(0,'#8ff0ff');gt.addColorStop(1,'#fff');ctx.fillStyle=gt;ctx.fillText('YOUR PITCH',46+stitchW,115);
- ctx.fillStyle='#a7f2ff';ctx.fillRect(49,137,80,5);ctx.fillStyle='#e9f7ff';ctx.font='italic 22px Arial';ctx.fillText('Plan Today. Practice Better. Create Bigger Impact.',148,150);
+ if(logo)ctx.drawImage(logo,35,12,132,117);
+ ctx.font='900 54px Arial';ctx.fillStyle='#fff';ctx.fillText('STITCH',194,105);const stitchW=ctx.measureText('STITCH ').width;const gt=ctx.createLinearGradient(194+stitchW,64,725,112);gt.addColorStop(0,'#8ff0ff');gt.addColorStop(1,'#fff');ctx.fillStyle=gt;ctx.fillText('YOUR PITCH',194+stitchW,105);
+ ctx.fillStyle='#a7f2ff';ctx.fillRect(197,125,80,5);ctx.fillStyle='#e9f7ff';ctx.font='italic 19px Arial';ctx.fillText('Plan Today. Practice Better. Create Bigger Impact.',294,138);
  ctx.save();ctx.shadowColor='rgba(0,0,0,.12)';ctx.shadowBlur=14;ctx.fillStyle='#fff';ctx.beginPath();ctx.roundRect(760,42,395,112,20);ctx.fill();ctx.restore();
  ctx.fillStyle='#0b2350';ctx.font='800 21px Arial';ctx.fillText(d.toLocaleDateString('en-IN',{weekday:'long'}),785,79);
  ctx.fillStyle='#0878bb';ctx.font='800 25px Arial';ctx.fillText(d.toLocaleDateString('en-IN',{day:'2-digit',month:'long',year:'numeric'}),785,117);
@@ -822,53 +834,85 @@ function clearTerritoryPlan(skipConfirm=false){
  if(SB&&navigator.onLine)SB.from('dp_aham_territory_plans').delete().eq('plan_date',key).then(r=>{if(r.error)toast('Could not clear online plan: '+r.error.message,'error');else territoryPlanLoaded.add(key)});
  resetTerritoryForm();renderTerritoryPairList();$('territoryStatus').textContent='Cleared for '+key;toast('Territory plan cleared');
 }
-function downloadTerritoryPlanImage(){
- const d=pitchDateObject(),key=pitchSelectedDate,W=1200,pad=42,gap=18;
+async function downloadTerritoryPlanImage(){
+ const logo=await loadAlzaOrgLogo();
+ const d=pitchDateObject(),key=pitchSelectedDate,W=1200,pad=34,gap=20;
  const canvas=document.createElement('canvas'),ctx=canvas.getContext('2d');
- const dateText=d.toLocaleDateString('en-IN',{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
  const wrap=(text,max,font)=>{
   ctx.font=font;const out=[];
   String(text||'—').split('\n').forEach(par=>{
-   let line='';if(!par.trim()){out.push('');return}
-   par.split(/\s+/).forEach(word=>{const test=line?line+' '+word:word;if(line&&ctx.measureText(test).width>max){out.push(line);line=word}else line=test});
+   if(!par.trim()){out.push('');return}
+   let line='';
+   par.split(/\s+/).forEach(word=>{
+    const test=line?line+' '+word:word;
+    if(line&&ctx.measureText(test).width>max){out.push(line);line=word}else line=test;
+   });
    out.push(line||'—');
   });return out;
  };
  const cards=territoryPairs.map((p,i)=>{
-  const titleLines=wrap((p.trainer||'Trainer not selected')+'  +  '+((p.retrains||[]).join(', ')||'No retrain assigned'),W-pad*2-145,'800 26px Arial');
-  const locations=(p.territories||[]).map((t,j)=>({t,j,nameLines:wrap(t.location||'Territory not selected',W-pad*2-310,'700 22px Arial'),time:formatTerritoryTime(t.start)+' – '+formatTerritoryTime(t.end)}));
-  const locHeight=locations.reduce((sum,l)=>sum+Math.max(58,l.nameLines.length*28+29),0);
-  const h=26+Math.max(1,titleLines.length)*31+31+14+locHeight+20;
-  return {p,i,titleLines,locations,h:Math.max(168,h),color:['#087bb5','#11866a','#c24679','#6947bd','#c55c19','#087b91'][i%6]};
+  const team=(p.trainer||'Trainer not selected')+'  +  '+((p.retrains||[]).join(', ')||'No retrain assigned');
+  const titleLines=wrap(team,W-pad*2-170,'800 25px Arial');
+  const locations=(p.territories||[]).map((t,j)=>({
+   t,j,
+   nameLines:wrap(t.location||'Territory not selected',300,'800 21px Arial'),
+   time:formatTerritoryTime(t.start)+' – '+formatTerritoryTime(t.end)
+  }));
+  const locExtra=Math.max(110,...locations.map(l=>l.nameLines.length*26+58));
+  return {p,i,titleLines,locations,h:148+locExtra,color:['#087bb5','#11866a','#c24679','#6947bd','#c55c19','#087b91'][i%6]};
  });
- const headerH=205,footerH=96,bodyH=cards.length?cards.reduce((n,c)=>n+c.h,0)+gap*(cards.length-1):180;
+ const headerH=248,footerH=126,bodyH=cards.length?cards.reduce((n,c)=>n+c.h,0)+gap*(cards.length-1):170;
  canvas.width=W;canvas.height=headerH+bodyH+footerH+pad;
- const bg=ctx.createLinearGradient(0,0,W,canvas.height);bg.addColorStop(0,'#f0fbff');bg.addColorStop(.55,'#fff');bg.addColorStop(1,'#e5f7ff');ctx.fillStyle=bg;ctx.fillRect(0,0,W,canvas.height);
- const hg=ctx.createLinearGradient(0,0,W,headerH);hg.addColorStop(0,'#071b43');hg.addColorStop(.6,'#10558d');hg.addColorStop(1,'#55cfe9');ctx.fillStyle=hg;ctx.fillRect(0,0,W,headerH);
- ctx.fillStyle='rgba(255,255,255,.07)';ctx.beginPath();ctx.moveTo(800,0);ctx.lineTo(960,0);ctx.lineTo(1130,headerH);ctx.lineTo(990,headerH);ctx.fill();
- ctx.fillStyle='#fff';ctx.font='800 23px Arial';ctx.fillText('ALZA ORG',42,44);ctx.font='900 53px Arial';ctx.fillText('TERRITORY PLAN',42,109);ctx.fillStyle='#b3f3ff';ctx.font='600 20px Arial';ctx.fillText('Trainer pairs · territories · form goals',44,146);
- ctx.save();ctx.shadowColor='rgba(0,0,0,.12)';ctx.shadowBlur=12;ctx.fillStyle='#fff';ctx.beginPath();ctx.roundRect(760,42,395,112,18);ctx.fill();ctx.restore();
- ctx.fillStyle='#10234a';ctx.font='800 20px Arial';ctx.fillText(d.toLocaleDateString('en-IN',{weekday:'long'}),782,79);ctx.fillStyle='#0878bb';ctx.font='800 25px Arial';ctx.fillText(d.toLocaleDateString('en-IN',{day:'2-digit',month:'long',year:'numeric'}),782,117);
+ const bg=ctx.createLinearGradient(0,0,W,canvas.height);bg.addColorStop(0,'#e8f7ff');bg.addColorStop(.48,'#fff');bg.addColorStop(1,'#e5f7ff');ctx.fillStyle=bg;ctx.fillRect(0,0,W,canvas.height);
+ ctx.save();ctx.globalAlpha=.7;
+ ctx.strokeStyle='#d4e8df';ctx.lineWidth=38;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(690,4);ctx.bezierCurveTo(820,30,760,100,890,130);ctx.bezierCurveTo(1000,158,1050,45,1200,80);ctx.stroke();
+ ctx.strokeStyle='#fff';ctx.lineWidth=25;ctx.beginPath();ctx.moveTo(690,4);ctx.bezierCurveTo(820,30,760,100,890,130);ctx.bezierCurveTo(1000,158,1050,45,1200,80);ctx.stroke();
+ ctx.strokeStyle='#2788b9';ctx.lineWidth=4;ctx.setLineDash([11,9]);ctx.beginPath();ctx.moveTo(690,4);ctx.bezierCurveTo(820,30,760,100,890,130);ctx.bezierCurveTo(1000,158,1050,45,1200,80);ctx.stroke();ctx.setLineDash([]);
+ [[1000,44,'#e34c4c'],[1122,83,'#0e9c73'],[890,130,'#167dc2']].forEach(([x,y,c])=>{ctx.fillStyle=c;ctx.beginPath();ctx.arc(x,y,14,0,Math.PI*2);ctx.fill();ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(x,y,5,0,Math.PI*2);ctx.fill()});
+ ctx.restore();
+ const hg=ctx.createLinearGradient(0,0,W,headerH);hg.addColorStop(0,'rgba(231,247,255,.96)');hg.addColorStop(.55,'rgba(255,255,255,.9)');hg.addColorStop(1,'rgba(218,243,255,.82)');ctx.fillStyle=hg;ctx.fillRect(0,0,W,headerH);
+ if(logo)ctx.drawImage(logo,28,24,150,133);
+ ctx.fillStyle='#0b2855';ctx.font='900 49px Arial';ctx.fillText('TERRITORY',205,77);
+ ctx.fillStyle='#087fce';ctx.fillText('PLAN',205,126);
+ ctx.fillStyle='#174a7a';ctx.font='600 18px Arial';ctx.fillText('RIGHT PEOPLE. RIGHT PLACES. BIGGER IMPACT.',208,157);
+ ctx.save();ctx.shadowColor='rgba(15,55,90,.14)';ctx.shadowBlur=16;ctx.shadowOffsetY=4;ctx.fillStyle='#fff';ctx.beginPath();ctx.roundRect(760,45,405,112,20);ctx.fill();ctx.restore();
+ ctx.fillStyle='#10234a';ctx.font='800 20px Arial';ctx.fillText(new Date(key+'T12:00:00').toLocaleDateString('en-IN',{weekday:'long'}),785,82);
+ ctx.fillStyle='#0878bb';ctx.font='800 25px Arial';ctx.fillText(new Date(key+'T12:00:00').toLocaleDateString('en-IN',{day:'2-digit',month:'long',year:'numeric'}),785,120);
  let y=headerH+pad/2;
  cards.forEach(card=>{
   const {p,i,titleLines,locations,h,color}=card,x=pad,w=W-pad*2;
-  ctx.save();ctx.shadowColor='rgba(13,45,79,.12)';ctx.shadowBlur=13;ctx.shadowOffsetY=4;ctx.fillStyle='#fff';ctx.beginPath();ctx.roundRect(x,y,w,h,17);ctx.fill();ctx.restore();
-  ctx.fillStyle=color;ctx.beginPath();ctx.roundRect(x,y,11,h,6);ctx.fill();
-  ctx.fillStyle=color;ctx.beginPath();ctx.arc(x+43,y+39,23,0,Math.PI*2);ctx.fill();ctx.fillStyle='#fff';ctx.font='800 21px Arial';ctx.textAlign='center';ctx.fillText(String(i+1),x+43,y+46);ctx.textAlign='left';
-  let ty=y+39;ctx.fillStyle='#10234a';ctx.font='800 26px Arial';titleLines.forEach(line=>{ctx.fillText(line,x+82,ty);ty+=31});
-  ty+=3;ctx.fillStyle='#087453';ctx.font='800 21px Arial';ctx.fillText('GOAL: '+String(p.goal??0)+' FORMS',x+82,ty);ty+=32;
+  ctx.save();ctx.shadowColor='rgba(13,45,79,.13)';ctx.shadowBlur=15;ctx.shadowOffsetY=5;ctx.fillStyle='#fff';ctx.beginPath();ctx.roundRect(x,y,w,h,18);ctx.fill();ctx.restore();
+  ctx.save();ctx.beginPath();ctx.roundRect(x,y,112,h,18);ctx.clip();const strip=ctx.createLinearGradient(x,y,x+112,y+h);strip.addColorStop(0,color);strip.addColorStop(1,i%2?'#075b49':'#064e9d');ctx.fillStyle=strip;ctx.fillRect(x,y,112,h);ctx.restore();
+  ctx.fillStyle='rgba(255,255,255,.08)';ctx.beginPath();ctx.moveTo(x,y+h*.55);ctx.lineTo(x+112,y+h*.38);ctx.lineTo(x+112,y+h*.65);ctx.lineTo(x,y+h*.82);ctx.fill();
+  ctx.fillStyle='#fff';ctx.font='900 58px Arial';ctx.textAlign='center';ctx.fillText(String(i+1),x+56,y+69);ctx.font='800 15px Arial';ctx.fillText('PAIR',x+56,y+94);ctx.textAlign='left';
+  const contentX=x+137;
+  ctx.fillStyle='#102a54';ctx.font='800 25px Arial';let titleY=y+39;titleLines.slice(0,2).forEach(line=>{ctx.fillText(line,contentX,titleY);titleY+=29});
+  const goalText='GOAL: '+String(p.goal??0)+' FORMS';ctx.font='800 19px Arial';const goalW=ctx.measureText(goalText).width+34;const goalY=y+titleLines.slice(0,2).length*29+45;
+  ctx.fillStyle=i%2?'#d9f8e9':'#dff3ff';ctx.beginPath();ctx.roundRect(contentX,goalY-23,goalW,34,12);ctx.fill();ctx.fillStyle=i%2?'#08744f':'#075b9e';ctx.fillText(goalText,contentX+17,goalY);
+  const routeY=y+143,routeLeft=contentX,routeRight=x+w-28,count=Math.max(1,locations.length),slotW=(routeRight-routeLeft)/count;
+  if(locations.length>1){ctx.strokeStyle='#b6d0e4';ctx.lineWidth=3;ctx.setLineDash([10,7]);ctx.beginPath();ctx.moveTo(routeLeft+slotW*.5,routeY);ctx.lineTo(routeRight-slotW*.5,routeY);ctx.stroke();ctx.setLineDash([]);ctx.strokeStyle='#7da3c4';ctx.lineWidth=2;for(let j=0;j<locations.length-1;j++){const mx=routeLeft+slotW*(j+1);ctx.beginPath();ctx.moveTo(mx-5,routeY-5);ctx.lineTo(mx+2,routeY);ctx.lineTo(mx-5,routeY+5);ctx.stroke()}}
+  if(!locations.length){ctx.fillStyle='#6c7d8d';ctx.font='600 19px Arial';ctx.fillText('No territories assigned',contentX,routeY+35)}
   locations.forEach(({t,j,nameLines,time})=>{
-   const badgeColor=['#087bb5','#11866a','#c24679'][j]||color;
-   ctx.fillStyle=badgeColor;ctx.beginPath();ctx.roundRect(x+82,ty-18,92,28,8);ctx.fill();
-   ctx.fillStyle='#fff';ctx.font='800 14px Arial';ctx.fillText('PLAN '+String.fromCharCode(65+j),x+94,ty+1);
-   ctx.fillStyle='#10234a';ctx.font='700 22px Arial';nameLines.forEach((line,n)=>{ctx.fillText(line,x+192,ty+n*27)});
-   const timeY=ty+nameLines.length*27;ctx.fillStyle='#5b6f83';ctx.font='600 17px Arial';ctx.fillText(time,x+192,timeY);
-   ty+=Math.max(58,nameLines.length*28+29);
+   const sx=routeLeft+slotW*j,lx=sx+8,badgeColor=['#087bb5','#11866a','#e46b20'][j]||color;
+   ctx.fillStyle=badgeColor;ctx.beginPath();ctx.arc(sx+slotW/2,routeY,14,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.moveTo(sx+slotW/2-9,routeY+8);ctx.lineTo(sx+slotW/2,routeY+24);ctx.lineTo(sx+slotW/2+9,routeY+8);ctx.fill();
+   ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(sx+slotW/2,routeY,5,0,Math.PI*2);ctx.fill();
+   ctx.fillStyle=badgeColor;ctx.beginPath();ctx.roundRect(lx,routeY+31,86,25,8);ctx.fill();ctx.fillStyle='#fff';ctx.font='800 14px Arial';ctx.fillText('PLAN '+String.fromCharCode(65+j),lx+10,routeY+48);
+   ctx.fillStyle='#10234a';ctx.font='800 20px Arial';nameLines.forEach((line,n)=>ctx.fillText(line,lx,routeY+82+n*25));
+   ctx.fillStyle='#526a80';ctx.font='600 17px Arial';ctx.fillText(time,lx,routeY+105+Math.max(0,nameLines.length-1)*25);
   });
   y+=h+gap;
  });
- if(!cards.length){ctx.fillStyle='#fff';ctx.beginPath();ctx.roundRect(pad,headerH+pad/2,W-pad*2,150,18);ctx.fill();ctx.fillStyle='#526a80';ctx.font='600 24px Arial';ctx.textAlign='center';ctx.fillText('No territory pairs planned for this date.',W/2,headerH+100);ctx.textAlign='left'}
- const fy=canvas.height-footerH;const fg=ctx.createLinearGradient(0,fy,0,canvas.height);fg.addColorStop(0,'#dff6ff');fg.addColorStop(1,'#b8e9f7');ctx.fillStyle=fg;ctx.fillRect(0,fy,W,footerH);ctx.fillStyle='#0b2c57';ctx.font='italic 25px Georgia';ctx.textAlign='center';ctx.fillText('Plan the territory. Own the result.',W/2,fy+51);ctx.textAlign='left';
+ if(!cards.length){ctx.fillStyle='#fff';ctx.beginPath();ctx.roundRect(pad,headerH+pad/2,W-pad*2,130,18);ctx.fill();ctx.fillStyle='#526a80';ctx.font='600 24px Arial';ctx.textAlign='center';ctx.fillText('No territory pairs planned for this date.',W/2,headerH+95);ctx.textAlign='left'}
+ const fy=canvas.height-footerH,fg=ctx.createLinearGradient(0,fy,0,canvas.height);fg.addColorStop(0,'#09234c');fg.addColorStop(1,'#061735');ctx.fillStyle=fg;ctx.fillRect(0,fy,W,footerH);
+ if(logo)ctx.drawImage(logo,28,fy+12,104,92);
+ ctx.fillStyle='#fff';ctx.font='800 20px Arial';ctx.fillText('ALZA ORG',143,fy+43);ctx.fillStyle='#d5e9ff';ctx.font='600 12px Arial';ctx.fillText('PEOPLE • PURPOSE • PERFORMANCE',143,fy+64);
+ ctx.fillStyle='#2c8cba';ctx.fillRect(385,fy+23,2,78);
+ ctx.fillStyle='#fff';ctx.font='800 17px Arial';ctx.fillText('TRAINER PAIRS',410,fy+45);ctx.font='500 15px Arial';ctx.fillStyle='#d5e9ff';ctx.fillText('Stronger together',410,fy+70);
+ ctx.fillStyle='#2c8cba';ctx.fillRect(620,fy+23,2,78);
+ ctx.fillStyle='#fff';ctx.font='800 17px Arial';ctx.fillText('RIGHT PLACES',644,fy+45);ctx.font='500 15px Arial';ctx.fillStyle='#d5e9ff';ctx.fillText('Bigger opportunities',644,fy+70);
+ ctx.fillStyle='#2c8cba';ctx.fillRect(855,fy+23,2,78);
+ ctx.fillStyle='#fff';ctx.font='800 17px Arial';ctx.fillText('FORM GOALS',879,fy+45);ctx.font='500 15px Arial';ctx.fillStyle='#d5e9ff';ctx.fillText('Greater impact',879,fy+70);
+ ctx.textAlign='right';ctx.fillStyle='#9de7ff';ctx.font='italic 19px Georgia';ctx.fillText('Plan the territory.',1168,fy+47);ctx.fillText('Own the result.',1168,fy+74);ctx.textAlign='left';
  const a=document.createElement('a');a.download='ALZA_Territory_Plan_'+key+'.png';a.href=canvas.toDataURL('image/png');a.click();
  if(territoryPairs.length&&confirm('Territory plan image downloaded. Clear the fields for '+key+' now?'))clearTerritoryPlan(true);
 }
@@ -1063,8 +1107,9 @@ async function carryForwardNow(){
    }
  },pending.length+' day-specific task(s) carried to '+dayName(d));
 }
-function downloadDailyAgendaImage(){
+async function downloadDailyAgendaImage(){
  if(!requireReady())return;
+ const logo=await loadAlzaOrgLogo();
  const tasks=dbTasks.filter(t=>t.section==='daily').map(taskView);
  const d=new Date(current);d.setHours(12,0,0,0);
  const W=1200,pad=48,cardGap=18,cardPad=28,textX=pad+94;
@@ -1095,10 +1140,10 @@ function downloadDailyAgendaImage(){
  const bg=ctx.createLinearGradient(0,0,W,canvas.height);bg.addColorStop(0,'#eefaff');bg.addColorStop(.5,'#ffffff');bg.addColorStop(1,'#e7f7ff');ctx.fillStyle=bg;ctx.fillRect(0,0,W,canvas.height);
  const hg=ctx.createLinearGradient(0,0,W,headerH);hg.addColorStop(0,'#071b43');hg.addColorStop(.58,'#10558d');hg.addColorStop(1,'#55cfe9');ctx.fillStyle=hg;ctx.fillRect(0,0,W,headerH);
  ctx.fillStyle='rgba(255,255,255,.07)';ctx.beginPath();ctx.moveTo(820,0);ctx.lineTo(980,0);ctx.lineTo(1140,headerH);ctx.lineTo(1000,headerH);ctx.fill();
- ctx.fillStyle='#fff';ctx.font='800 24px Arial';ctx.fillText('ALZA ORG',pad,48);
- ctx.font='900 56px Arial';ctx.fillText('DAILY AGENDA',pad,118);
- ctx.fillStyle='#a7f2ff';ctx.fillRect(pad+2,140,82,5);
- ctx.fillStyle='#eaf8ff';ctx.font='500 22px Arial';ctx.fillText('Clear responsibilities. Strong ownership. Better execution.',pad+105,151);
+ if(logo)ctx.drawImage(logo,pad,12,120,106);
+ ctx.font='900 53px Arial';ctx.fillText('DAILY AGENDA',190,112);
+ ctx.fillStyle='#a7f2ff';ctx.fillRect(192,136,82,5);
+ ctx.fillStyle='#eaf8ff';ctx.font='500 20px Arial';ctx.fillText('Clear responsibilities. Strong ownership. Better execution.',290,148);
  ctx.save();ctx.shadowColor='rgba(0,0,0,.12)';ctx.shadowBlur=14;ctx.fillStyle='#fff';ctx.beginPath();ctx.roundRect(755,48,395,112,22);ctx.fill();ctx.restore();
  ctx.fillStyle='#10234a';ctx.font='800 21px Arial';ctx.fillText(d.toLocaleDateString('en-IN',{weekday:'long'}),782,87);
  ctx.fillStyle='#0878bb';ctx.font='800 25px Arial';ctx.fillText(d.toLocaleDateString('en-IN',{day:'2-digit',month:'long',year:'numeric'}),782,126);
