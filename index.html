@@ -69,6 +69,17 @@ button,input,select{font:inherit}button{cursor:pointer}.app{max-width:1160px;mar
 .territory-card{background:#fff;border:1px solid #d8e8f1;border-radius:15px;overflow:hidden;box-shadow:0 5px 16px rgba(15,57,84,.07)}
 .territory-card-head{padding:13px 15px;background:linear-gradient(100deg,#b8e8f7,#e9faff);display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}.territory-card-head h4{margin:0;color:#10234a;font-size:15px}.territory-small,.territory-help{font-size:11px;color:#64758b}.territory-card-body{padding:14px;display:grid;gap:13px}
 .territory-label{display:grid;gap:6px;color:#203451;font-weight:750;font-size:12px}.territory-input{width:100%;min-width:0;border:1px solid #bfd4e1;border-radius:9px;padding:10px 11px;font:inherit;font-size:13px;color:#172b45;background:#fff}.territory-input:focus{outline:2px solid #8eddf4;border-color:#1388b6}
+.territory-person-picker{position:relative;min-width:0;width:100%}
+.territory-retrain-picker{flex:1}
+.territory-person-options{display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;z-index:50;max-height:250px;overflow:auto;background:#fff;border:1px solid #b8d5e4;border-radius:11px;box-shadow:0 12px 28px rgba(9,44,70,.18);padding:5px}
+.territory-person-options.is-open{display:block}
+.territory-person-option{width:100%;display:flex;align-items:center;justify-content:space-between;gap:8px;text-align:left;padding:9px 10px;border:0;border-radius:7px;background:#fff;color:#172b45;font:inherit;font-size:12px;cursor:pointer}
+.territory-person-option:hover,.territory-person-option:focus{outline:none;background:#eef8ff}
+.territory-person-option.is-assigned{background:#fff0c2;color:#7b4600;border:1px solid #f2cf67;font-weight:800}
+.territory-person-option.is-assigned:hover,.territory-person-option.is-assigned:focus{background:#ffe39a}
+.territory-person-option-name{min-width:0;overflow-wrap:anywhere}
+.territory-person-badge{flex:0 0 auto;padding:3px 6px;border-radius:99px;background:#f3c64e;color:#583500;font-size:9px;font-weight:900;letter-spacing:.02em}
+.territory-person-empty{padding:11px 9px;color:#718096;font-size:11px}
 .territory-addline{display:flex;gap:7px;align-items:center}.territory-addline .btn{white-space:nowrap;flex-shrink:0}.territory-chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:7px}.territory-chip{display:inline-flex;align-items:center;gap:7px;background:#e4f6ff;color:#0b4266;border:1px solid #b9e2f3;border-radius:999px;padding:6px 9px;font-size:12px;font-weight:700}.territory-chip button{border:0;background:transparent;color:#a12c45;font-size:16px;line-height:1;cursor:pointer}
 .territory-territory-heading{display:flex;justify-content:space-between;align-items:center;gap:8px}.territory-territory-heading>span{display:grid;gap:3px}.territory-rows{display:grid;gap:10px}.territory-location-row{padding:11px;border:1px solid #d4e7f0;border-radius:12px;background:#f7fcff;display:grid;gap:9px}.territory-location-title{display:flex;justify-content:space-between;align-items:center;color:#0b517c;font-size:12px;font-weight:850}.territory-location-fields{display:grid;grid-template-columns:minmax(0,1fr) 100px 100px;gap:7px;align-items:end}.territory-time-field{display:grid;gap:4px;font-size:10px;font-weight:750;color:#5a6b80}.territory-time-field input{min-width:0;width:100%;padding:8px 5px;border:1px solid #bfd4e1;border-radius:8px;font:inherit;font-size:12px;color:#172b45;background:#fff}
 .territory-form-actions,.territory-result-actions{display:flex;gap:8px;flex-wrap:wrap}.territory-registry-details{border-top:1px solid #e0edf3;padding-top:11px}.territory-registry-details summary{cursor:pointer;color:#0b517c;font-weight:800;font-size:12px}.territory-registry-details h5{margin:12px 0 6px;font-size:11px;color:#64758b;text-transform:uppercase;letter-spacing:.08em}.territory-registry-list{display:grid;gap:6px}.territory-registry-item{display:flex;justify-content:space-between;align-items:center;gap:8px;border-bottom:1px solid #edf2f6;padding:6px 0;font-size:12px}.territory-registry-item .btn{padding:4px 8px;font-size:11px}
@@ -143,9 +154,9 @@ button,input,select{font:inherit}button{cursor:pointer}.app{max-width:1160px;mar
    <section class="territory-card territory-editor">
     <div class="territory-card-head"><h4 id="territoryFormHeading">Add a trainer pair</h4><span class="territory-small">Goal is counted in FORMS</span></div>
     <div class="territory-card-body">
-     <label class="territory-label">Trainer <input id="territoryTrainerInput" class="territory-input" list="territoryTrainerOptions" placeholder="Search or type trainer name" autocomplete="off"><datalist id="territoryTrainerOptions"></datalist></label>
+     <label class="territory-label">Trainer <div class="territory-person-picker"><input id="territoryTrainerInput" class="territory-input" placeholder="Search or type trainer name" autocomplete="off" aria-autocomplete="list" aria-expanded="false"><div class="territory-person-options" id="territoryTrainerPicker" role="listbox"></div></div><datalist id="territoryTrainerOptions"></datalist></label>
      <div class="territory-label">Retrain <span class="territory-help">Add one or more junior trainers</span>
-      <div class="territory-addline"><input id="territoryRetrainInput" class="territory-input" list="territoryTrainerOptions" placeholder="Search trainer to add" autocomplete="off"><button class="btn" id="territoryAddRetrain" type="button">＋ Add</button></div>
+      <div class="territory-addline"><div class="territory-person-picker territory-retrain-picker"><input id="territoryRetrainInput" class="territory-input" placeholder="Search trainer to add" autocomplete="off" aria-autocomplete="list" aria-expanded="false"><div class="territory-person-options" id="territoryRetrainPicker" role="listbox"></div></div><button class="btn" id="territoryAddRetrain" type="button">＋ Add</button></div>
       <div class="territory-chips" id="territoryRetrainChips"></div>
      </div>
      <div class="territory-label territory-territory-heading"><span>Territory <span class="territory-help">Maximum 3 per pair</span></span><button class="btn" id="territoryAddLocation" type="button">＋ Add territory</button></div>
@@ -769,6 +780,43 @@ function normalName(v){return String(v||'').trim().replace(/\s+/g,' ')}
 function refreshTerritoryDatalists(){
  $('territoryTrainerOptions').innerHTML=territoryTrainers.map(x=>'<option value="'+esc(x.name)+'"></option>').join('');
  $('territoryLocationOptions').innerHTML=territoryLocations.map(x=>'<option value="'+esc(x.name)+'"></option>').join('');
+ renderTerritoryPersonPicker('trainer');renderTerritoryPersonPicker('retrain');
+}
+function territoryAssignedPersonMap(){
+ const assigned=new Map();
+ const add=(name,label)=>{name=normalName(name);if(!name)return;const key=name.toLocaleLowerCase();if(!assigned.has(key))assigned.set(key,[]);if(!assigned.get(key).includes(label))assigned.get(key).push(label)};
+ territoryPairs.forEach(p=>{
+  const label=p.id===territoryEditingId?'IN THIS PAIR':'ALREADY PAIRED';
+  add(p.trainer,label);(p.retrains||[]).forEach(n=>add(n,label));
+ });
+ add($('territoryTrainerInput')?.value,territoryEditingId?'IN THIS PAIR':'SELECTED IN FORM');
+ territoryRetrainsDraft.forEach(n=>add(n,'SELECTED IN FORM'));
+ return assigned;
+}
+function renderTerritoryPersonPicker(type,forceOpen=false){
+ const input=$(type==='trainer'?'territoryTrainerInput':'territoryRetrainInput');
+ const panel=$(type==='trainer'?'territoryTrainerPicker':'territoryRetrainPicker');
+ if(!input||!panel)return;
+ const query=normalName(input.value).toLocaleLowerCase();
+ const assigned=territoryAssignedPersonMap();
+ const list=territoryTrainers.filter(x=>!query||x.name.toLocaleLowerCase().includes(query)).sort((a,b)=>{
+  const aa=assigned.has(a.name.toLocaleLowerCase())?0:1,bb=assigned.has(b.name.toLocaleLowerCase())?0:1;
+  return aa-bb||a.name.localeCompare(b.name);
+ });
+ panel.innerHTML=list.length?list.map(x=>{
+  const tags=assigned.get(x.name.toLocaleLowerCase())||[],isAssigned=tags.length>0;
+  return '<button type="button" role="option" class="territory-person-option '+(isAssigned?'is-assigned':'')+'" data-territory-person="'+esc(x.name)+'" data-person-type="'+type+'"><span class="territory-person-option-name">'+esc(x.name)+'</span>'+(isAssigned?'<span class="territory-person-badge">'+esc(tags[0])+'</span>':'')+'</button>';
+ }).join(''):'<div class="territory-person-empty">'+(query?'No registered names match. You can type a new name.':'No registered trainers yet.')+'</div>';
+ const open=forceOpen||document.activeElement===input;
+ panel.classList.toggle('is-open',open);input.setAttribute('aria-expanded',open?'true':'false');
+}
+function closeTerritoryPersonPickers(){
+ ['territoryTrainer','territoryRetrain'].forEach(type=>{const input=$(type+'Input'),panel=$(type+'Picker');if(input&&panel){panel.classList.remove('is-open');input.setAttribute('aria-expanded','false')}});
+}
+function chooseTerritoryPerson(name,type){
+ const input=$(type==='trainer'?'territoryTrainerInput':'territoryRetrainInput');
+ input.value=name;closeTerritoryPersonPickers();
+ if(type==='trainer')renderTerritoryPersonPicker('retrain');
 }
 async function loadTerritoryRegistries(force=false){
  if(!SB||(!force&&territoryRegistryLoaded))return;
@@ -892,6 +940,18 @@ async function addTerritoryRetrain(){
 }
 function bindTerritoryPlan(){
  $('ahamPitchTab').onclick=()=>setAhamTab('pitch');$('ahamTerritoryTab').onclick=()=>setAhamTab('territory');
+ ['trainer','retrain'].forEach(type=>{
+  const input=$(type==='trainer'?'territoryTrainerInput':'territoryRetrainInput'),panel=$(type==='trainer'?'territoryTrainerPicker':'territoryRetrainPicker');
+  input.addEventListener('focus',()=>renderTerritoryPersonPicker(type,true));
+  input.addEventListener('input',()=>renderTerritoryPersonPicker(type,true));
+  input.addEventListener('keydown',e=>{
+   if(e.key==='Escape'){closeTerritoryPersonPickers();return}
+   if(e.key==='ArrowDown'){e.preventDefault();renderTerritoryPersonPicker(type,true);panel.querySelector('button')?.focus()}
+  });
+  panel.addEventListener('mousedown',e=>{if(e.target.closest('[data-territory-person]'))e.preventDefault()});
+  panel.addEventListener('click',e=>{const b=e.target.closest('[data-territory-person]');if(b)chooseTerritoryPerson(b.dataset.territoryPerson,type)});
+ });
+ document.addEventListener('click',e=>{if(!e.target.closest('.territory-person-picker'))closeTerritoryPersonPickers()});
  $('territoryAddRetrain').onclick=addTerritoryRetrain;
  $('territoryRetrainInput').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();addTerritoryRetrain()}});
  $('territoryAddLocation').onclick=()=>{if(territoryRowsDraft.length>=3){toast('Maximum 3 territories per pair','error');return}territoryRowsDraft.push(defaultTerritoryRow(territoryRowsDraft.length));renderTerritoryRows()};
