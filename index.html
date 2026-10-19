@@ -46,6 +46,19 @@ button,input,select{font:inherit}button{cursor:pointer}.app{max-width:1160px;mar
 @media(max-width:700px){.pitch-content{grid-template-columns:1fr}.pitch-head{padding:17px}.pitch-field{grid-template-columns:95px minmax(0,1fr)}}
 
 
+.calls-panel{padding:14px;background:linear-gradient(150deg,#f1faff,#fff 58%,#e8f8ff);border-top:1px solid #c9e5f2}
+.calls-intro{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;padding:18px 20px;border-radius:15px;background:linear-gradient(120deg,#071b43,#12618f 70%,#55cfe9);color:#fff}
+.calls-intro h3{font-size:28px;margin:4px 0}.calls-intro p{margin:0;color:#d9f5ff;font-size:12px}
+.calls-week-nav{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.calls-week-nav .btn{background:#fff;color:#10234a}.calls-week-label{font-size:12px;font-weight:850;padding:10px 12px;border-radius:10px;background:rgba(255,255,255,.14);white-space:nowrap}
+.calls-progress-row{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin:14px 0;padding:13px 15px;border:1px solid #d5e7f0;border-radius:13px;background:#fff}
+.calls-progress-row strong{font-size:13px;color:#10234a}.calls-progress-track{height:7px;width:min(330px,70vw);background:#e7eff5;border-radius:99px;overflow:hidden;margin-top:8px}.calls-progress-track span{display:block;height:100%;width:0;background:linear-gradient(90deg,#087bb5,#16a36a);border-radius:99px;transition:width .2s}
+.calls-week-note{font-size:11px;color:#64758b}.calls-add-row{display:flex;gap:8px;margin:12px 0}.calls-add-row input{flex:1}
+.calls-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.calls-item{display:flex;align-items:center;gap:10px;min-width:0;padding:12px;background:#fff;border:1px solid #d6e8f1;border-radius:12px}
+.calls-item.is-checked{background:#effbf5;border-color:#b5e6ce}.calls-check{width:21px;height:21px;accent-color:#168653;flex:0 0 auto}
+.calls-name{flex:1;min-width:0;font-size:13px;font-weight:750;color:#1b2b45;overflow-wrap:anywhere}.calls-item.is-checked .calls-name{color:#087449}
+.calls-item-actions{display:flex;gap:5px;flex:0 0 auto}.calls-item-actions .btn{padding:5px 7px;font-size:10px}
+@media(max-width:700px){.calls-list{grid-template-columns:1fr}.calls-intro{padding:15px}.calls-week-nav{width:100%;display:grid;grid-template-columns:1fr 1fr}.calls-week-label{grid-column:1/-1;grid-row:1;text-align:center}.calls-week-nav button{grid-row:2}.calls-add-row{align-items:stretch}.calls-add-row .btn{white-space:nowrap}.calls-item{padding:11px}}
 .aham-tabs{display:flex;gap:8px;padding:12px 14px 0;background:#d8f0fb;flex-wrap:wrap}
 .aham-tabs .btn{background:#fff;color:#123451;border:1px solid #b8d9e8}
 .aham-tabs .btn.active{background:#0b4d7c;color:#fff;border-color:#0b4d7c}
@@ -112,7 +125,18 @@ button,input,select{font:inherit}button{cursor:pointer}.app{max-width:1160px;mar
  <nav class="aham-tabs" aria-label="Ahammed dashboard features">
   <button class="btn active" id="ahamPitchTab" type="button">Stitch Your Pitch</button>
   <button class="btn" id="ahamTerritoryTab" type="button">Territory Plan</button>
+  <button class="btn" id="ahamCallsTab" type="button">CALLS</button>
  </nav>
+ <div class="calls-panel" id="callsPanel" style="display:none">
+  <div class="calls-intro">
+   <div><div class="territory-kicker">WEEKLY CONNECTION TRACKER</div><h3>CALLS</h3><p>Call every category at least once each week. Ticks stay saved for the selected week.</p></div>
+   <div class="calls-week-nav"><button class="btn" id="callsPrevWeek" type="button">← Previous week</button><div class="calls-week-label" id="callsWeekLabel">Week of —</div><button class="btn" id="callsNextWeek" type="button">Next week →</button></div>
+  </div>
+  <div class="calls-progress-row"><div><strong id="callsProgress">0 / 18 completed</strong><div class="calls-progress-track"><span id="callsProgressBar"></span></div></div><span class="calls-week-note">Resets automatically for a new week</span></div>
+  <div class="calls-add-row"><input class="territory-input" id="callsNewCategory" placeholder="Add a new call category" maxlength="100"><button class="btn primary" id="callsAddCategory" type="button">＋ Add entry</button></div>
+  <div id="callsList" class="calls-list"></div>
+  <div class="territory-status" id="callsStatus">Weekly call progress saves online.</div>
+ </div>
  <div class="territory-panel" id="territoryPanel" style="display:none">
   <div class="territory-intro"><div><div class="territory-kicker">FIELD TRAINING PLAN</div><h3>Territory Plan</h3><p>Build trainer pairs, assign up to three territories, set time slots and form goals.</p></div><div class="territory-date-badge" id="territoryDateLabel">—</div></div>
   <div class="territory-main-grid">
@@ -449,7 +473,85 @@ function defaultPitchType(d=new Date()){
  return map[d.getDay()];
 }
 const pitchSaveTimers=new Map(),pitchRemoteLoaded=new Set(),pitchRemoteLoadingKeys=new Set();let pitchSelectedDate=deviceDateKey();
-let ahamTab='pitch',territoryPairs=[],territoryTrainers=[],territoryLocations=[],territoryRetrainsDraft=[],territoryRowsDraft=[],territoryEditingId=null,territoryFormDate='',territoryPlanLoaded=new Set(),territoryPlanLoading=new Set(),territorySaveTimers=new Map(),territoryRegistryLoaded=false;
+let ahamTab='pitch',callsCategories=[],callsCheckedIds=new Set(),callsWeekStart=callsWeekStartFor(new Date()),callsLoadedWeeks=new Set(),callsLoadingWeeks=new Set(),callsSaveTimer=null,territoryPairs=[],territoryTrainers=[],territoryLocations=[],territoryRetrainsDraft=[],territoryRowsDraft=[],territoryEditingId=null,territoryFormDate='',territoryPlanLoaded=new Set(),territoryPlanLoading=new Set(),territorySaveTimers=new Map(),territoryRegistryLoaded=false;
+
+// CALLS: category definitions are shared permanently; completion is stored separately per Monday-Sunday week.
+function callsDateKey(d){const x=new Date(d);return x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0')}
+function callsWeekStartFor(date){const d=new Date(date);d.setHours(12,0,0,0);d.setDate(d.getDate()-((d.getDay()+6)%7));return callsDateKey(d)}
+function callsWeekEndFor(key){const d=new Date(key+'T12:00:00');d.setDate(d.getDate()+6);return d}
+function callsWeekLabel(key){const a=new Date(key+'T12:00:00'),b=callsWeekEndFor(key);return a.toLocaleDateString('en-IN',{day:'2-digit',month:'short'})+' – '+b.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})}
+async function loadCallsWeek(key=callsWeekStart){
+ if(!SB||!navigator.onLine){$('callsStatus').textContent='Offline: connect to load shared weekly call progress.';renderCallsList();return}
+ if(callsLoadedWeeks.has(key)||callsLoadingWeeks.has(key)){renderCallsList();return}
+ callsLoadingWeeks.add(key);$('callsStatus').textContent='Loading weekly call progress…';
+ try{
+  const [cats,week]=await Promise.all([
+   SB.from('dp_aham_call_categories').select('id,name,sort_order').order('sort_order').order('name'),
+   SB.from('dp_aham_call_weeks').select('checked_ids').eq('week_start',key).maybeSingle()
+  ]);
+  if(cats.error)throw cats.error;if(week.error)throw week.error;
+  callsCategories=cats.data||[];
+  if(key===callsWeekStart)callsCheckedIds=new Set(Array.isArray(week.data?.checked_ids)?week.data.checked_ids:[]);
+  callsLoadedWeeks.add(key);
+  $('callsStatus').textContent='Saved online · week of '+key;
+ }catch(e){console.error('Calls tracker load failed:',e);$('callsStatus').textContent='Could not load calls. Please retry when connected.'}
+ finally{callsLoadingWeeks.delete(key);if(ahamTab==='calls')renderCallsList()}
+}
+function renderCallsList(){
+ if(!$('callsList'))return;
+ $('callsWeekLabel').textContent='Week of '+callsWeekLabel(callsWeekStart);
+ const checked=callsCategories.filter(c=>callsCheckedIds.has(c.id)).length,total=callsCategories.length;
+ $('callsProgress').textContent=checked+' / '+total+' completed';
+ $('callsProgressBar').style.width=(total?Math.round(checked/total*100):0)+'%';
+ $('callsList').innerHTML=callsCategories.length?callsCategories.map(c=>'<div class="calls-item '+(callsCheckedIds.has(c.id)?'is-checked':'')+'"><input class="calls-check" type="checkbox" data-call-check="'+esc(c.id)+'" '+(callsCheckedIds.has(c.id)?'checked':'')+' aria-label="Mark '+esc(c.name)+' called this week"><span class="calls-name">'+esc(c.name)+'</span><div class="calls-item-actions"><button class="btn" type="button" data-call-edit="'+esc(c.id)+'">Edit</button><button class="btn danger" type="button" data-call-delete="'+esc(c.id)+'">Delete</button></div></div>').join(''):'<div class="territory-empty">No call categories yet. Add your first entry above.</div>';
+ $('callsPrevWeek').disabled=callsLoadingWeeks.has(callsWeekStart);$('callsNextWeek').disabled=callsLoadingWeeks.has(callsWeekStart);
+}
+async function saveCallsChecks(){
+ const key=callsWeekStart,ids=[...callsCheckedIds];
+ $('callsStatus').textContent='Saving weekly call progress…';
+ if(!SB||!navigator.onLine){$('callsStatus').textContent='Offline: changes may not sync until connection returns.';return}
+ try{const r=await SB.from('dp_aham_call_weeks').upsert({week_start:key,checked_ids:ids,updated_at:new Date().toISOString()},{onConflict:'week_start'});if(r.error)throw r.error;callsLoadedWeeks.add(key);if(key===callsWeekStart)$('callsStatus').textContent='Saved online · '+new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'})}
+ catch(e){console.error(e);$('callsStatus').textContent='Could not save weekly ticks: '+(e.message||'please retry')}
+}
+async function addCallsCategory(){
+ const input=$('callsNewCategory'),name=normalName(input.value);if(!name){toast('Enter a category name first.','error');return}
+ if(callsCategories.some(c=>c.name.toLowerCase()===name.toLowerCase())){toast('That call category already exists.','error');return}
+ if(!SB||!navigator.onLine){toast('Connect to the internet to add a shared category.','error');return}
+ const r=await SB.from('dp_aham_call_categories').insert({name,sort_order:Math.max(0,...callsCategories.map(c=>Number(c.sort_order)||0))+1}).select('id,name,sort_order').single();
+ if(r.error){toast('Could not add category: '+r.error.message,'error');return}
+ callsCategories.push(r.data);callsCategories.sort((a,b)=>a.sort_order-b.sort_order||a.name.localeCompare(b.name));input.value='';renderCallsList();toast('Call category added','success')
+}
+async function editCallsCategory(id){
+ const c=callsCategories.find(x=>x.id===id);if(!c)return;
+ const name=normalName(prompt('Edit call category:',c.name));if(!name||name===c.name)return;
+ if(callsCategories.some(x=>x.id!==id&&x.name.toLowerCase()===name.toLowerCase())){toast('That call category already exists.','error');return}
+ const r=await SB.from('dp_aham_call_categories').update({name,updated_at:new Date().toISOString()}).eq('id',id);
+ if(r.error){toast('Could not edit category: '+r.error.message,'error');return}
+ c.name=name;renderCallsList();toast('Call category updated','success')
+}
+async function deleteCallsCategory(id){
+ const c=callsCategories.find(x=>x.id===id);if(!c||!confirm('Delete the call category "'+c.name+'"? This removes it from the shared list.'))return;
+ const r=await SB.from('dp_aham_call_categories').delete().eq('id',id);
+ if(r.error){toast('Could not delete category: '+r.error.message,'error');return}
+ callsCategories=callsCategories.filter(x=>x.id!==id);callsCheckedIds.delete(id);renderCallsList();toast('Call category deleted','success')
+}
+function bindCallsTracker(){
+ $('ahamCallsTab').onclick=()=>setAhamTab('calls');
+ $('callsPrevWeek').onclick=()=>{const d=new Date(callsWeekStart+'T12:00:00');d.setDate(d.getDate()-7);callsWeekStart=callsWeekStartFor(d);callsCheckedIds=new Set();renderCallsList();loadCallsWeek(callsWeekStart)};
+ $('callsNextWeek').onclick=()=>{const d=new Date(callsWeekStart+'T12:00:00');d.setDate(d.getDate()+7);callsWeekStart=callsWeekStartFor(d);callsCheckedIds=new Set();renderCallsList();loadCallsWeek(callsWeekStart)};
+ $('callsAddCategory').onclick=addCallsCategory;
+ $('callsNewCategory').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();addCallsCategory()}});
+ $('callsList').addEventListener('change',e=>{
+  const box=e.target.closest('[data-call-check]');if(!box)return;
+  const id=box.dataset.callCheck;if(box.checked)callsCheckedIds.add(id);else callsCheckedIds.delete(id);
+  renderCallsList();if(callsSaveTimer)clearTimeout(callsSaveTimer);callsSaveTimer=setTimeout(()=>{callsSaveTimer=null;saveCallsChecks()},80);
+ });
+ $('callsList').addEventListener('click',e=>{
+  const edit=e.target.closest('[data-call-edit]');if(edit){editCallsCategory(edit.dataset.callEdit);return}
+  const del=e.target.closest('[data-call-delete]');if(del)deleteCallsCategory(del.dataset.callDelete);
+ });
+}
+
 async function loadRemotePitchPlan(key){
  if(!SB||pitchRemoteLoaded.has(key)||pitchRemoteLoadingKeys.has(key)||!navigator.onLine)return;
  pitchRemoteLoadingKeys.add(key);
@@ -615,8 +717,13 @@ async function downloadPitchImage(){
 
 function renderAhamDashboard(){
  renderPitchDashboard();
- if(ahamTab==='territory')renderTerritoryPlan();
- else { $('territoryPanel').style.display='none';$('pitchContent').style.display=pitchDateObject().getDay()===0?'none':'grid';$('pitchHoliday').style.display=pitchDateObject().getDay()===0?'block':'none';$('pitchActions').style.display='flex';}
+ if(ahamTab==='territory'){renderTerritoryPlan();$('callsPanel').style.display='none';}
+ else if(ahamTab==='calls'){
+  $('territoryPanel').style.display='none';$('pitchContent').style.display='none';$('pitchHoliday').style.display='none';$('pitchActions').style.display='none';$('callsPanel').style.display='block';
+  renderCallsList();loadCallsWeek(callsWeekStart);
+ }else{
+  $('territoryPanel').style.display='none';$('callsPanel').style.display='none';$('pitchContent').style.display=pitchDateObject().getDay()===0?'none':'grid';$('pitchHoliday').style.display=pitchDateObject().getDay()===0?'block':'none';$('pitchActions').style.display='flex';
+ }
 }
 let lastObservedAhamDate=deviceDateKey();
 function resetAhamDashboardForNewDay(){
@@ -636,12 +743,13 @@ window.addEventListener('focus',resetAhamDashboardForNewDay);
 setInterval(resetAhamDashboardForNewDay,60000);
 function setAhamTab(tab){
  ahamTab=tab;
- $('ahamPitchTab').classList.toggle('active',tab==='pitch');$('ahamTerritoryTab').classList.toggle('active',tab==='territory');
+ $('ahamPitchTab').classList.toggle('active',tab==='pitch');$('ahamTerritoryTab').classList.toggle('active',tab==='territory');$('ahamCallsTab').classList.toggle('active',tab==='calls');
  $('pitchContent').style.display=(tab==='pitch'&&pitchDateObject().getDay()!==0)?'grid':'none';
  $('pitchHoliday').style.display=(tab==='pitch'&&pitchDateObject().getDay()===0)?'block':'none';
  $('pitchActions').style.display=tab==='pitch'?'flex':'none';
- $('territoryPanel').style.display=tab==='territory'?'block':'none';
+ $('territoryPanel').style.display=tab==='territory'?'block':'none';$('callsPanel').style.display=tab==='calls'?'block':'none';
  if(tab==='territory'){renderTerritoryPlan();loadTerritoryRegistries()}
+ if(tab==='calls'){renderCallsList();loadCallsWeek(callsWeekStart)}
 }
 function defaultTerritoryRow(index=0){
  const times=[['10:30','14:00'],['14:30','18:00'],['18:00','21:00']][index]||['09:00','17:00'];
@@ -1230,7 +1338,7 @@ async function initRealtime(){
  });
  realtimeChannel.subscribe();
 }
-bind();bindPitchDashboard();bindTerritoryPlan();
+bind();bindPitchDashboard();bindTerritoryPlan();bindCallsTracker();
 if(navigator.onLine)refresh();else showOffline();
 if(SB)initRealtime();
 </script>
