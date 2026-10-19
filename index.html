@@ -545,7 +545,7 @@ function bindCallsTracker(){
  $('callsList').addEventListener('change',e=>{
   const box=e.target.closest('[data-call-check]');if(!box)return;
   const id=box.dataset.callCheck;if(box.checked)callsCheckedIds.add(id);else callsCheckedIds.delete(id);
-  renderCallsList();if(callsSaveTimer)clearTimeout(callsSaveTimer);callsSaveTimer=setTimeout(()=>{callsSaveTimer=null;saveCallsChecks()},80);
+  renderCallsList();saveCallsChecks();
  });
  $('callsList').addEventListener('click',e=>{
   const edit=e.target.closest('[data-call-edit]');if(edit){editCallsCategory(edit.dataset.callEdit);return}
@@ -732,7 +732,15 @@ function resetAhamDashboardForNewDay(){
  if(today===lastObservedAhamDate)return;
  const previous=lastObservedAhamDate;
  lastObservedAhamDate=today;
- // Follow the calendar into the new day only when the dashboard was showing the previous current day.
+ // The weekly Calls checklist automatically moves to the new week only if it was following the current week.
+ const oldCurrentWeek=callsWeekStartFor(new Date(previous+'T12:00:00'));
+ const newCurrentWeek=callsWeekStartFor(new Date(today+'T12:00:00'));
+ if(oldCurrentWeek!==newCurrentWeek&&callsWeekStart===oldCurrentWeek){
+  callsWeekStart=newCurrentWeek;
+  callsCheckedIds=new Set(callsChecksByWeek.get(newCurrentWeek)||[]);
+  if(ahamTab==='calls'){renderCallsList();loadCallsWeek(newCurrentWeek)}
+ }
+ // Follow the calendar into the new day only when the daily dashboard was showing the previous current day.
  // Historical dates remain selectable and are not deleted.
  if(pitchSelectedDate===previous){
   pitchSelectedDate=today;
