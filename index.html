@@ -932,7 +932,7 @@ async function downloadTerritoryPlanImage(){
  ctx.fillStyle='#fff';ctx.font='800 17px Arial';ctx.fillText('FORM GOALS',879,fy+45);ctx.font='500 15px Arial';ctx.fillStyle='#d5e9ff';ctx.fillText('Greater impact',879,fy+70);
  ctx.textAlign='right';ctx.fillStyle='#9de7ff';ctx.font='italic 19px Georgia';ctx.fillText('Plan the territory.',1168,fy+47);ctx.fillText('Own the result.',1168,fy+74);ctx.textAlign='left';
  const a=document.createElement('a');a.download='ALZA_Territory_Plan_'+key+'.png';a.href=canvas.toDataURL('image/png');a.click();
- if(territoryPairs.length&&confirm('Territory plan image downloaded. Clear the fields for '+key+' now?'))clearTerritoryPlan(true);
+ toast('Territory plan image downloaded. Your pairs are still saved and can be edited or regenerated today.','success');
 }
 function bindPitchDashboard(){
  $('pitchDateSelect').value=pitchSelectedDate;
