@@ -473,7 +473,7 @@ function defaultPitchType(d=new Date()){
  return map[d.getDay()];
 }
 const pitchSaveTimers=new Map(),pitchRemoteLoaded=new Set(),pitchRemoteLoadingKeys=new Set();let pitchSelectedDate=deviceDateKey();
-let ahamTab='pitch',callsCategories=[],callsCheckedIds=new Set(),callsWeekStart=callsWeekStartFor(new Date()),callsLoadedWeeks=new Set(),callsLoadingWeeks=new Set(),callsSaveTimer=null,territoryPairs=[],territoryTrainers=[],territoryLocations=[],territoryRetrainsDraft=[],territoryRowsDraft=[],territoryEditingId=null,territoryFormDate='',territoryPlanLoaded=new Set(),territoryPlanLoading=new Set(),territorySaveTimers=new Map(),territoryRegistryLoaded=false;
+let ahamTab='pitch',callsCategories=[],callsCheckedIds=new Set(),callsChecksByWeek=new Map(),callsWeekStart=callsWeekStartFor(new Date()),callsLoadedWeeks=new Set(),callsLoadingWeeks=new Set(),callsSaveTimer=null,territoryPairs=[],territoryTrainers=[],territoryLocations=[],territoryRetrainsDraft=[],territoryRowsDraft=[],territoryEditingId=null,territoryFormDate='',territoryPlanLoaded=new Set(),territoryPlanLoading=new Set(),territorySaveTimers=new Map(),territoryRegistryLoaded=false;
 
 // CALLS: category definitions are shared permanently; completion is stored separately per Monday-Sunday week.
 function callsDateKey(d){const x=new Date(d);return x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0')}
@@ -482,7 +482,7 @@ function callsWeekEndFor(key){const d=new Date(key+'T12:00:00');d.setDate(d.getD
 function callsWeekLabel(key){const a=new Date(key+'T12:00:00'),b=callsWeekEndFor(key);return a.toLocaleDateString('en-IN',{day:'2-digit',month:'short'})+' – '+b.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})}
 async function loadCallsWeek(key=callsWeekStart){
  if(!SB||!navigator.onLine){$('callsStatus').textContent='Offline: connect to load shared weekly call progress.';renderCallsList();return}
- if(callsLoadedWeeks.has(key)||callsLoadingWeeks.has(key)){renderCallsList();return}
+ if(callsLoadedWeeks.has(key)){callsCheckedIds=new Set(callsChecksByWeek.get(key)||[]);renderCallsList();return}if(callsLoadingWeeks.has(key)){renderCallsList();return}
  callsLoadingWeeks.add(key);$('callsStatus').textContent='Loading weekly call progress…';
  try{
   const [cats,week]=await Promise.all([
@@ -491,7 +491,8 @@ async function loadCallsWeek(key=callsWeekStart){
   ]);
   if(cats.error)throw cats.error;if(week.error)throw week.error;
   callsCategories=cats.data||[];
-  if(key===callsWeekStart)callsCheckedIds=new Set(Array.isArray(week.data?.checked_ids)?week.data.checked_ids:[]);
+  const loadedChecks=Array.isArray(week.data?.checked_ids)?week.data.checked_ids:[];callsChecksByWeek.set(key,loadedChecks);
+  if(key===callsWeekStart)callsCheckedIds=new Set(loadedChecks);
   callsLoadedWeeks.add(key);
   $('callsStatus').textContent='Saved online · week of '+key;
  }catch(e){console.error('Calls tracker load failed:',e);$('callsStatus').textContent='Could not load calls. Please retry when connected.'}
@@ -510,7 +511,7 @@ async function saveCallsChecks(){
  const key=callsWeekStart,ids=[...callsCheckedIds];
  $('callsStatus').textContent='Saving weekly call progress…';
  if(!SB||!navigator.onLine){$('callsStatus').textContent='Offline: changes may not sync until connection returns.';return}
- try{const r=await SB.from('dp_aham_call_weeks').upsert({week_start:key,checked_ids:ids,updated_at:new Date().toISOString()},{onConflict:'week_start'});if(r.error)throw r.error;callsLoadedWeeks.add(key);if(key===callsWeekStart)$('callsStatus').textContent='Saved online · '+new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'})}
+ try{const r=await SB.from('dp_aham_call_weeks').upsert({week_start:key,checked_ids:ids,updated_at:new Date().toISOString()},{onConflict:'week_start'});if(r.error)throw r.error;callsChecksByWeek.set(key,ids);callsLoadedWeeks.add(key);if(key===callsWeekStart)$('callsStatus').textContent='Saved online · '+new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'})}
  catch(e){console.error(e);$('callsStatus').textContent='Could not save weekly ticks: '+(e.message||'please retry')}
 }
 async function addCallsCategory(){
@@ -537,7 +538,7 @@ async function deleteCallsCategory(id){
 }
 function bindCallsTracker(){
  $('ahamCallsTab').onclick=()=>setAhamTab('calls');
- $('callsPrevWeek').onclick=()=>{const d=new Date(callsWeekStart+'T12:00:00');d.setDate(d.getDate()-7);callsWeekStart=callsWeekStartFor(d);callsCheckedIds=new Set();renderCallsList();loadCallsWeek(callsWeekStart)};
+ $('callsPrevWeek').onclick=()=>{const d=new Date(callsWeekStart+'T12:00:00');d.setDate(d.getDate()-7);callsWeekStart=callsWeekStartFor(d);callsCheckedIds=new Set(callsChecksByWeek.get(callsWeekStart)||[]);renderCallsList();loadCallsWeek(callsWeekStart)};
  $('callsNextWeek').onclick=()=>{const d=new Date(callsWeekStart+'T12:00:00');d.setDate(d.getDate()+7);callsWeekStart=callsWeekStartFor(d);callsCheckedIds=new Set();renderCallsList();loadCallsWeek(callsWeekStart)};
  $('callsAddCategory').onclick=addCallsCategory;
  $('callsNewCategory').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();addCallsCategory()}});
