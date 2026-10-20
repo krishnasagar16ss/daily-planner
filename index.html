@@ -688,7 +688,9 @@ async function downloadPitchImage(){
    {text:serviceTopic,large:true,gap:10},
    ...serviceLines.map((line,i)=>({text:/^\d+[.)]/.test(line)?'➜  '+line:line,bullet:!(/^\d+[.)]/.test(line)),gap:5}))
   ]),
-  section(teamTitle,'✦','pink',[
+  section('Morning Team Topic','✦','pink',[
+   {text:'TOPIC',small:true,muted:true,gap:3},
+   {text:teamTitle||'—',large:true,gap:8},
    ...teamCardLines,
    {text:'CREW: '+(value('pitchCrew')||'________________________'),large:true,gap:0}
   ]),
