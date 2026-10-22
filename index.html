@@ -569,7 +569,7 @@ function bindCallsTracker(){
 }
 
 const reusablePitchFieldIds=['pitchTeamTopicTitle','pitchTeamTopicDetails','pitchOneOffTopicTitle','pitchOneOffTopicDetails'];
-let reusablePitchTemplate={},reusablePitchSaveTimer=null,reusablePitchTemplateLoaded=false;
+let reusablePitchTemplate={},reusablePitchSaveTimer=null,reusablePitchTemplateLoaded=false,reusablePitchTemplateDirty=false;
 function readReusablePitchFields(){
  const data={};reusablePitchFieldIds.forEach(id=>{const el=$(id);data[id]=el?el.value:''});return data;
 }
@@ -580,7 +580,7 @@ async function loadReusablePitchTemplate(){
   try{
    const r=await SB.from('dp_aham_pitch_reusable_template').select('template_data').eq('template_key','default').maybeSingle();
    if(r.error)throw r.error;
-   if(r.data&&r.data.template_data&&typeof r.data.template_data==='object')reusablePitchTemplate={...r.data.template_data};
+   if(!reusablePitchTemplateDirty&&r.data&&r.data.template_data&&typeof r.data.template_data==='object')reusablePitchTemplate={...r.data.template_data};
    reusablePitchTemplateLoaded=true;
    localStorage.setItem('dp_aham_pitch_reusable_template',JSON.stringify(reusablePitchTemplate));
   }catch(e){console.error('Reusable Stitch Your Pitch template load failed:',e)}
@@ -588,6 +588,7 @@ async function loadReusablePitchTemplate(){
  return reusablePitchTemplate;
 }
 function saveReusablePitchTemplate(){
+ reusablePitchTemplateDirty=true;
  reusablePitchTemplate={...reusablePitchTemplate,...readReusablePitchFields()};
  try{localStorage.setItem('dp_aham_pitch_reusable_template',JSON.stringify(reusablePitchTemplate))}catch{}
  if(reusablePitchSaveTimer)clearTimeout(reusablePitchSaveTimer);
@@ -597,7 +598,7 @@ function saveReusablePitchTemplate(){
   try{
    const r=await SB.from('dp_aham_pitch_reusable_template').upsert({template_key:'default',template_data:reusablePitchTemplate,updated_at:new Date().toISOString()},{onConflict:'template_key'});
    if(r.error)throw r.error;
-   reusablePitchTemplateLoaded=true;
+   reusablePitchTemplateLoaded=true;reusablePitchTemplateDirty=false;
    if(pitchSelectedDate)$('pitchSaved').textContent='Daily plan and reusable topics saved online';
   }catch(e){console.error('Reusable Stitch Your Pitch template save failed:',e);$('pitchSaved').textContent='Daily plan saved; reusable topics sync failed'}
  },600);
