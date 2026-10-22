@@ -568,6 +568,40 @@ function bindCallsTracker(){
  });
 }
 
+const reusablePitchFieldIds=['pitchTeamTopicTitle','pitchTeamTopicDetails','pitchOneOffTopicTitle','pitchOneOffTopicDetails'];
+let reusablePitchTemplate={},reusablePitchSaveTimer=null,reusablePitchTemplateLoaded=false;
+function readReusablePitchFields(){
+ const data={};reusablePitchFieldIds.forEach(id=>{const el=$(id);data[id]=el?el.value:''});return data;
+}
+async function loadReusablePitchTemplate(){
+ let local={};try{local=JSON.parse(localStorage.getItem('dp_aham_pitch_reusable_template')||'{}')}catch{}
+ reusablePitchTemplate={...local};
+ if(SB&&navigator.onLine){
+  try{
+   const r=await SB.from('dp_aham_pitch_reusable_template').select('template_data').eq('template_key','default').maybeSingle();
+   if(r.error)throw r.error;
+   if(r.data&&r.data.template_data&&typeof r.data.template_data==='object')reusablePitchTemplate={...r.data.template_data};
+   reusablePitchTemplateLoaded=true;
+   localStorage.setItem('dp_aham_pitch_reusable_template',JSON.stringify(reusablePitchTemplate));
+  }catch(e){console.error('Reusable Stitch Your Pitch template load failed:',e)}
+ }
+ return reusablePitchTemplate;
+}
+function saveReusablePitchTemplate(){
+ reusablePitchTemplate={...reusablePitchTemplate,...readReusablePitchFields()};
+ try{localStorage.setItem('dp_aham_pitch_reusable_template',JSON.stringify(reusablePitchTemplate))}catch{}
+ if(reusablePitchSaveTimer)clearTimeout(reusablePitchSaveTimer);
+ if(!SB||!navigator.onLine){$('pitchSaved').textContent='Reusable topics saved on this device · waiting for internet';return}
+ reusablePitchSaveTimer=setTimeout(async()=>{
+  reusablePitchSaveTimer=null;
+  try{
+   const r=await SB.from('dp_aham_pitch_reusable_template').upsert({template_key:'default',template_data:reusablePitchTemplate,updated_at:new Date().toISOString()},{onConflict:'template_key'});
+   if(r.error)throw r.error;
+   reusablePitchTemplateLoaded=true;
+   if(pitchSelectedDate)$('pitchSaved').textContent='Daily plan and reusable topics saved online';
+  }catch(e){console.error('Reusable Stitch Your Pitch template save failed:',e);$('pitchSaved').textContent='Daily plan saved; reusable topics sync failed'}
+ },600);
+}
 async function loadRemotePitchPlan(key){
  if(!SB||pitchRemoteLoaded.has(key)||pitchRemoteLoadingKeys.has(key)||!navigator.onLine)return;
  pitchRemoteLoadingKeys.add(key);
@@ -587,8 +621,11 @@ async function loadRemotePitchPlan(key){
    data=r.data.plan_data;
    pitchIds.forEach(id=>{const el=$(id);if(el&&Object.prototype.hasOwnProperty.call(data,id)){if(el.type==='checkbox')el.checked=!!data[id];else el.value=data[id]??''}});
   }else{
-   // No plan exists for this date: start fresh, with only the weekday defaults.
+   // No plan exists for this date: start fresh, then seed campaign topics from the reusable template.
    pitchIds.forEach(id=>{const el=$(id);if(!el)return;if(el.type==='checkbox')el.checked=false;else el.value=''});
+   const reusable=await loadReusablePitchTemplate();
+   reusablePitchFieldIds.forEach(id=>{const el=$(id);if(el&&Object.prototype.hasOwnProperty.call(reusable,id))el.value=reusable[id]??''});
+   data={...reusable};
   }
   const defaultsChanged=applyPitchDefaults(key,data);
   const merged={...data};
@@ -1130,6 +1167,7 @@ function bindPitchDashboard(){
  $('pitchPrevDate').onclick=()=>{const d=pitchDateObject();d.setDate(d.getDate()-1);pitchSelectedDate=deviceDateKeyFromDate(d);renderAhamDashboard()};
  $('pitchNextDate').onclick=()=>{const d=pitchDateObject();d.setDate(d.getDate()+1);pitchSelectedDate=deviceDateKeyFromDate(d);renderAhamDashboard()};
  pitchIds.forEach(id=>{const el=$(id);if(el){el.addEventListener('input',savePitchDashboard);el.addEventListener('change',savePitchDashboard)}});
+ reusablePitchFieldIds.forEach(id=>{const el=$(id);if(el){el.addEventListener('input',saveReusablePitchTemplate);el.addEventListener('change',saveReusablePitchTemplate)}});
  $('pitchDownload').onclick=()=>{savePitchDashboard();downloadPitchImage()};
  $('pitchClear').onclick=async()=>{const key=pitchSelectedDate,d=pitchDateObject(key);if(!confirm('Clear all Stitch Your Pitch entries for '+d.toLocaleDateString('en-IN',{weekday:'long',day:'2-digit',month:'long',year:'numeric'})+'? This cannot be undone.'))return;localStorage.removeItem('dp_aham_pitch_'+key);pitchRemoteLoaded.delete(key);if(SB&&navigator.onLine){const r=await SB.from('dp_aham_pitch_plans').delete().eq('plan_date',key);if(r.error){toast('Could not clear online copy: '+r.error.message,'error');return}}renderPitchDashboard();toast('Planner cleared for '+key,'success')};
  ['dashboardOwner','dashboardOwnerDesktop'].forEach(id=>{const el=$(id);if(el)el.addEventListener('change',()=>{selectedDashboardOwner=el.value;['dashboardOwner','dashboardOwnerDesktop'].forEach(other=>{if($(other))$(other).value=selectedDashboardOwner});render()})});
