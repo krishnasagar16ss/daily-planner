@@ -42,6 +42,8 @@ button,input,select{font:inherit}button{cursor:pointer}.app{max-width:1160px;mar
 .pitch-check input{width:17px;height:17px;accent-color:#2563eb;flex:0 0 auto}
 .pitch-actions{display:flex;gap:8px;flex-wrap:wrap;padding:0 14px 14px}
 .pitch-holiday{padding:24px;text-align:center;background:#fff;border:1px dashed #7ebbd4;border-radius:12px;font-weight:800;color:#24536c}
+.pitch-topic-subhead{margin:4px 0 10px;padding:8px 11px;border-radius:8px;background:#e4f4ff;color:#0b527b;font-size:12px;font-weight:850;letter-spacing:.04em}
+.pitch-topic-subhead-oneoff{margin-top:14px;background:#fff0d9;color:#92500e}
 .pitch-foot{text-align:center;padding:13px;background:#d9f0fa;color:#123451;font-style:italic;font-weight:700}
 @media(max-width:700px){.pitch-content{grid-template-columns:1fr}.pitch-head{padding:17px}.pitch-field{grid-template-columns:95px minmax(0,1fr)}}
 
@@ -201,8 +203,12 @@ button,input,select{font:inherit}button{cursor:pointer}.app{max-width:1160px;mar
    </div></section>
    <section class="pitch-section"><h3>⑥ Excited Title</h3><div class="inside"><input class="pitch-input" id="pitchTitle" placeholder="Today's title"></div></section>
    <section class="pitch-section"><h3>⑦ Morning Team Topic</h3><div class="inside">
-    <label class="pitch-field pitch-field-top">Topic <input class="pitch-input" id="pitchTeamTopicTitle" placeholder="Default topic for this day"></label>
-    <label class="pitch-field pitch-field-top">Details <textarea class="pitch-input pitch-service-details" id="pitchTeamTopicDetails" rows="8" placeholder="Daily topic and key points"></textarea></label>
+    <div class="pitch-topic-subhead">UNICEF</div>
+    <label class="pitch-field pitch-field-top">UNICEF Topic <input class="pitch-input" id="pitchTeamTopicTitle" placeholder="Enter UNICEF topic"></label>
+    <label class="pitch-field pitch-field-top">UNICEF Details <textarea class="pitch-input pitch-service-details" id="pitchTeamTopicDetails" rows="5" placeholder="UNICEF topic details and key points"></textarea></label>
+    <div class="pitch-topic-subhead pitch-topic-subhead-oneoff">ONE OFF (CRY &amp; SOS)</div>
+    <label class="pitch-field pitch-field-top">ONE OFF Topic <input class="pitch-input" id="pitchOneOffTopicTitle" placeholder="Enter CRY / SOS topic"></label>
+    <label class="pitch-field pitch-field-top">ONE OFF Details <textarea class="pitch-input pitch-service-details" id="pitchOneOffTopicDetails" rows="5" placeholder="CRY / SOS topic details and key points"></textarea></label>
     <label class="pitch-field">CREW <input class="pitch-input" id="pitchCrew" placeholder="Enter responsible crew"></label>
    </div></section>
   </div>
@@ -440,7 +446,7 @@ function renderList(el,tasks){
  '<div class="task-actions"><button class="btn" data-action="edit" data-id="'+esc(t.id)+'">Edit</button><button class="btn danger" data-action="delete" data-id="'+esc(t.id)+'">Delete</button></div></div>').join('')
 }
 
-const pitchIds=['pitchType','pitchFun','pitchConductor','pitchTopic','pitchQA','pitchPpt','pitchCompetition','pitchServiceTopic','pitchServiceDetails','pitchTitle','pitchTeamTopicTitle','pitchTeamTopicDetails','pitchCrew','pitchNotes' ,'pitchAAPTele','pitchAAPCRY','pitchAAPRoad','pitchAAPOneOff','pitchAAPUNICEF','pitchOwnTeam','pitchCommon','pitchHighroller','pitchShuffle','pitchOwnerPractice'];
+const pitchIds=['pitchType','pitchFun','pitchConductor','pitchTopic','pitchQA','pitchPpt','pitchCompetition','pitchServiceTopic','pitchServiceDetails','pitchTitle','pitchTeamTopicTitle','pitchTeamTopicDetails','pitchOneOffTopicTitle','pitchOneOffTopicDetails','pitchCrew','pitchNotes' ,'pitchAAPTele','pitchAAPCRY','pitchAAPRoad','pitchAAPOneOff','pitchAAPUNICEF','pitchOwnTeam','pitchCommon','pitchHighroller','pitchShuffle','pitchOwnerPractice'];
 function deviceDateKey(){return deviceDateKeyFromDate(new Date())}
 function deviceDateKeyFromDate(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
 function defaultCustomerService(d=new Date()){
@@ -474,9 +480,7 @@ function applyPitchDefaults(key,data={}){
  const service=defaultCustomerService(d);
  if(!String(data.pitchServiceTopic??'').trim()){$('pitchServiceTopic').value=service.topic;changed=true}
  if(!String(data.pitchServiceDetails??'').trim()){$('pitchServiceDetails').value=service.details;changed=true}
- const team=defaultMorningTeamTopic(d);
- if(!String(data.pitchTeamTopicTitle??'').trim()){$('pitchTeamTopicTitle').value=team.title;changed=true}
- if(!String(data.pitchTeamTopicDetails??'').trim()){$('pitchTeamTopicDetails').value=team.details;changed=true}
+ // UNICEF and ONE OFF topics are entered independently; do not fill one campaign's fields with generic defaults.
  return changed;
 }
 function defaultPitchType(d=new Date()){
@@ -661,14 +665,15 @@ async function downloadPitchImage(){
  const bodyFont='500 21px Arial',smallFont='600 17px Arial',headFont='800 24px Arial',cardPad=20;
  const serviceTopic=value('pitchServiceTopic')||defaultCustomerService(d).topic;
  const serviceLines=(value('pitchServiceDetails')||defaultCustomerService(d).details).split('\n').filter(line=>line.trim());
- const teamDefaults=defaultMorningTeamTopic(d);
- const teamTitle=value('pitchTeamTopicTitle')||teamDefaults.title;
- const teamDetailLines=(value('pitchTeamTopicDetails')||teamDefaults.details).split('\n').filter(line=>line.trim());
- const teamCardLines=teamDetailLines.map(line=>{
+ const campaignLines=(raw)=>String(raw||'—').split('\n').filter(line=>line.trim()).map(line=>{
   const heading=/^(Key points|Pitch skills|Closing techniques|Reference|Banking & theory|Objection mastery):?$/i.test(line.trim());
   const numbered=/^\d+[.)]/.test(line.trim());
   return {text:numbered?'➜  '+line:line,small:heading,muted:heading,bullet:!heading&&!numbered,gap:heading?3:6};
  });
+ const unicefTitle=value('pitchTeamTopicTitle')||'UNICEF topic not entered';
+ const unicefLines=campaignLines(value('pitchTeamTopicDetails'));
+ const oneOffTitle=value('pitchOneOffTopicTitle')||'ONE OFF topic not entered';
+ const oneOffLines=campaignLines(value('pitchOneOffTopicDetails'));
  const section=(title,icon,color,lines)=>({title,icon,color,lines:lines.map(line=>typeof line==='string'?{text:line}:line)});
  const leftCards=holiday?[]:[
   section('Type of Pitch Practice','1','blue',[value('pitchType')]),
@@ -688,10 +693,15 @@ async function downloadPitchImage(){
    {text:serviceTopic,large:true,gap:10},
    ...serviceLines.map((line,i)=>({text:/^\d+[.)]/.test(line)?'➜  '+line:line,bullet:!(/^\d+[.)]/.test(line)),gap:5}))
   ]),
-  section('Morning Team Topic','✦','pink',[
+  section('UNICEF — Morning Team Topic','✦','pink',[
    {text:'TOPIC',small:true,muted:true,gap:3},
-   {text:teamTitle||'—',large:true,gap:8},
-   ...teamCardLines,
+   {text:unicefTitle,large:true,gap:8},
+   ...unicefLines
+  ]),
+  section('ONE OFF — CRY & SOS','✦','orange',[
+   {text:'TOPIC',small:true,muted:true,gap:3},
+   {text:oneOffTitle,large:true,gap:8},
+   ...oneOffLines,
    {text:'CREW: '+(value('pitchCrew')||'________________________'),large:true,gap:0}
   ]),
   section('Notes','✎','blue',[value('pitchNotes')])
