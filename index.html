@@ -702,6 +702,7 @@ function renderPitchDashboard(){
  updatePitchChecks();
  $('pitchSaved').textContent='Auto-saves and syncs online';
  if(defaultsChanged&&(!SB||!navigator.onLine||pitchRemoteLoaded.has(key))){savePitchDashboard()}
+ if(!SB||!navigator.onLine){applyCustomerServiceTemplate(key).then(applied=>{if(applied&&key===pitchSelectedDate)savePitchDashboard()})}
  if(SB&&!pitchRemoteLoaded.has(key))loadRemotePitchPlan(key);
 }
 function savePitchDashboard(){
