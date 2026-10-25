@@ -569,6 +569,48 @@ function bindCallsTracker(){
 }
 
 const reusablePitchFieldIds=['pitchTeamTopicTitle','pitchTeamTopicDetails','pitchOneOffTopicTitle','pitchOneOffTopicDetails'];
+const customerServiceTemplateCache={};
+let customerServiceTemplateTimer=null;
+function customerServiceWeekday(key=pitchSelectedDate){return pitchDateObject(key).getDay()}
+function isFuturePitchDate(key){return key>deviceDateKey()}
+async function loadCustomerServiceTemplate(day){
+ if(!day||day===0)return null;
+ if(customerServiceTemplateCache[day])return customerServiceTemplateCache[day];
+ let cached={};try{cached=JSON.parse(localStorage.getItem('dp_aham_customer_service_'+day)||'null')||{}}catch{}
+ if(SB&&navigator.onLine){
+  try{
+   const r=await SB.from('dp_aham_pitch_customer_service_templates').select('topic,details').eq('day_of_week',day).maybeSingle();
+   if(r.error)throw r.error;
+   if(r.data){customerServiceTemplateCache[day]=r.data;localStorage.setItem('dp_aham_customer_service_'+day,JSON.stringify(r.data));return r.data}
+  }catch(e){console.error('Customer Service template load failed:',e)}
+ }
+ if(cached.topic!==undefined||cached.details!==undefined)customerServiceTemplateCache[day]=cached;
+ return customerServiceTemplateCache[day]||null;
+}
+function saveCustomerServiceTemplate(){
+ const day=customerServiceWeekday();if(!day||day===0)return;
+ const template={topic:$('pitchServiceTopic').value,details:$('pitchServiceDetails').value};
+ customerServiceTemplateCache[day]=template;
+ try{localStorage.setItem('dp_aham_customer_service_'+day,JSON.stringify(template))}catch{}
+ if(customerServiceTemplateTimer)clearTimeout(customerServiceTemplateTimer);
+ if(!SB||!navigator.onLine)return;
+ customerServiceTemplateTimer=setTimeout(async()=>{
+  customerServiceTemplateTimer=null;
+  try{
+   const r=await SB.from('dp_aham_pitch_customer_service_templates').upsert({day_of_week:day,topic:template.topic,details:template.details,updated_at:new Date().toISOString()},{onConflict:'day_of_week'});
+   if(r.error)throw r.error;
+   $('pitchSaved').textContent='Daily plan and weekday Customer Service template saved online';
+  }catch(e){console.error('Customer Service template save failed:',e);$('pitchSaved').textContent='Daily plan saved; Customer Service template sync failed'}
+ },600);
+}
+async function applyCustomerServiceTemplate(key,force=false){
+ if(!isFuturePitchDate(key))return false;
+ const day=customerServiceWeekday(key);if(!day)return false;
+ const template=await loadCustomerServiceTemplate(day);if(!template)return false;
+ $('pitchServiceTopic').value=template.topic??'';
+ $('pitchServiceDetails').value=template.details??'';
+ return true;
+}
 let reusablePitchTemplate={},reusablePitchSaveTimer=null,reusablePitchTemplateLoaded=false,reusablePitchTemplateDirty=false;
 function readReusablePitchFields(){
  const data={};reusablePitchFieldIds.forEach(id=>{const el=$(id);data[id]=el?el.value:''});return data;
@@ -629,7 +671,9 @@ async function loadRemotePitchPlan(key){
    data={...reusable};
   }
   const defaultsChanged=applyPitchDefaults(key,data);
+  await applyCustomerServiceTemplate(key);
   const merged={...data};
+  merged.pitchServiceTopic=$('pitchServiceTopic').value;merged.pitchServiceDetails=$('pitchServiceDetails').value;
   pitchIds.forEach(id=>{const el=$(id);if(el)merged[id]=el.type==='checkbox'?el.checked:el.value});
   localStorage.setItem('dp_aham_pitch_'+key,JSON.stringify(merged));
   pitchRemoteLoaded.add(key);
@@ -1169,6 +1213,7 @@ function bindPitchDashboard(){
  $('pitchNextDate').onclick=()=>{const d=pitchDateObject();d.setDate(d.getDate()+1);pitchSelectedDate=deviceDateKeyFromDate(d);renderAhamDashboard()};
  pitchIds.forEach(id=>{const el=$(id);if(el){el.addEventListener('input',savePitchDashboard);el.addEventListener('change',savePitchDashboard)}});
  reusablePitchFieldIds.forEach(id=>{const el=$(id);if(el){el.addEventListener('input',saveReusablePitchTemplate);el.addEventListener('change',saveReusablePitchTemplate)}});
+ ['pitchServiceTopic','pitchServiceDetails'].forEach(id=>{const el=$(id);if(el){el.addEventListener('input',saveCustomerServiceTemplate);el.addEventListener('change',saveCustomerServiceTemplate)}});
  $('pitchDownload').onclick=()=>{savePitchDashboard();downloadPitchImage()};
  $('pitchClear').onclick=async()=>{const key=pitchSelectedDate,d=pitchDateObject(key);if(!confirm('Clear all Stitch Your Pitch entries for '+d.toLocaleDateString('en-IN',{weekday:'long',day:'2-digit',month:'long',year:'numeric'})+'? This cannot be undone.'))return;localStorage.removeItem('dp_aham_pitch_'+key);pitchRemoteLoaded.delete(key);if(SB&&navigator.onLine){const r=await SB.from('dp_aham_pitch_plans').delete().eq('plan_date',key);if(r.error){toast('Could not clear online copy: '+r.error.message,'error');return}}renderPitchDashboard();toast('Planner cleared for '+key,'success')};
  ['dashboardOwner','dashboardOwnerDesktop'].forEach(id=>{const el=$(id);if(el)el.addEventListener('change',()=>{selectedDashboardOwner=el.value;['dashboardOwner','dashboardOwnerDesktop'].forEach(other=>{if($(other))$(other).value=selectedDashboardOwner});render()})});
