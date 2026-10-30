@@ -1402,7 +1402,8 @@ async function carryForwardNow(){
 async function downloadDailyAgendaImage(){
  if(!requireReady())return;
  const logo=await loadAlzaOrgLogo();
- const tasks=dbTasks.filter(t=>t.section==='daily').map(taskView);
+ // Hide completed carried-forward items from the generated image. They may be ticked the next morning after being finished late the previous night.
+ const tasks=dbTasks.filter(t=>t.section==='daily'&&!(t.is_carried_forward&&t.is_completed)).map(taskView);
  const d=new Date(current);d.setHours(12,0,0,0);
  const W=1200,pad=48,cardGap=18,cardPad=28,textX=pad+94;
  const canvas=document.createElement('canvas'),ctx=canvas.getContext('2d');
