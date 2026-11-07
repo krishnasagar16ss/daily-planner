@@ -12,7 +12,7 @@
 <div id="app" class="wrap hidden">
 <header class="top"><div class="logo">PC</div><div><h1>Personal Contact Manager</h1><p>Contacts · References · Follow-ups</p></div></header>
 <section class="stats"><div class="stat"><small>Total contacts</small><strong id="sContacts">0</strong></div><div class="stat"><small>References</small><strong id="sRefs">0</strong></div><div class="stat"><small>Calls logged</small><strong id="sCalls">0</strong></div><div class="stat"><small>Pending reminders</small><strong id="sReminders">0</strong></div></section>
-<nav class="nav"><button class="active" data-tab="dashboard">Overview</button><button data-tab="contacts">Contacts</button><button data-tab="references">References</button><button data-tab="reminders">Reminders <span id="bellCount">0</span></button><button data-tab="history">Call history</button></nav><main id="view"></main></div>
+<nav class="nav"><button class="active" data-tab="dashboard">Overview</button><button data-tab="contacts">Contacts</button><button data-tab="reminders">Reminders <span id="bellCount">0</span></button><button data-tab="history">Call history</button></nav><main id="view"></main></div>
 <div class="footer">Personal Contact Manager · Private workspace</div>
 <div id="modal" class="modal"><div class="modalbox"><div class="modalhead"><h2 id="modalTitle">Add contact</h2><button class="close" id="modalClose">✕</button></div><div id="modalBody"></div></div></div>
 <script>
@@ -72,10 +72,12 @@ function stats(){
  $('bellCount').textContent=pending.filter(r=>r.remind_at.slice(0,10)<=today()).length;
 }
 function card(c){
- const parent=contact(c.referred_by_contact_id);
- return '<article class="person"><div class="personrow"><div><h3>'+esc(c.name)+'</h3><div class="phone">'+esc(c.phone)+'</div></div><span class="tag '+(c.contact_type==='reference'?'warn':'')+'">'+(c.contact_type==='reference'?'Reference':'Contact')+'</span></div>'+
- (parent?'<div class="sub" style="margin-top:6px">Referred by '+esc(parent.name)+'</div>':'')+(c.notes?'<div class="notes">'+esc(c.notes)+'</div>':'')+
- '<div class="actions"><a class="iconbtn" href="tel:'+encodeURIComponent(c.phone)+'">☎ Call</a><button class="btn small" onclick="PCM.logCall(\''+c.id+'\')">＋ Log call</button><button class="btn small" onclick="PCM.newReminder(\''+c.id+'\')">＋ Reminder</button><button class="btn small" onclick="PCM.editContact(\''+c.id+'\')">Edit</button></div></article>';
+ const linked=contacts.filter(r=>r.contact_type==='reference'&&r.referred_by_contact_id===c.id);
+ return '<article class="person"><div class="personrow"><div><h3>'+esc(c.name)+'</h3><div class="phone">'+esc(c.phone)+'</div></div><span class="tag">Contact</span></div>'+
+ (c.notes?'<div class="notes">'+esc(c.notes)+'</div>':'')+
+ '<div class="actions"><a class="iconbtn" href="tel:'+encodeURIComponent(c.phone)+'">☎ Call</a><button class="btn small" onclick="PCM.logCall(\\''+c.id+'\\')">＋ Log call</button><button class="btn small" onclick="PCM.newReminder(\\''+c.id+'\\')">＋ Reminder</button><button class="btn small" onclick="PCM.newReference(\\''+c.id+'\\')">＋ Add reference</button><button class="btn small" onclick="PCM.editContact(\\''+c.id+'\\')">Edit</button></div>'+
+ (linked.length?'<div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--line)"><div class="sub" style="font-weight:800;margin-bottom:7px">REFERENCES ('+linked.length+')</div><div class="list">'+linked.map(r=>'<div class="person" style="background:#f8fafc"><div class="personrow"><div><b>'+esc(r.name)+'</b><div class="phone">'+esc(r.phone)+'</div></div><a class="iconbtn" href="tel:'+encodeURIComponent(r.phone)+'">☎ Call</a></div>'+(r.notes?'<div class="notes">'+esc(r.notes)+'</div>':'')+'</div>').join('')+'</div></div>':'<div class="sub" style="margin-top:10px">No references added yet.</div>')+
+ '</article>';
 }
 function reminderCard(r){
  const p=contact(r.contact_id);
@@ -87,11 +89,11 @@ function render(){
  if(!user)return;stats();const v=$('view');
  if(tab==='dashboard'){
   const due=reminders.filter(r=>r.status==='pending'&&r.remind_at.slice(0,10)<=today());
-  v.innerHTML='<section class="panel"><div class="head"><h2>Good day</h2><span class="muted">'+new Date().toLocaleDateString('en-IN',{dateStyle:'full'})+'</span></div><div class="tools"><button class="btn primary" onclick="PCM.newContact()">＋ Add contact</button><button class="btn" onclick="PCM.newContact(null,true)">＋ Add reference</button></div><h3>Due and overdue reminders</h3>'+(due.length?'<div class="list">'+due.map(reminderCard).join('')+'</div>':'<div class="empty">No reminders due today.</div>')+'</section><section class="panel"><div class="head"><h2>Recently added contacts</h2><button class="btn small" onclick="PCM.setTab(\'contacts\')">View all</button></div><div class="list">'+(mainContacts().slice(0,5).map(card).join('')||'<div class="empty">No contacts added yet.</div>')+'</div></section>';
- }else if(tab==='contacts'||tab==='references'){
-  const refs=tab==='references',arr=contacts.filter(c=>refs?c.contact_type==='reference':c.contact_type==='main');
-  v.innerHTML='<section class="panel"><div class="head"><h2>'+(refs?'References':'All contacts')+'</h2><button class="btn primary" onclick="PCM.newContact(null,'+refs+')">＋ Add '+(refs?'reference':'contact')+'</button></div><input class="search" id="search" placeholder="Search name or phone number…"><div id="contactList" class="list" style="margin-top:12px">'+(arr.map(card).join('')||'<div class="empty">Nothing here yet.</div>')+'</div></section>';
-  $('search').addEventListener('input',()=>{const q=$('search').value.toLowerCase();$('contactList').innerHTML=arr.filter(c=>(c.name+' '+c.phone).toLowerCase().includes(q)).map(card).join('')||'<div class="empty">No matches.</div>'});
+  v.innerHTML='<section class="panel"><div class="head"><h2>Good day</h2><span class="muted">'+new Date().toLocaleDateString('en-IN',{dateStyle:'full'})+'</span></div><div class="tools"><button class="btn primary" onclick="PCM.newContact()">＋ Add contact</button></div><h3>Due and overdue reminders</h3>'+(due.length?'<div class="list">'+due.map(reminderCard).join('')+'</div>':'<div class="empty">No reminders due today.</div>')+'</section><section class="panel"><div class="head"><h2>Recently added contacts</h2><button class="btn small" onclick="PCM.setTab(\'contacts\')">View all</button></div><div class="list">'+(mainContacts().slice(0,5).map(card).join('')||'<div class="empty">No contacts added yet.</div>')+'</div></section>';
+ }else if(tab==='contacts'){
+  const arr=mainContacts();
+  v.innerHTML='<section class="panel"><div class="head"><h2>Contacts</h2><button class="btn primary" onclick="PCM.newContact()">＋ Add contact</button></div><input class="search" id="search" placeholder="Search name or phone number…"><div id="contactList" class="list" style="margin-top:12px">'+(arr.map(card).join('')||'<div class="empty">Nothing here yet.</div>')+'</div></section>';
+  $('search').addEventListener('input',()=>{const q=$('search').value.toLowerCase();$('contactList').innerHTML=arr.filter(c=>(c.name+' '+c.phone+' '+contacts.filter(r=>r.referred_by_contact_id===c.id).map(r=>r.name+' '+r.phone).join(' ')).toLowerCase().includes(q)).map(card).join('')||'<div class="empty">No matches.</div>'});
  }else if(tab==='reminders'){
   const list=reminders.filter(r=>r.remind_at.slice(0,10)===reminderDate);
   v.innerHTML='<section class="panel"><div class="head"><h2>Reminder Centre</h2><button class="btn primary" onclick="PCM.newReminder()">＋ Add reminder</button></div><div class="datebar"><label for="rDate">Select date</label><input id="rDate" type="date" value="'+reminderDate+'"><button class="btn small" onclick="PCM.todayReminders()">Today</button></div><div class="list">'+(list.map(reminderCard).join('')||'<div class="empty">No reminders for this date.</div>')+'</div><p class="muted" style="font-size:11px">Pending reminders remain visible until completed or cancelled.</p></section>';
@@ -103,12 +105,18 @@ function render(){
 function openModal(title,html){$('modalTitle').textContent=title;$('modalBody').innerHTML=html;$('modal').classList.add('show')}
 function closeModal(){$('modal').classList.remove('show')}
 $('modalClose').onclick=closeModal;$('modal').onclick=e=>{if(e.target===$('modal'))closeModal()};
-function newContact(id=null,isRef=false){
+function newContact(id=null){
  const c=id?contact(id):null;
- openModal(c?'Edit contact':isRef?'Add reference':'Add contact','<form id="contactForm"><div class="field"><label>Name *</label><input name="name" required value="'+esc(c?.name||'')+'"></div><div class="field"><label>Phone number *</label><input name="phone" type="tel" required value="'+esc(c?.phone||'')+'"></div>'+
- ((isRef||c?.contact_type==='reference')?'<div class="field"><label>Reference provided by *</label><select name="parent" required><option value="">Select contact</option>'+mainContacts().map(p=>'<option value="'+p.id+'" '+(c?.referred_by_contact_id===p.id?'selected':'')+'>'+esc(p.name)+'</option>').join('')+'</select></div>':'')+
- '<div class="field"><label>Notes</label><textarea name="notes">'+esc(c?.notes||'')+'</textarea></div><div class="tools"><button class="btn primary">Save</button><button type="button" class="btn" onclick="PCM.closeModal()">Cancel</button></div></form>');
- $('contactForm').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.target),isReference=isRef||c?.contact_type==='reference';const row={owner_id:user.id,name:f.get('name').trim(),phone:f.get('phone').trim(),notes:f.get('notes'),contact_type:isReference?'reference':'main',referred_by_contact_id:isReference?f.get('parent'):null,updated_at:new Date().toISOString()};const r=c?await db.from('contacts').update(row).eq('id',c.id):await db.from('contacts').insert(row);if(r.error)return alert(r.error.message);closeModal();await loadAll()};
+ openModal(c?'Edit contact':'Add contact','<form id="contactForm"><div class="field"><label>Name *</label><input name="name" required value="'+esc(c?.name||'')+'"></div><div class="field"><label>Phone number *</label><input name="phone" type="tel" required value="'+esc(c?.phone||'')+'"></div><div class="field"><label>Notes</label><textarea name="notes">'+esc(c?.notes||'')+'</textarea></div>'+
+ '<div class="person" style="background:#f8fafc"><label style="display:flex;gap:9px;align-items:center;font-weight:800"><input id="addRefToggle" type="checkbox" style="width:18px;height:18px"> Add a reference for this contact</label><div id="inlineReferenceFields" class="hidden"><div class="field"><label>Reference name *</label><input name="refName" placeholder="Enter reference name"></div><div class="field"><label>Reference phone number *</label><input name="refPhone" type="tel" placeholder="Enter phone number"></div><div class="field"><label>Reference notes</label><textarea name="refNotes" placeholder="Optional notes"></textarea></div></div></div>'+
+ '<div class="tools" style="margin-top:12px"><button class="btn primary">Save contact</button><button type="button" class="btn" onclick="PCM.closeModal()">Cancel</button></div></form>');
+ $('addRefToggle').addEventListener('change',e=>{$('inlineReferenceFields').classList.toggle('hidden',!e.target.checked);$('inlineReferenceFields').querySelector('[name="refName"]').required=e.target.checked;$('inlineReferenceFields').querySelector('[name="refPhone"]').required=e.target.checked});
+ $('contactForm').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.target);const row={owner_id:user.id,name:f.get('name').trim(),phone:f.get('phone').trim(),notes:f.get('notes'),contact_type:'main',referred_by_contact_id:null,updated_at:new Date().toISOString()};const saved=c?await db.from('contacts').update(row).eq('id',c.id).select().single():await db.from('contacts').insert(row).select().single();if(saved.error)return alert(saved.error.message);const parentId=c?c.id:saved.data.id;if($('addRefToggle').checked){const ref=await db.from('contacts').insert({owner_id:user.id,name:f.get('refName').trim(),phone:f.get('refPhone').trim(),notes:f.get('refNotes')||'',contact_type:'reference',referred_by_contact_id:parentId});if(ref.error){closeModal();await loadAll();return alert('Contact saved, but reference could not be saved: '+ref.error.message)}}closeModal();await loadAll()};
+}
+async function newReference(parentId){
+ const parent=contact(parentId);if(!parent)return alert('Contact not found.');
+ openModal('Add reference for '+esc(parent.name),'<form id="referenceForm"><div class="notice">This reference will be saved under '+esc(parent.name)+'.</div><div class="field"><label>Reference name *</label><input name="name" required></div><div class="field"><label>Phone number *</label><input name="phone" type="tel" required></div><div class="field"><label>Notes</label><textarea name="notes"></textarea></div><div class="tools"><button class="btn primary">Save reference</button><button type="button" class="btn" onclick="PCM.closeModal()">Cancel</button></div></form>');
+ $('referenceForm').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.target),r=await db.from('contacts').insert({owner_id:user.id,name:f.get('name').trim(),phone:f.get('phone').trim(),notes:f.get('notes')||'',contact_type:'reference',referred_by_contact_id:parentId});if(r.error)return alert(r.error.message);closeModal();await loadAll()};
 }
 async function logCall(id){
  const c=contact(id);openModal('Log call · '+esc(c.name),'<form id="callForm"><div class="field"><label>Call outcome</label><select name="outcome"><option value="connected">Connected</option><option value="no_answer">No answer</option><option value="callback">Callback requested</option><option value="not_interested">Not interested</option></select></div><div class="field"><label>Call notes</label><textarea name="notes"></textarea></div><button class="btn primary">Save call log</button></form>');
@@ -121,7 +129,7 @@ function newReminder(id=null){
 }
 async function completeReminder(id){const r=await db.from('reminders').update({status:'completed',completed_at:new Date().toISOString()}).eq('id',id);if(r.error)return alert(r.error.message);await loadAll()}
 async function cancelReminder(id){if(!confirm('Cancel this reminder?'))return;const r=await db.from('reminders').update({status:'cancelled'}).eq('id',id);if(r.error)return alert(r.error.message);await loadAll()}
-window.PCM={setTab,newContact,editContact:id=>newContact(id,contact(id)?.contact_type==='reference'),logCall,newReminder,completeReminder,cancelReminder,closeModal,todayReminders:()=>{reminderDate=today();render()}};
+window.PCM={setTab,newContact,newReference,editContact:id=>newContact(id),logCall,newReminder,completeReminder,cancelReminder,closeModal,todayReminders:()=>{reminderDate=today();render()}};
 start();
 })();
 </script></body></html>
