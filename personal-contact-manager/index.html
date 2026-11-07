@@ -84,22 +84,29 @@ function stats(){
  $('sReminders').textContent=pending.length;
  $('bellCount').textContent=pending.filter(r=>r.remind_at.slice(0,10)<=today()).length;
 }
+function whatsappUrl(phone){
+ let n=String(phone||'').replace(/\\D/g,'');
+ if(n.startsWith('0'))n=n.slice(1);
+ if(n.length===10)n='91'+n;
+ return 'https://wa.me/'+n;
+}
 function referenceTree(parentId,depth=0,visited=new Set()){
  const children=contacts.filter(r=>r.contact_type==='reference'&&r.referred_by_contact_id===parentId&&!visited.has(r.id));
  if(!children.length)return '';
- return '<div style="margin-top:12px;padding-left:'+Math.min(depth*10,30)+'px;border-left:2px solid #dce6f4"><div class="sub" style="font-weight:800;margin:8px 0">REFERENCES ('+children.length+')</div><div class="list">'+children.map(r=>{
+ const boxId='refs-'+parentId;
+ return '<div style="margin-top:10px"><button class="btn small" onclick="PCM.toggleRefs(&quot;'+boxId+'&quot;)">＋ Show '+children.length+' contact'+(children.length===1?'':'s')+'</button><div id="'+boxId+'" class="hidden" style="margin-top:10px;padding-left:'+Math.min(depth*10,30)+'px;border-left:2px solid #dce6f4"><div class="list">'+children.map(r=>{
   const next=new Set(visited);next.add(r.id);
-  return '<article class="person" style="background:#f8fafc"><div class="personrow"><div><b>'+esc(r.name)+'</b><div class="phone">'+esc(r.phone)+'</div></div><span class="tag warn">Reference</span></div>'+(r.notes?'<div class="notes">'+esc(r.notes)+'</div>':'')+
-  '<div class="actions"><a class="iconbtn" href="tel:'+encodeURIComponent(r.phone)+'">☎ Call</a><button class="btn small" onclick="PCM.logCall(&quot;'+r.id+'&quot;)">＋ Log call</button><button class="btn small" onclick="PCM.newReminder(&quot;'+r.id+'&quot;)">＋ Reminder</button><button class="btn small" onclick="PCM.newReference(&quot;'+r.id+'&quot;)">＋ Add their reference</button><button class="btn small" onclick="PCM.editContact(&quot;'+r.id+'&quot;)">Edit</button></div>'+
+  return '<article class="person" style="background:#f8fafc"><div class="personrow"><div><b>'+esc(r.name)+'</b><div class="phone">'+esc(r.phone)+'</div></div><span class="tag">Contact</span></div>'+(r.notes?'<div class="notes">'+esc(r.notes)+'</div>':'')+
+  '<div class="actions"><a class="iconbtn" href="tel:'+encodeURIComponent(r.phone)+'">☎ Call</a><a class="iconbtn" href="'+whatsappUrl(r.phone)+'" target="_blank" rel="noopener">◉ WhatsApp</a><button class="btn small" onclick="PCM.logCall(&quot;'+r.id+'&quot;)">＋ Log call</button><button class="btn small" onclick="PCM.newReminder(&quot;'+r.id+'&quot;)">＋ Reminder</button><button class="btn small" onclick="PCM.newReference(&quot;'+r.id+'&quot;)">＋ Add contact</button><button class="btn small" onclick="PCM.editContact(&quot;'+r.id+'&quot;)">Edit</button></div>'+
   referenceTree(r.id,depth+1,next)+'</article>';
- }).join('')+'</div></div>';
+ }).join('')+'</div></div></div>';
 }
 function card(c){
  const linked=contacts.filter(r=>r.contact_type==='reference'&&r.referred_by_contact_id===c.id);
- return '<article class="person"><div class="personrow"><div><h3>'+esc(c.name)+'</h3><div class="phone">'+esc(c.phone)+'</div></div><span class="tag">Contact</span></div>'+
+ return '<article class="person"><div class="personrow"><div><h3>'+esc(c.name)+'</h3><div class="phone">'+esc(c.phone)+'</div></div><span class="tag">Main contact</span></div>'+
  (c.notes?'<div class="notes">'+esc(c.notes)+'</div>':'')+
- '<div class="actions"><a class="iconbtn" href="tel:'+encodeURIComponent(c.phone)+'">☎ Call</a><button class="btn small" onclick="PCM.logCall(&quot;'+c.id+'&quot;)">＋ Log call</button><button class="btn small" onclick="PCM.newReminder(&quot;'+c.id+'&quot;)">＋ Reminder</button><button class="btn small" onclick="PCM.newReference(&quot;'+c.id+'&quot;)">＋ Add reference</button><button class="btn small" onclick="PCM.editContact(&quot;'+c.id+'&quot;)">Edit</button></div>'+
- (linked.length?referenceTree(c.id,0,new Set([c.id])):'<div class="sub" style="margin-top:10px">No references added yet.</div>')+
+ '<div class="actions"><a class="iconbtn" href="tel:'+encodeURIComponent(c.phone)+'">☎ Call</a><a class="iconbtn" href="'+whatsappUrl(c.phone)+'" target="_blank" rel="noopener">◉ WhatsApp</a><button class="btn small" onclick="PCM.logCall(&quot;'+c.id+'&quot;)">＋ Log call</button><button class="btn small" onclick="PCM.newReminder(&quot;'+c.id+'&quot;)">＋ Reminder</button><button class="btn small" onclick="PCM.newReference(&quot;'+c.id+'&quot;)">＋ Add contact</button><button class="btn small" onclick="PCM.editContact(&quot;'+c.id+'&quot;)">Edit</button></div>'+
+ (linked.length?referenceTree(c.id,0,new Set([c.id])):'<div class="sub" style="margin-top:10px">No additional contacts linked yet.</div>')+
  '</article>';
 }
 function reminderCard(r){
@@ -152,7 +159,7 @@ function newReminder(id=null){
 }
 async function completeReminder(id){const r=await db.from('reminders').update({status:'completed',completed_at:new Date().toISOString()}).eq('id',id);if(r.error)return alert(r.error.message);await loadAll()}
 async function cancelReminder(id){if(!confirm('Cancel this reminder?'))return;const r=await db.from('reminders').update({status:'cancelled'}).eq('id',id);if(r.error)return alert(r.error.message);await loadAll()}
-window.PCM={setTab,newContact,newReference,editContact:id=>newContact(id),logCall,newReminder,completeReminder,cancelReminder,closeModal,todayReminders:()=>{reminderDate=today();render()}};
+window.PCM={setTab,newContact,newReference,toggleRefs:id=>{const el=$(id);if(el)el.classList.toggle('hidden')},editContact:id=>newContact(id),logCall,newReminder,completeReminder,cancelReminder,closeModal,todayReminders:()=>{reminderDate=today();render()}};
 start();
 })();
 </script></body></html>
