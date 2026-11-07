@@ -10,15 +10,9 @@
 #loadingView{position:relative;z-index:20;pointer-events:auto}#authForm,.tools{position:relative;z-index:21;pointer-events:auto}#authToggle,#authSubmit{position:relative;z-index:22;pointer-events:auto;touch-action:manipulation;-webkit-tap-highlight-color:rgba(37,99,235,.2)}
 @media(max-width:650px){.wrap{padding:10px 10px 85px}.stats{grid-template-columns:repeat(2,1fr)}.top{padding:13px}.grid2{grid-template-columns:1fr}.personrow{align-items:flex-start}.stat strong{font-size:22px}}
 </style></head><body>
-<div id="loadingView" class="auth">
-<h2>Welcome Back</h2><p class="muted">Personal Contact Manager</p>
-<div class="notice">Enter your 4-digit PIN to continue.</div>
-<div class="field"><label for="appPin">Access PIN</label><input id="appPin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="••••" autocomplete="off"></div>
-<button id="pinEnter" class="btn primary" type="button" style="width:100%">Continue</button>
-<div id="pinMessage" class="notice hidden" role="status"></div>
-</div>
+<div id="loadingView" class="auth"><h2>Opening your workspace…</h2><p class="muted">Personal Contact Manager</p><div id="loadMessage" class="notice" role="status">Connecting securely. Please wait.</div></div>
 <div id="app" class="wrap hidden">
-<header class="top"><div class="brand"><div class="logo">PC</div><div><h1>Personal Contact Manager</h1><p>Contacts · References · Follow-ups</p></div></div><button class="btn small" id="signOutBtn" type="button">Sign out</button></header>
+<header class="top"><div class="brand"><div class="logo">PC</div><div><h1>Personal Contact Manager</h1><p>Contacts · References · Follow-ups</p></div></div></header>
 <section class="stats"><div class="stat"><small>Total contacts</small><strong id="sContacts">0</strong></div><div class="stat"><small>References</small><strong id="sRefs">0</strong></div><div class="stat"><small>Calls logged</small><strong id="sCalls">0</strong></div><div class="stat"><small>Pending reminders</small><strong id="sReminders">0</strong></div></section>
 <nav class="nav"><button class="active" data-tab="dashboard">Overview</button><button data-tab="contacts">Contacts</button><button data-tab="references">References</button><button data-tab="reminders">Reminders <span id="bellCount" class="count">0</span></button><button data-tab="history">Call history</button></nav>
 <main id="view"></main>
@@ -36,8 +30,7 @@ function msg(t){alert(t)}
 function showApp(){ $('loadingView').classList.add('hidden');$('app').classList.remove('hidden');if($('app').dataset.loaded!=='yes'){$('app').dataset.loaded='yes';loadAll()} }
 client.auth.onAuthStateChange((event,session)=>{if(session?.user){user=session.user;showApp()}else if(event==='SIGNED_OUT'){user=null;$('app').dataset.loaded='';$('app').classList.add('hidden');$('loadingView').classList.remove('hidden')}});
 async function initializePrivateData(){const {data,error}=await client.auth.getSession();if(error)throw error;if(data.session?.user){user=data.session.user;showApp();return}const {data:created,error:signError}=await client.auth.signInAnonymously();if(signError)throw signError;user=created.user;showApp()}
-function unlockWithPin(){const pin=$('appPin').value;if(pin!=='1669'){$('pinMessage').textContent='Incorrect PIN. Please try again.';$('pinMessage').classList.remove('hidden');$('pinMessage').style.background='#fff0f0';$('pinMessage').style.color='#a52d36';$('appPin').value='';return} $('pinEnter').disabled=true;$('pinEnter').textContent='Opening…';$('pinMessage').classList.add('hidden');initializePrivateData().catch(err=>{$('pinMessage').textContent='Could not open your workspace: '+(err.message||'Authentication error')+'. Anonymous sign-in must be enabled in Supabase Authentication settings.';$('pinMessage').classList.remove('hidden');$('pinMessage').style.background='#fff0f0';$('pinMessage').style.color='#a52d36';$('pinEnter').disabled=false;$('pinEnter').textContent='Continue'})}
-$('pinEnter').onclick=unlockWithPin;$('appPin').addEventListener('keydown',e=>{if(e.key==='Enter')unlockWithPin()});
+initializePrivateData().catch(err=>{$('loadMessage').textContent='Could not connect: '+(err.message||'Authentication error')+'. Please check that anonymous sign-ins are enabled in Supabase Authentication settings.';$('loadMessage').style.background='#fff0f0';$('loadMessage').style.color='#a52d36'});
 function setTab(t){tab=t;document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===t));render()}
 document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>setTab(b.dataset.tab));
 async function loadAll(){if(!user)return;try{const [a,b,c]=await Promise.all([db.from('contacts').select('*').order('created_at',{ascending:false}),db.from('call_logs').select('*').order('called_at',{ascending:false}),db.from('reminders').select('*').order('remind_at')]);if(a.error)throw a.error;if(b.error)throw b.error;if(c.error)throw c.error;contacts=a.data||[];calls=b.data||[];reminders=c.data||[];render()}catch(e){msg('Database error: '+e.message)}}
