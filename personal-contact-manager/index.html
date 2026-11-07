@@ -157,10 +157,13 @@ async function newReference(parentId){
  $('referenceForm').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.target),r=await db.from('contacts').insert({owner_id:user.id,name:f.get('name').trim(),phone:f.get('phone').trim(),notes:f.get('notes')||'',contact_type:'reference',referred_by_contact_id:parentId}).select().single();if(r.error)return alert(r.error.message);const log=await db.from('call_logs').insert({owner_id:user.id,contact_id:r.data.id,outcome:'not_contacted',notes:'Reference received from '+parent.name+'; not contacted yet.'});if(log.error){closeModal();await loadAll();return alert('Reference saved, but its initial call status could not be saved: '+log.error.message)}closeModal();await loadAll()};
 }
 async function logCall(id,logId=null){
- const c=contact(id);const existing=logId?calls.find(x=>x.id===logId):null;
- openModal(existing?'Update call response · '+esc(c.name):'Log call · '+esc(c.name),'<form id="callForm"><div class="field"><label>Call outcome</label><select name="outcome"><option value="not_contacted" selected>Not contacted (default)</option><option value="connected">Connected</option><option value="no_answer">No answer</option><option value="callback">Callback requested</option><option value="not_interested">Not interested</option></select></div><div class="field"><label>Call notes</label><textarea name="notes">'+esc(existing?.notes||'')+'</textarea></div><button class="btn primary">Save response</button></form>');
+ const c=contact(id);
+ // The contact card action edits the latest saved response instead of opening a fresh default entry.
+ const latest=calls.filter(x=>x.contact_id===id).sort((x,y)=>new Date(y.called_at||0)-new Date(x.called_at||0))[0]||null;
+ const existing=logId?calls.find(x=>x.id===logId):latest;
+ openModal(existing?'Update call response · '+esc(c.name):'Log call · '+esc(c.name),'<form id="callForm"><div class="field"><label>Call outcome</label><select name="outcome"><option value="not_contacted">Not contacted</option><option value="connected">Connected</option><option value="no_answer">No answer</option><option value="callback">Callback requested</option><option value="not_interested">Not interested</option></select></div><div class="field"><label>Call notes</label><textarea name="notes">'+esc(existing?.notes||'')+'</textarea></div><button class="btn primary">Save response</button></form>');
  $('callForm').elements.outcome.value=existing?.outcome||'not_contacted';
- $('callForm').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.target),payload={owner_id:user.id,contact_id:id,outcome:f.get('outcome'),notes:f.get('notes')};const r=existing?await db.from('call_logs').update({outcome:payload.outcome,notes:payload.notes}).eq('id',existing.id):await db.from('call_logs').insert(payload);if(r.error)return alert(r.error.message);closeModal();await loadAll()};
+ $('callForm').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.target),payload={outcome:f.get('outcome'),notes:f.get('notes')};const r=existing?await db.from('call_logs').update(payload).eq('id',existing.id):await db.from('call_logs').insert({owner_id:user.id,contact_id:id,...payload});if(r.error)return alert(r.error.message);closeModal();await loadAll()};
 }
 function newReminder(id=null){
  const c=id?contact(id):null;
