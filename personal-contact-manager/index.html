@@ -75,7 +75,8 @@ async function loadAll(){
  render();
 }
 function contact(id){return contacts.find(c=>c.id===id)}
-function mainContacts(){return contacts.filter(c=>c.contact_type==='main')}
+function isContactPerson(c){return c.contact_type==='main'||calls.some(x=>x.contact_id===c.id)}
+function mainContacts(){return contacts.filter(isContactPerson)}
 function stats(){
  $('sContacts').textContent=mainContacts().length;
  $('sRefs').textContent=contacts.filter(c=>c.contact_type==='reference').length;
