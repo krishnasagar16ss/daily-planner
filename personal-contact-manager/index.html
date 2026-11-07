@@ -75,7 +75,8 @@ async function loadAll(){
  render();
 }
 function contact(id){return contacts.find(c=>c.id===id)}
-function isContactPerson(c){return c.contact_type==='main'||calls.some(x=>x.contact_id===c.id&&['connected','callback','not_interested'].includes(x.outcome))}
+function latestOutcome(contactId){const rows=calls.filter(x=>x.contact_id===contactId).sort((a,b)=>new Date(b.called_at||0)-new Date(a.called_at||0));return rows[0]?.outcome||'not_contacted'}
+function isContactPerson(c){return c.contact_type==='main'||(c.contact_type==='reference'&&latestOutcome(c.id)==='connected')}
 function mainContacts(){return contacts.filter(isContactPerson)}
 function stats(){
  $('sContacts').textContent=mainContacts().length;
@@ -151,7 +152,7 @@ async function newReference(parentId){
 }
 async function logCall(id,logId=null){
  const c=contact(id);const existing=logId?calls.find(x=>x.id===logId):null;
- openModal(existing?'Update call response · '+esc(c.name):'Log call · '+esc(c.name),'<form id="callForm"><div class="field"><label>Call outcome</label><select name="outcome"><option value="not_contacted">Not contacted</option><option value="connected">Connected</option><option value="no_answer">No answer</option><option value="callback">Callback requested</option><option value="not_interested">Not interested</option></select></div><div class="field"><label>Call notes</label><textarea name="notes">'+esc(existing?.notes||'')+'</textarea></div><button class="btn primary">Save response</button></form>');
+ openModal(existing?'Update call response · '+esc(c.name):'Log call · '+esc(c.name),'<form id="callForm"><div class="field"><label>Call outcome</label><select name="outcome"><option value="not_contacted" selected>Not contacted (default)</option><option value="connected">Connected</option><option value="no_answer">No answer</option><option value="callback">Callback requested</option><option value="not_interested">Not interested</option></select></div><div class="field"><label>Call notes</label><textarea name="notes">'+esc(existing?.notes||'')+'</textarea></div><button class="btn primary">Save response</button></form>');
  $('callForm').elements.outcome.value=existing?.outcome||'not_contacted';
  $('callForm').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.target),payload={owner_id:user.id,contact_id:id,outcome:f.get('outcome'),notes:f.get('notes')};const r=existing?await db.from('call_logs').update({outcome:payload.outcome,notes:payload.notes}).eq('id',existing.id):await db.from('call_logs').insert(payload);if(r.error)return alert(r.error.message);closeModal();await loadAll()};
 }
