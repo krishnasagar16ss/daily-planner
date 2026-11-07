@@ -2,7 +2,7 @@
 <html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#12213b"><title>Personal Contact Manager</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <style>
 :root{--bg:#f3f6fb;--card:#fff;--ink:#17243a;--muted:#718096;--line:#e3e9f1;--navy:#12213b;--blue:#2563eb;--green:#13845b;--red:#c33b45;--amber:#b76b13}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:14px system-ui,-apple-system,Segoe UI,Arial}button,input,textarea,select{font:inherit}button{cursor:pointer}.wrap{max-width:1050px;margin:auto;padding:14px 12px 85px}.top{display:flex;align-items:center;gap:12px;background:var(--navy);color:white;border-radius:16px;padding:15px;margin-bottom:12px}.logo{width:42px;height:42px;border-radius:12px;background:white;color:var(--navy);display:grid;place-items:center;font-weight:900}.top h1{font-size:17px;margin:0}.top p{font-size:11px;color:#c5d2e4;margin:3px 0 0}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-bottom:12px}.stat,.panel{background:white;border:1px solid var(--line);border-radius:14px;padding:13px}.stat small{color:var(--muted)}.stat strong{display:block;font-size:24px;margin-top:4px}.nav{display:flex;gap:7px;overflow:auto;padding:2px 0 12px}.nav button,.btn{border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:10px;padding:9px 12px;font-weight:700;white-space:nowrap}.nav button.active{background:var(--navy);color:white}.btn.primary{background:var(--blue);border-color:var(--blue);color:white}.btn.green{background:var(--green);border-color:var(--green);color:white}.btn.danger{color:var(--red)}.btn.small{padding:7px 9px;font-size:12px}.panel{margin-bottom:12px}.head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}.head h2{font-size:16px;margin:0}.muted{color:var(--muted)}.tools,.actions{display:flex;gap:7px;flex-wrap:wrap}.field{display:grid;gap:5px;margin:10px 0}.field label{font-size:12px;font-weight:750;color:#526176}.field input,.field textarea,.field select,.search{width:100%;border:1px solid #d7e0eb;border-radius:10px;padding:11px;background:#fff;color:var(--ink)}.field textarea{min-height:75px;resize:vertical}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:9px}.list{display:grid;gap:9px}.person{border:1px solid var(--line);border-radius:12px;padding:12px;background:#fff}.personrow{display:flex;justify-content:space-between;gap:10px}.person h3{font-size:14px;margin:0 0 4px}.phone,.sub{font-size:12px;color:var(--muted)}.notes{font-size:12px;color:#536278;margin-top:7px;white-space:pre-wrap}.tag{font-size:10px;font-weight:800;border-radius:99px;padding:4px 8px;background:#edf3ff;color:#2757a6;height:max-content}.tag.warn{background:#fff4e5;color:#9b5b0a}.tag.good{background:#e8f7ef;color:#13734e}.actions{margin-top:10px}.iconbtn{display:inline-flex;text-decoration:none;background:#eaf2ff;color:#1e5bb7;border-radius:9px;padding:8px 10px;font-weight:800}.empty{text-align:center;padding:25px;color:var(--muted);font-size:13px}.hidden{display:none!important}.modal{position:fixed;inset:0;background:#0d172b99;z-index:10;display:none;align-items:flex-end;justify-content:center;padding:10px}.modal.show{display:flex}.modalbox{background:white;border-radius:17px;padding:16px;width:min(560px,100%);max-height:92vh;overflow:auto}.modalhead{display:flex;justify-content:space-between;align-items:center}.modalhead h2{font-size:17px;margin:0}.close{border:0;background:#eef2f7;border-radius:9px;padding:8px}.notice{padding:11px 12px;border-radius:10px;background:#eff6ff;color:#24559c;font-size:12px;margin-top:10px;line-height:1.5}.notice.error{background:#fff0f0;color:#a52d36}.loading{max-width:480px;margin:18vh auto;background:#fff;border:1px solid var(--line);border-radius:18px;padding:22px}.loading h2{margin:0 0 5px}.footer{position:fixed;bottom:0;left:0;right:0;text-align:center;padding:9px;background:#ffffffed;border-top:1px solid var(--line);font-size:10px;color:var(--muted)}.datebar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px}.datebar input{padding:8px;border:1px solid var(--line);border-radius:9px}
@@ -28,9 +28,22 @@ const timeout=(promise,ms,label)=>Promise.race([promise,new Promise((_,reject)=>
 let client,db,user=null,contacts=[],calls=[],reminders=[],tab='dashboard',reminderDate=today();
 function loading(message,error=false){$('loadMessage').textContent=message;$('loadMessage').classList.toggle('error',error)}
 function fail(error){$('loadTitle').textContent='Could not open workspace';loading((error&&error.message?error.message:String(error))+' Please check your internet connection and refresh. If this continues, send this message to support.',true)}
+function loadSupabaseLibrary(){
+ return new Promise((resolve,reject)=>{
+  if(window.supabase&&window.supabase.createClient)return resolve();
+  const script=document.createElement('script');
+  script.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
+  script.async=true;
+  const timer=setTimeout(()=>{script.remove();reject(new Error('Supabase library download timed out. Check your connection or try again.'))},12000);
+  script.onload=()=>{clearTimeout(timer);if(window.supabase&&window.supabase.createClient)resolve();else reject(new Error('Supabase library loaded but its client was unavailable.'))};
+  script.onerror=()=>{clearTimeout(timer);reject(new Error('Could not download the Supabase library from the CDN.'))};
+  document.head.appendChild(script);
+ });
+}
 async function start(){
  try{
-  if(!window.supabase||!window.supabase.createClient)throw new Error('Supabase library did not load. Check your internet connection, then refresh.');
+  loading('Loading secure database connection…');
+  await loadSupabaseLibrary();
   loading('Connecting to Supabase…');
   client=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false}});
   db=client.schema('personal_contacts');
