@@ -128,6 +128,7 @@ const localDate=()=>{const d=new Date();return d.getFullYear()+'-'+pad(d.getMont
 const weekday=new Date().getDay();
 const isoWeekday=weekday===0?7:weekday;
 const dateKey=localDate();
+setInterval(()=>{if(localDate()!==dateKey)location.reload()},60000);
 const dayNames=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 let crews=[],selectedCrew='',topicLoaded=false,dailyLoaded=false,topicTimer=null,dailyTimer=null,lastImageUrl=null;
 const defaultTopics={1:'Introduction & Rapport Building',2:'Need Discovery & Presentation',3:'Product Knowledge & Impact Story',4:'Objection Handling',5:'Closing & Commitment',6:'Follow-up & Referral Handling'};
