@@ -14,7 +14,7 @@
 button,input,textarea{font:inherit}button{cursor:pointer}
 .shell{max-width:1100px;margin:auto;padding:22px}
 .topbar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:20px}
-.brand{display:flex;align-items:center;gap:11px}.brandmark{width:42px;height:42px;background:var(--ink);color:var(--lime);display:grid;place-items:center;font-weight:950;font-size:22px;transform:rotate(-5deg)}.brand h1{font-size:14px;letter-spacing:.14em;margin:0;font-weight:950}.brand p{margin:3px 0 0;color:var(--muted);font-size:10px;letter-spacing:.1em;text-transform:uppercase}
+.brand{display:flex;align-items:center;gap:11px}.brandmark{width:58px;height:52px;background:#fff;display:grid;place-items:center;overflow:hidden}.brandmark img{width:100%;height:100%;object-fit:contain}.brand h1{font-size:14px;letter-spacing:.14em;margin:0;font-weight:950}.brand p{margin:3px 0 0;color:var(--muted);font-size:10px;letter-spacing:.1em;text-transform:uppercase}
 .link{color:var(--ink);font-size:12px;font-weight:800;text-decoration:none;border-bottom:2px solid var(--orange);padding:5px 0}
 .hero{background:var(--ink);color:white;padding:26px 28px;position:relative;overflow:hidden;border-radius:4px;min-height:175px;display:flex;justify-content:space-between;align-items:flex-end;gap:20px}
 .hero:after{content:"";position:absolute;width:260px;height:260px;border:35px solid var(--orange);border-radius:50%;right:10%;top:-150px;opacity:.95}
@@ -43,7 +43,7 @@ textarea{resize:vertical;min-height:105px;line-height:1.5}
 .poster:before{content:"";position:absolute;width:210px;height:210px;border-radius:50%;background:var(--orange);right:-80px;top:-75px}
 .poster:after{content:"";position:absolute;width:150px;height:150px;border:22px solid var(--blue);border-radius:50%;left:-85px;bottom:-85px}
 .poster-top{position:relative;z-index:1;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #454957;padding-bottom:13px}
-.poster-brand{font-size:10px;font-weight:950;letter-spacing:.22em}.poster-date{font-size:9px;color:var(--lime);font-weight:800}
+.poster-logo{width:76px;height:68px;object-fit:contain;background:#fff;padding:2px}.poster-brand{font-size:9px;font-weight:950;letter-spacing:.2em;color:#d5d8e0}.poster-date{font-size:9px;color:var(--lime);font-weight:800}
 .poster-crew{position:relative;z-index:1;margin:25px 0 6px;color:var(--lime);font-size:clamp(24px,4vw,38px);line-height:1;letter-spacing:-.04em;font-weight:1000;overflow-wrap:anywhere}
 .poster-kicker{position:relative;z-index:1;font-size:10px;letter-spacing:.25em;color:#aeb4c3;text-transform:uppercase;font-weight:900}
 .poster-topic{position:relative;z-index:1;margin-top:26px;padding:15px;background:var(--orange);color:#10131d;font-size:23px;font-weight:1000;line-height:1.08;letter-spacing:-.04em;overflow-wrap:anywhere}
@@ -59,7 +59,7 @@ textarea{resize:vertical;min-height:105px;line-height:1.5}
 <body>
 <div class="shell">
  <div class="topbar">
-  <div class="brand"><div class="brandmark">P</div><div><h1>PITCH PRACTICE STUDIO</h1><p>ALZA ORG · Daily rehearsal room</p></div></div>
+  <div class="brand"><div class="brandmark"><img src="../alza-org-logo.svg" alt="ALZA ORG official logo"></div><div><h1>PITCH PRACTICE STUDIO</h1><p>ALZA ORG · Daily rehearsal room</p></div></div>
   <a class="link" href="../">← DAILY PLANNER</a>
  </div>
  <section class="hero">
@@ -95,7 +95,7 @@ textarea{resize:vertical;min-height:105px;line-height:1.5}
   <section class="panel preview-panel">
    <h3 class="preview-title">04 / Image preview</h3>
    <div class="poster" id="poster">
-    <div class="poster-top"><span class="poster-brand">ALZA ORG / PRACTICE SERIES</span><span class="poster-date" id="posterDate">DATE</span></div>
+    <div class="poster-top"><img class="poster-logo" src="../alza-org-logo.svg" alt="ALZA ORG official logo"><span class="poster-brand">PRACTICE<br>SERIES / 01</span><span class="poster-date" id="posterDate">DATE</span></div>
     <div class="poster-crew" id="posterCrew">SELECT A CREW</div>
     <div class="poster-kicker">Today's pitch practice</div>
     <div class="poster-topic" id="posterTopic">Your practice topic appears here</div>
