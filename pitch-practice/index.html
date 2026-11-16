@@ -85,6 +85,17 @@ textarea{resize:vertical;min-height:105px;line-height:1.5}
 .poster-retrain .poster-block{border-radius:10px}
 @media(max-width:760px){.poster{padding:15px;border-radius:14px}.poster-topic{padding:12px 10px}.practice-table{font-size:13px}.practice-table td{padding:8px 7px}.practice-table .section-no,.practice-table .sub-row td:first-child{width:32px}.poster-topic:before{background-size:140px auto}}
 
+.preview-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}.preview-note{font-size:10px;color:var(--muted);font-weight:800;letter-spacing:.08em;text-transform:uppercase}
+.poster{padding:16px;border-radius:16px;min-height:0;background:linear-gradient(145deg,#101522,#1a2234);box-shadow:0 14px 34px rgba(8,12,24,.22)}
+.poster-top{display:grid;grid-template-columns:64px minmax(0,1fr) auto;align-items:center;gap:12px;padding-bottom:11px}.poster-logo{width:64px;height:58px;padding:2px;border-radius:5px}
+.poster-crew-inline{font-size:clamp(15px,3vw,24px);font-weight:1000;line-height:1.05;color:#fff;overflow-wrap:anywhere;letter-spacing:-.03em}.poster-heading-date{display:flex;flex-direction:column;align-items:flex-end;gap:6px}.poster-brand{font-size:8px;letter-spacing:.16em}.poster-date{font-size:10px;white-space:nowrap}
+.poster-kicker{margin-top:12px;font-size:9px;letter-spacing:.2em}.poster-topic{margin-top:9px;padding:10px;border-radius:12px;background:linear-gradient(135deg,#f5f7ff,#dce7ff)}
+.topic-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;align-items:start}.topic-group{min-width:0;border:1px solid rgba(16,19,29,.08);border-radius:9px;overflow:hidden;background:rgba(255,255,255,.9);break-inside:avoid}
+.topic-group-title{display:grid;grid-template-columns:27px minmax(0,1fr);align-items:stretch;font-size:clamp(10px,1.6vw,14px);font-weight:950;line-height:1.2;color:#111827}.topic-group-title b{display:flex;align-items:center;justify-content:center;background:var(--crew-bg);color:#fff;padding:6px 2px}.topic-group-title span{padding:7px 8px;overflow-wrap:anywhere}
+.topic-sublist{padding:3px 7px 6px}.topic-subitem{display:grid;grid-template-columns:17px minmax(0,1fr);gap:5px;padding:4px 1px;color:#202b3c;font-size:clamp(9px,1.4vw,12px);font-weight:700;line-height:1.25;border-top:1px solid rgba(16,19,29,.06)}.topic-subitem b{color:#52627a}.topic-plain{font-size:12px;font-weight:800;color:#10131d;padding:5px}
+.poster-lower{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:9px}.poster-block{margin-top:0;padding:10px 11px;border-radius:10px;min-width:0}.poster-block small{font-size:8px;margin-bottom:5px}.poster-block p{font-size:11px;line-height:1.35;overflow-wrap:anywhere}.poster-retrain-block{border-left-color:var(--crew-accent)}.poster-footer{margin-top:11px;padding-top:8px;font-size:7px}.poster-download{margin-top:12px}
+@media(max-width:520px){.poster{padding:12px}.poster-top{grid-template-columns:54px minmax(0,1fr) auto;gap:8px}.poster-logo{width:54px;height:50px}.poster-crew-inline{font-size:16px}.poster-brand{font-size:7px;letter-spacing:.1em}.poster-date{font-size:9px}.poster-topic{padding:7px}.topic-grid{gap:6px}.topic-group-title{grid-template-columns:22px minmax(0,1fr);font-size:10px}.topic-group-title span{padding:6px}.topic-sublist{padding:2px 5px 4px}.topic-subitem{font-size:9px;grid-template-columns:13px minmax(0,1fr);gap:3px}.poster-lower{gap:6px}.poster-block{padding:8px}.poster-block p{font-size:10px}}
+@media(max-width:360px){.poster-top{grid-template-columns:48px minmax(0,1fr)}.poster-heading-date{grid-column:2;flex-direction:row;align-items:center;justify-content:space-between}.poster-logo{width:48px;height:46px;grid-row:1 / span 2}.poster-crew-inline{align-self:end}}
 </style>
 </head>
 <body>
@@ -104,7 +115,6 @@ textarea{resize:vertical;min-height:105px;line-height:1.5}
    <label for="topic">Practice topic · Repeats every same weekday</label>
    <div class="topic-wrap"><textarea id="topic" rows="2" placeholder="Enter this weekday's practice topic"></textarea><span class="topic-tag">Weekly topic</span></div>
    <div class="help">Edit the topic and save it once. It will be used again next Monday / Tuesday / etc. Sunday is excluded.</div>
-   <div class="actions"><button class="btn dark" id="saveTopic">Save weekday topic</button></div>
    <div class="status" id="topicStatus" aria-live="polite"></div>
    <div class="special">
     <label for="special">Special for the day · Changes daily</label>
@@ -116,44 +126,22 @@ textarea{resize:vertical;min-height:105px;line-height:1.5}
     <input id="crewSearch" type="text" placeholder="Search and select a crew..." autocomplete="off">
     <div class="crew-options" id="crewOptions" role="listbox"></div>
    </div>
-   <div class="crew-actions"><button class="mini" id="manageCrews">＋ Add / edit crews</button><button class="mini" id="clearCrew">Clear selection</button></div>
+   <div class="crew-actions"><button class="mini" id="manageCrews">＋ Add / edit crews</button></div>
    <label for="retrain">03 / Pitch practice retrain</label>
    <textarea id="retrain" placeholder="Rayees with Archana and Sasi&#10;Bineesha with Ramu&#10;Seetha with Praveen"></textarea>
    <div class="help">Enter one retraining pairing per line. Add as many names and pairings as needed.</div>
-   <div class="actions"><button class="btn blue" id="saveDaily">Save today's practice</button><button class="btn" id="generate">Generate image ↓</button></div>
    <div class="status" id="dailyStatus" aria-live="polite">Connecting to shared practice data…</div>
   </section>
-  <section class="panel preview-panel">
-   <h3 class="preview-title">04 / Downloadable practice images</h3>
-   <div class="preview-stack">
-    <div class="preview-card">
-     <h4>Image 1 · Daily practice details</h4>
-     <div class="poster" id="posterDaily">
-      <div class="poster-top"><img class="poster-logo" src="../alza-org-logo.svg" alt="ALZA ORG official logo"><span class="poster-brand">DAILY PRACTICE</span><span class="poster-date" id="posterDateDaily">DATE</span></div>
-      <div class="poster-crew" id="posterCrewDaily">SELECT A CREW</div>
-      <div class="poster-kicker">Today's pitch practice</div>
-      <div class="poster-topic" id="posterTopic" aria-label="Structured weekday practice topic">Your practice topic appears here</div>
-      <div class="poster-block" id="posterSpecialBlock"><small>Special for the day</small><p id="posterSpecial">—</p></div>
-      <div class="poster-footer"><span>PEOPLE · PURPOSE · PERFORMANCE</span><b>REHEARSE TO RAISE THE STANDARD</b></div>
-     </div>
-     <div class="actions"><button class="btn dark" id="downloadDaily">Download daily details</button></div>
-    </div>
-    <div class="preview-card">
-     <h4>Image 2 · Pitch practice & retraining</h4>
-     <div class="poster poster-retrain" id="posterRetrainImage">
-      <div class="poster-top"><img class="poster-logo" src="../alza-org-logo.svg" alt="ALZA ORG official logo"><span class="poster-brand">RETRAINING SERIES</span><span class="poster-date" id="posterDateRetrain">DATE</span></div>
-      <div class="poster-crew" id="posterCrewRetrain">SELECT A CREW</div>
-      <div class="poster-kicker">Pitch practice · retraining pairs</div>
-      <div class="poster-block"><small>Retraining pairs</small><p id="posterRetrain">Add retraining names to display them here.</p></div>
-      <div class="poster-footer"><span>PEOPLE · PURPOSE · PERFORMANCE</span><b>REHEARSE TO RAISE THE STANDARD</b></div>
-     </div>
-     <div class="actions"><button class="btn blue" id="downloadRetrain">Download retraining</button></div>
-    </div>
-   </div>
-   <div class="actions"><button class="btn" id="downloadBoth">Download both images</button></div>
-   <div class="help">Each image is laid out independently with readable line spacing. The selected crew name and its assigned colour appear at the top of both images.</div>
-   <div class="status" id="imageStatus"></div>
-  </section>
+<section class="panel preview-panel">
+<div class="preview-heading"><h3 class="preview-title">04 / Practice card preview</h3><span class="preview-note">One image · All crew details</span></div>
+<div class="poster" id="posterDaily">
+<div class="poster-top"><img class="poster-logo" src="../alza-org-logo.svg" alt="ALZA ORG official logo"><div class="poster-crew-inline" id="posterCrewDaily">SELECT A CREW</div><div class="poster-heading-date"><span class="poster-brand">DAILY PRACTICE</span><span class="poster-date" id="posterDateDaily">DATE</span></div></div>
+<div class="poster-kicker">WEEKLY PITCH PRACTICE</div>
+<div class="poster-topic" id="posterTopic" aria-label="Structured weekday practice topic">Your practice topic appears here</div>
+<div class="poster-lower"><div class="poster-block" id="posterSpecialBlock"><small>Special for the day</small><p id="posterSpecial">—</p></div><div class="poster-block poster-retrain-block"><small>Pitch practice · retraining pairs</small><p id="posterRetrain">Add retraining pairs to display them here.</p></div></div>
+<div class="poster-footer"><span>PEOPLE · PURPOSE · PERFORMANCE</span><b>REHEARSE TO RAISE THE STANDARD</b></div>
+</div>
+<div class="actions poster-download"><button class="btn dark" id="downloadPractice">Download practice card</button></div><div class="status" id="imageStatus"></div></section>
  </main>
 </div>
 <div class="modal" id="crewModal">
@@ -191,7 +179,7 @@ function crewColors(){const idx=Math.max(0,crews.findIndex(c=>c.name===selectedC
 function applyCrewTheme(){const [bg,accent,text]=crewColors();['posterDaily','posterRetrainImage'].forEach(id=>{const p=$(id);p.style.setProperty('--crew-bg',bg);p.style.setProperty('--crew-accent',accent);p.style.setProperty('--crew-text',text)})}
 function showDate(){const {date,weekday}=dateParts();$('dayName').textContent=dayNames[weekday].toUpperCase();$('dateLabel').textContent=prettyDate(selectedDate);$('weekdayLabel').textContent=dayNames[weekday].toUpperCase();$('posterDateDaily').textContent=prettyDate(selectedDate);$('posterDateRetrain').textContent=prettyDate(selectedDate);const holiday=weekday===0;$('holidayView').hidden=!holiday;$('practiceView').hidden=holiday}
 function escHtml(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-function topicTable(raw){const lines=String(raw||'').split(/\r?\n/).map(x=>x.trim()).filter(Boolean);if(!lines.length)return '<table class="practice-table"><tbody><tr class="plain-row"><td>Practice topic not entered</td></tr></tbody></table>';let rows='';for(const line of lines){let m=line.match(/^(\d+)[.)]\s*(.*)$/);if(m){rows+='<tr class="section-row"><td class="section-no">'+escHtml(m[1])+'</td><td class="section-title" colspan="2">'+escHtml(m[2])+'</td></tr>';continue}m=line.match(/^([a-z])[.)]\s*(.*)$/i);if(m){rows+='<tr class="sub-row"><td>'+escHtml(m[1].toLowerCase())+'</td><td colspan="2">'+escHtml(m[2])+'</td></tr>';continue}rows+='<tr class="plain-row"><td colspan="3">'+escHtml(line)+'</td></tr>'}return '<table class="practice-table"><tbody>'+rows+'</tbody></table>'}
+function topicTable(raw){const lines=String(raw||'').split(/\r?\n/).map(x=>x.trim()).filter(Boolean);if(!lines.length)return '<div class="topic-plain">Practice topic not entered</div>';const groups=[];let current=null;for(const line of lines){let m=line.match(/^(\d+)[.)]\s*(.*)$/);if(m){current={number:m[1],title:m[2],items:[]};groups.push(current);continue}m=line.match(/^([a-z])[.)]\s*(.*)$/i);if(m&&current){current.items.push({key:m[1].toLowerCase(),text:m[2]});continue}if(current)current.items.push({key:'',text:line});else groups.push({number:'',title:line,items:[]})}return '<div class="topic-grid">'+groups.map(g=>'<div class="topic-group">'+(g.number?'<div class="topic-group-title"><b>'+escHtml(g.number)+'</b><span>'+escHtml(g.title)+'</span></div>':'<div class="topic-plain">'+escHtml(g.title)+'</div>')+(g.items.length?'<div class="topic-sublist">'+g.items.map(i=>'<div class="topic-subitem">'+(i.key?'<b>'+escHtml(i.key)+'</b>':'<b>•</b>')+'<span>'+escHtml(i.text)+'</span></div>').join('')+'</div>':'')+'</div>').join('')+'</div>'}
 function weekdayArtwork(day){const drawings={
 1:'<path d="M25 70c12-20 25-25 38-14l13 12 13-10c12-9 25-7 35 4l-18 23-19 8-22-8-20 8-20-23z"/><path d="M57 55l20 18m-7-2l13 8m-25-2l13 10"/>',
 2:'<circle cx="70" cy="63" r="30"/><path d="M92 85l25 25M48 63h44M70 41v44M57 52l26 22"/>',
@@ -200,7 +188,7 @@ function weekdayArtwork(day){const drawings={
 5:'<circle cx="70" cy="70" r="42"/><path d="M47 70l15 15 32-34"/>',
 6:'<circle cx="40" cy="45" r="13"/><circle cx="100" cy="45" r="13"/><circle cx="70" cy="100" r="13"/><path d="M51 52l11 34m27-34L78 86M53 45h34"/>'
 };const svg='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 140 140"><g fill="none" stroke="#2857ff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round">'+(drawings[day]||drawings[1])+'</g></svg>';return 'url("data:image/svg+xml;charset=UTF-8,'+encodeURIComponent(svg)+'")'}
-function renderPoster(){const crew=selectedCrew||'SELECT A CREW';$('posterCrewDaily').textContent=crew.toUpperCase();$('posterCrewRetrain').textContent=crew.toUpperCase();$('posterTopic').innerHTML=topicTable($('topic').value);$('posterTopic').style.setProperty('color','#10131d','important');$('posterTopic').style.setProperty('--weekday-art',weekdayArtwork(dateParts().isoWeekday));const sp=$('special').value.trim();$('posterSpecialBlock').style.display=sp?'block':'none';$('posterSpecial').textContent=sp;$('posterRetrain').textContent=$('retrain').value.trim()||'No retraining pairs added for this date.';applyCrewTheme()}
+function renderPoster(){const crew=selectedCrew||'SELECT A CREW';$('posterCrewDaily').textContent=crew.toUpperCase();$('posterDateDaily').textContent=prettyDate(dateKey());$('posterTopic').innerHTML=topicTable($('topic').value);$('posterTopic').style.setProperty('color','#10131d','important');$('posterTopic').style.setProperty('--weekday-art',weekdayArtwork(dateParts().isoWeekday));const sp=$('special').value.trim();$('posterSpecialBlock').style.display=sp?'block':'none';$('posterSpecial').textContent=sp;$('posterRetrain').textContent=$('retrain').value.trim()||'No retraining pairs added for this date.';applyCrewTheme()}
 function renderCrewOptions(filter=''){const q=filter.trim().toLowerCase();const list=crews.filter(c=>c.name.toLowerCase().includes(q));$('crewOptions').innerHTML=list.length?list.map(c=>'<button type="button" class="crew-option" data-crew="'+esc(c.name)+'"><span>'+esc(c.name)+'</span><small>SELECT</small></button>').join(''):'<div class="help" style="padding:12px">No crew found. Use Add / edit crews.</div>';$('crewOptions').classList.add('open')}
 function renderCrewManager(){$('crewManageList').innerHTML=crews.map(c=>'<div class="crew-manage-row"><span>'+esc(c.name)+'</span><button type="button" data-edit-crew="'+esc(c.id)+'">RENAME</button></div>').join('')}
 async function loadCrews(){if(!SB){try{crews=JSON.parse(localStorage.getItem('pp_crews')||'[]')}catch{crews=[]}renderCrewOptions();renderCrewManager();return}const {data,error}=await SB.from('dp_pitch_practice_crews').select('id,name,sort_order').eq('active',true).order('sort_order').order('name');if(error)throw error;crews=data||[];localStorage.setItem('pp_crews',JSON.stringify(crews));renderCrewManager()}
@@ -214,17 +202,14 @@ async function changeDate(){clearTimeout(topicTimer);clearTimeout(dailyTimer);se
 async function chooseCrew(name){if(name===selectedCrew)return;clearTimeout(dailyTimer);selectedCrew=name;$('crewSearch').value=name;$('crewOptions').classList.remove('open');$('special').value='';$('retrain').value='';localStorage.setItem('pp_selected_crew_'+dateKey(),name);renderPoster();if(!name){setStatus('dailyStatus','Select a crew to enter its details.','');return}try{await loadCrewDaily(name)}catch(e){setStatus('dailyStatus','Could not load '+name+' practice: '+e.message,'bad')}}
 async function addCrew(){const name=$('newCrew').value.trim().replace(/\s+/g,' ');if(!name)return toast('Enter a crew name');if(crews.some(c=>c.name.toLowerCase()===name.toLowerCase()))return toast('Crew already exists');if(!SB)return toast('Database connection unavailable');const {data,error}=await SB.from('dp_pitch_practice_crews').insert({name,sort_order:crews.length+1}).select('id,name,sort_order').single();if(error)return toast(error.message);crews.push(data);crews.sort((a,b)=>a.sort_order-b.sort_order||a.name.localeCompare(b.name));$('newCrew').value='';renderCrewManager();renderCrewOptions();renderPoster();toast('Crew added')}
 async function renameCrew(id){const c=crews.find(x=>x.id===id);if(!c)return;const next=prompt('Rename crew:',c.name);if(next===null)return;const name=next.trim().replace(/\s+/g,' ');if(!name||name===c.name)return;if(crews.some(x=>x.id!==id&&x.name.toLowerCase()===name.toLowerCase()))return toast('Crew already exists');const {error}=await SB.from('dp_pitch_practice_crews').update({name,updated_at:new Date().toISOString()}).eq('id',id);if(error)return toast(error.message);if(selectedCrew===c.name){selectedCrew=name;$('crewSearch').value=name;await saveDaily(true)}await loadCrews();renderCrewOptions();renderPoster();toast('Crew renamed')}
-async function downloadPoster(id,suffix){renderPoster();if(!selectedCrew){toast('Select a crew before downloading');$('crewSearch').focus();return}if(!window.html2canvas){toast('Image generator is still loading');return}const btn=id==='posterDaily'?'downloadDaily':'downloadRetrain';$(btn).disabled=true;try{const target=$(id);const canvas=await html2canvas(target,{scale:2,backgroundColor:id==='posterDaily'?'#10131d':'#f0f3fa',useCORS:true,windowWidth:Math.max(document.documentElement.clientWidth,target.scrollWidth)});const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));if(!blob)throw new Error('Could not create image');const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='ALZA-ORG-'+selectedCrew.replace(/[^a-z0-9]+/gi,'-')+'-'+suffix+'-'+dateKey()+'.png';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);setStatus('imageStatus',suffix+' image downloaded.','ok')}catch(e){console.error(e);setStatus('imageStatus','Could not generate image: '+e.message,'bad')}finally{$(btn).disabled=false}}
-async function downloadBoth(){await downloadPoster('posterDaily','daily-details');await new Promise(r=>setTimeout(r,350));await downloadPoster('posterRetrainImage','retraining')}
+async function downloadPractice(){renderPoster();if(!selectedCrew){toast('Select a crew before downloading');$('crewSearch').focus();return}if(!window.html2canvas){toast('Image generator is still loading');return}const btn=$('downloadPractice');btn.disabled=true;try{const target=$('posterDaily');const canvas=await html2canvas(target,{scale:2,backgroundColor:'#101522',useCORS:true,windowWidth:Math.max(document.documentElement.clientWidth,target.scrollWidth)});const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));if(!blob)throw new Error('Could not create image');const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='ALZA-ORG-'+selectedCrew.replace(/[^a-z0-9]+/gi,'-')+'-practice-'+dateKey()+'.png';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);setStatus('imageStatus','Practice card downloaded.','ok')}catch(e){console.error(e);setStatus('imageStatus','Could not generate image: '+e.message,'bad')}finally{btn.disabled=false}}
 async function init(){selectedDate=localDate();$('practiceDate').value=selectedDate;showDate();if(dateParts().weekday===0){setStatus('dailyStatus','Sunday is a holiday. You can select another date.','');}try{await loadCrews();if(dateParts().weekday!==0){await loadTopic();await loadDaily()}else renderPoster();setStatus('dailyStatus','Connected · shared practice data is ready.','ok')}catch(e){console.error(e);setStatus('dailyStatus','Could not fully sync online. '+(e.message||''),'bad')}}
 $('practiceDate').addEventListener('change',changeDate);
 $('crewSearch').addEventListener('focus',()=>renderCrewOptions($('crewSearch').value));$('crewSearch').addEventListener('input',()=>renderCrewOptions($('crewSearch').value));$('crewOptions').addEventListener('click',e=>{const b=e.target.closest('[data-crew]');if(b)chooseCrew(b.dataset.crew)});document.addEventListener('click',e=>{if(!e.target.closest('.crew-select'))$('crewOptions').classList.remove('open')});
-$('clearCrew').onclick=()=>{clearTimeout(dailyTimer);selectedCrew='';$('crewSearch').value='';$('special').value='';$('retrain').value='';localStorage.removeItem('pp_selected_crew_'+dateKey());renderPoster();setStatus('dailyStatus','Select a crew to enter its details.','')};
+
 $('manageCrews').onclick=()=>{$('crewModal').classList.add('show');renderCrewManager()};$('closeCrewModal').onclick=()=>$('crewModal').classList.remove('show');$('addCrew').onclick=addCrew;$('crewManageList').addEventListener('click',e=>{const b=e.target.closest('[data-edit-crew]');if(b)renameCrew(b.dataset.editCrew)});
-$('saveTopic').onclick=()=>saveTopic().catch(e=>setStatus('topicStatus','Could not save topic: '+e.message,'bad'));
 $('topic').addEventListener('input',()=>{renderPoster();clearTimeout(topicTimer);topicTimer=setTimeout(()=>saveTopic().catch(e=>setStatus('topicStatus','Auto-save failed: '+e.message,'bad')),900)});
-$('special').addEventListener('input',()=>{if(!selectedCrew){setStatus('dailyStatus','Select a crew first.','bad');return}scheduleDailySave()});$('retrain').addEventListener('input',()=>{if(!selectedCrew){setStatus('dailyStatus','Select a crew first.','bad');return}scheduleDailySave()});$('saveDaily').onclick=()=>saveDaily(false).catch(()=>{});
-$('downloadDaily').onclick=()=>downloadPoster('posterDaily','daily-details');$('downloadRetrain').onclick=()=>downloadPoster('posterRetrainImage','retraining');$('downloadBoth').onclick=downloadBoth;
+$('special').addEventListener('input',()=>{if(!selectedCrew){setStatus('dailyStatus','Select a crew first.','bad');return}scheduleDailySave()});$('retrain').addEventListener('input',()=>{if(!selectedCrew){setStatus('dailyStatus','Select a crew first.','bad');return}scheduleDailySave()});$('downloadPractice').onclick=downloadPractice;
 init();
 </script>
 </body>
