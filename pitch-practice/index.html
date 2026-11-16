@@ -62,6 +62,29 @@ textarea{resize:vertical;min-height:105px;line-height:1.5}
 .toast{position:fixed;bottom:15px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:12px 16px;font-size:11px;z-index:100;display:none;max-width:90vw}.toast.show{display:block}
 @media(max-width:760px){.shell{padding:12px}.topbar{align-items:flex-start}.hero{padding:20px;min-height:190px;display:block}.hero h2{font-size:39px}.date-stamp{text-align:left;margin-top:20px}.grid{grid-template-columns:1fr}.panel{padding:15px}.poster{min-height:0;padding:17px}.actions .btn{flex:1}}
 @media print{body{background:white}.shell>*:not(.preview-panel){display:none!important}.preview-panel{display:block!important}.poster{width:100%;max-width:600px;margin:auto}}
+
+/* Editorial weekday practice card */
+.poster{border-radius:18px;padding:22px;background:linear-gradient(145deg,#101522 0%,#171e30 100%);box-shadow:0 18px 42px rgba(8,12,24,.24)}
+.poster-top{border-bottom:1px solid rgba(255,255,255,.22);padding-bottom:15px}
+.poster-logo{border-radius:5px;width:70px;height:62px}
+.poster-crew{border-radius:10px;box-shadow:0 7px 0 rgba(0,0,0,.14);text-transform:uppercase}
+.poster-kicker{margin-top:18px;color:#dce4ff}
+.poster-topic{position:relative;isolation:isolate;overflow:hidden;border-radius:14px;padding:18px 16px;background:linear-gradient(135deg,#f5f7ff 0%,#dce7ff 100%);border:1px solid rgba(255,255,255,.55);box-shadow:inset 0 0 0 1px rgba(16,19,29,.05)}
+.poster-topic:before{content:"";position:absolute;z-index:-1;inset:0;background-image:var(--weekday-art);background-repeat:no-repeat;background-position:right 12px top 8px;background-size:180px auto;opacity:.12;pointer-events:none}
+.practice-table{width:100%;border-collapse:separate;border-spacing:0 7px;color:#10131d;font-size:clamp(13px,2vw,17px);line-height:1.35;position:relative}
+.practice-table td{vertical-align:top;padding:9px 10px;background:rgba(255,255,255,.78)}
+.practice-table .section-row td{background:rgba(255,255,255,.96);font-weight:950;border-top:1px solid rgba(16,19,29,.08);border-bottom:1px solid rgba(16,19,29,.08)}
+.practice-table .section-no{width:42px;text-align:center;color:#fff;background:var(--crew-bg)!important;border-radius:8px 0 0 8px;font-weight:950}
+.practice-table .section-title{border-radius:0 8px 8px 0}
+.practice-table .sub-row td:first-child{width:42px;text-align:center;color:#334155;font-weight:950;border-radius:7px 0 0 7px;background:#eaf0ff}
+.practice-table .sub-row td:last-child{border-radius:0 7px 7px 0;font-weight:650}
+.practice-table .plain-row td{border-radius:7px;font-weight:700}
+.poster-block{border-radius:10px;padding:15px 16px}
+.poster-footer{padding-top:13px}
+.poster-retrain{background:linear-gradient(145deg,#f7f8fc,#e7ebf5);border-radius:18px;box-shadow:0 18px 42px rgba(8,12,24,.15)}
+.poster-retrain .poster-block{border-radius:10px}
+@media(max-width:760px){.poster{padding:15px;border-radius:14px}.poster-topic{padding:12px 10px}.practice-table{font-size:13px}.practice-table td{padding:8px 7px}.practice-table .section-no,.practice-table .sub-row td:first-child{width:32px}.poster-topic:before{background-size:140px auto}}
+
 </style>
 </head>
 <body>
@@ -109,7 +132,7 @@ textarea{resize:vertical;min-height:105px;line-height:1.5}
       <div class="poster-top"><img class="poster-logo" src="../alza-org-logo.svg" alt="ALZA ORG official logo"><span class="poster-brand">DAILY PRACTICE</span><span class="poster-date" id="posterDateDaily">DATE</span></div>
       <div class="poster-crew" id="posterCrewDaily">SELECT A CREW</div>
       <div class="poster-kicker">Today's pitch practice</div>
-      <div class="poster-topic" id="posterTopic">Your practice topic appears here</div>
+      <div class="poster-topic" id="posterTopic" aria-label="Structured weekday practice topic">Your practice topic appears here</div>
       <div class="poster-block" id="posterSpecialBlock"><small>Special for the day</small><p id="posterSpecial">—</p></div>
       <div class="poster-footer"><span>PEOPLE · PURPOSE · PERFORMANCE</span><b>REHEARSE TO RAISE THE STANDARD</b></div>
      </div>
@@ -167,7 +190,17 @@ function prettyDate(value){return new Date(value+'T12:00:00').toLocaleDateString
 function crewColors(){const idx=Math.max(0,crews.findIndex(c=>c.name===selectedCrew))%crewPalette.length;return crewPalette[idx]}
 function applyCrewTheme(){const [bg,accent,text]=crewColors();['posterDaily','posterRetrainImage'].forEach(id=>{const p=$(id);p.style.setProperty('--crew-bg',bg);p.style.setProperty('--crew-accent',accent);p.style.setProperty('--crew-text',text)})}
 function showDate(){const {date,weekday}=dateParts();$('dayName').textContent=dayNames[weekday].toUpperCase();$('dateLabel').textContent=prettyDate(selectedDate);$('weekdayLabel').textContent=dayNames[weekday].toUpperCase();$('posterDateDaily').textContent=prettyDate(selectedDate);$('posterDateRetrain').textContent=prettyDate(selectedDate);const holiday=weekday===0;$('holidayView').hidden=!holiday;$('practiceView').hidden=holiday}
-function renderPoster(){const crew=selectedCrew||'SELECT A CREW';$('posterCrewDaily').textContent=crew.toUpperCase();$('posterCrewRetrain').textContent=crew.toUpperCase();$('posterTopic').textContent=$('topic').value.trim()||'Practice topic not entered';$('posterTopic').style.setProperty('color','#10131d','important');const sp=$('special').value.trim();$('posterSpecialBlock').style.display=sp?'block':'none';$('posterSpecial').textContent=sp;$('posterRetrain').textContent=$('retrain').value.trim()||'No retraining pairs added for this date.';applyCrewTheme()}
+function escHtml(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function topicTable(raw){const lines=String(raw||'').split(/\r?\n/).map(x=>x.trim()).filter(Boolean);if(!lines.length)return '<table class="practice-table"><tbody><tr class="plain-row"><td>Practice topic not entered</td></tr></tbody></table>';let rows='';for(const line of lines){let m=line.match(/^(\d+)[.)]\s*(.*)$/);if(m){rows+='<tr class="section-row"><td class="section-no">'+escHtml(m[1])+'</td><td class="section-title" colspan="2">'+escHtml(m[2])+'</td></tr>';continue}m=line.match(/^([a-z])[.)]\s*(.*)$/i);if(m){rows+='<tr class="sub-row"><td>'+escHtml(m[1].toLowerCase())+'</td><td colspan="2">'+escHtml(m[2])+'</td></tr>';continue}rows+='<tr class="plain-row"><td colspan="3">'+escHtml(line)+'</td></tr>'}return '<table class="practice-table"><tbody>'+rows+'</tbody></table>'}
+function weekdayArtwork(day){const drawings={
+1:'<path d="M25 70c12-20 25-25 38-14l13 12 13-10c12-9 25-7 35 4l-18 23-19 8-22-8-20 8-20-23z"/><path d="M57 55l20 18m-7-2l13 8m-25-2l13 10"/>',
+2:'<circle cx="70" cy="63" r="30"/><path d="M92 85l25 25M48 63h44M70 41v44M57 52l26 22"/>',
+3:'<path d="M35 35h70v75H35zM70 35v75M45 49h16m-16 12h16m17-12h17m-17 12h17M48 91h16m17 0h17"/>',
+4:'<path d="M70 25l42 15v30c0 25-18 42-42 53-24-11-42-28-42-53V40z"/><path d="M50 69l14 14 28-31"/>',
+5:'<circle cx="70" cy="70" r="42"/><path d="M47 70l15 15 32-34"/>',
+6:'<circle cx="40" cy="45" r="13"/><circle cx="100" cy="45" r="13"/><circle cx="70" cy="100" r="13"/><path d="M51 52l11 34m27-34L78 86M53 45h34"/>'
+};const svg='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 140 140"><g fill="none" stroke="#2857ff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round">'+(drawings[day]||drawings[1])+'</g></svg>';return 'url("data:image/svg+xml;charset=UTF-8,'+encodeURIComponent(svg)+'")'}
+function renderPoster(){const crew=selectedCrew||'SELECT A CREW';$('posterCrewDaily').textContent=crew.toUpperCase();$('posterCrewRetrain').textContent=crew.toUpperCase();$('posterTopic').innerHTML=topicTable($('topic').value);$('posterTopic').style.setProperty('color','#10131d','important');$('posterTopic').style.setProperty('--weekday-art',weekdayArtwork(dateParts().isoWeekday));const sp=$('special').value.trim();$('posterSpecialBlock').style.display=sp?'block':'none';$('posterSpecial').textContent=sp;$('posterRetrain').textContent=$('retrain').value.trim()||'No retraining pairs added for this date.';applyCrewTheme()}
 function renderCrewOptions(filter=''){const q=filter.trim().toLowerCase();const list=crews.filter(c=>c.name.toLowerCase().includes(q));$('crewOptions').innerHTML=list.length?list.map(c=>'<button type="button" class="crew-option" data-crew="'+esc(c.name)+'"><span>'+esc(c.name)+'</span><small>SELECT</small></button>').join(''):'<div class="help" style="padding:12px">No crew found. Use Add / edit crews.</div>';$('crewOptions').classList.add('open')}
 function renderCrewManager(){$('crewManageList').innerHTML=crews.map(c=>'<div class="crew-manage-row"><span>'+esc(c.name)+'</span><button type="button" data-edit-crew="'+esc(c.id)+'">RENAME</button></div>').join('')}
 async function loadCrews(){if(!SB){try{crews=JSON.parse(localStorage.getItem('pp_crews')||'[]')}catch{crews=[]}renderCrewOptions();renderCrewManager();return}const {data,error}=await SB.from('dp_pitch_practice_crews').select('id,name,sort_order').eq('active',true).order('sort_order').order('name');if(error)throw error;crews=data||[];localStorage.setItem('pp_crews',JSON.stringify(crews));renderCrewManager()}
