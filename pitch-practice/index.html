@@ -17,8 +17,7 @@ button,input,textarea{font:inherit}button{cursor:pointer}
 .brand{display:flex;align-items:center;gap:11px}.brandmark{width:58px;height:52px;background:#fff;display:grid;place-items:center;overflow:hidden}.brandmark img{width:100%;height:100%;object-fit:contain}.brand h1{font-size:14px;letter-spacing:.14em;margin:0;font-weight:950}.brand p{margin:3px 0 0;color:var(--muted);font-size:10px;letter-spacing:.1em;text-transform:uppercase}
 .link{color:var(--ink);font-size:12px;font-weight:800;text-decoration:none;border-bottom:2px solid var(--orange);padding:5px 0}
 .hero{background:var(--ink);color:white;padding:26px 28px;position:relative;overflow:hidden;border-radius:4px;min-height:175px;display:flex;justify-content:space-between;align-items:flex-end;gap:20px}
-.hero:after{content:"";position:absolute;width:260px;height:260px;border:35px solid var(--orange);border-radius:50%;right:10%;top:-150px;opacity:.95}
-.kicker{font-size:10px;letter-spacing:.24em;text-transform:uppercase;color:var(--lime);font-weight:900}.hero h2{font-size:clamp(32px,6vw,58px);line-height:.95;letter-spacing:-.06em;margin:10px 0 8px;max-width:600px}.hero p{font-size:12px;color:#c8cad2;margin:0}.date-stamp{position:relative;z-index:1;text-align:right;min-width:140px}.date-stamp strong{display:block;font-size:20px}.date-stamp span{font-size:10px;color:var(--lime);letter-spacing:.16em;text-transform:uppercase}
+.kicker{font-size:10px;letter-spacing:.24em;text-transform:uppercase;color:var(--lime);font-weight:900}.hero h2{font-size:clamp(32px,6vw,58px);line-height:.95;letter-spacing:-.06em;margin:10px 0 8px;max-width:600px}.hero p{font-size:12px;color:#c8cad2;margin:0}.date-stamp{position:relative;z-index:1;text-align:right;min-width:190px}.date-stamp label{color:var(--lime);font-size:10px;margin:0 0 8px}.date-stamp input{background:#fff;color:var(--ink);font-weight:800;font-size:14px;min-width:175px;padding:10px;border:0}.date-stamp strong{display:block;font-size:20px}.date-stamp span{font-size:10px;color:var(--lime);letter-spacing:.16em;text-transform:uppercase}
 .grid{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(300px,.9fr);gap:15px;margin-top:15px}
 .panel{background:var(--card);border:1px solid var(--line);padding:18px;box-shadow:5px 5px 0 rgba(16,19,29,.07)}
 .panel-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:14px}.panel-head h3{margin:0;font-size:12px;text-transform:uppercase;letter-spacing:.15em}.num{font-size:10px;color:var(--muted);font-weight:800}
@@ -39,20 +38,29 @@ textarea{resize:vertical;min-height:105px;line-height:1.5}
 .holiday{margin-top:16px;background:var(--lime);padding:35px 22px;text-align:center;border:2px solid var(--ink)}.holiday b{font-size:28px;letter-spacing:-.04em;display:block}.holiday span{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.13em}
 .preview-panel{background:#e7e5dc}
 .preview-title{font-size:11px;font-weight:950;letter-spacing:.15em;text-transform:uppercase;margin:0 0 12px}
-.poster{background:#10131d;color:#fff;min-height:480px;padding:25px;position:relative;overflow:hidden;border:1px solid #10131d}
-.poster:before{content:"";position:absolute;width:210px;height:210px;border-radius:50%;background:var(--orange);right:-80px;top:-75px}
-.poster:after{content:"";position:absolute;width:150px;height:150px;border:22px solid var(--blue);border-radius:50%;left:-85px;bottom:-85px}
-.poster-top{position:relative;z-index:1;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #454957;padding-bottom:13px}
+.poster{--crew-bg:#2857ff;--crew-accent:#d7ff65;--crew-text:#10131d;background:#10131d;color:#fff;min-height:300px;height:auto;padding:22px;position:relative;overflow:visible;border:1px solid #10131d;break-inside:avoid}
+.poster-top{position:relative;z-index:1;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #454957;padding-bottom:12px;gap:12px}
 .poster-logo{width:76px;height:68px;object-fit:contain;background:#fff;padding:2px}.poster-brand{font-size:9px;font-weight:950;letter-spacing:.2em;color:#d5d8e0}.poster-date{font-size:9px;color:var(--lime);font-weight:800}
-.poster-crew{position:relative;z-index:1;margin:25px 0 6px;color:var(--lime);font-size:clamp(24px,4vw,38px);line-height:1;letter-spacing:-.04em;font-weight:1000;overflow-wrap:anywhere}
+.poster-crew{position:relative;z-index:1;margin:18px 0 7px;padding:12px 14px;background:var(--crew-bg);color:var(--crew-text);font-size:clamp(22px,4vw,34px);line-height:1.05;letter-spacing:-.04em;font-weight:1000;overflow-wrap:anywhere}
 .poster-kicker{position:relative;z-index:1;font-size:10px;letter-spacing:.25em;color:#aeb4c3;text-transform:uppercase;font-weight:900}
-.poster-topic{position:relative;z-index:1;margin-top:26px;padding:15px;background:var(--orange);color:#10131d;font-size:23px;font-weight:1000;line-height:1.08;letter-spacing:-.04em;overflow-wrap:anywhere}
-.poster-block{position:relative;z-index:1;margin-top:15px}.poster-block small{display:block;color:var(--lime);font-size:9px;letter-spacing:.2em;font-weight:950;text-transform:uppercase;margin-bottom:7px}.poster-block p{margin:0;font-size:14px;line-height:1.45;white-space:pre-wrap;overflow-wrap:anywhere;color:#f1f1ee}
-.poster-footer{position:absolute;z-index:1;bottom:22px;right:25px;left:25px;border-top:1px solid #454957;padding-top:10px;display:flex;justify-content:space-between;gap:8px;font-size:8px;letter-spacing:.17em;color:#aeb4c3;text-transform:uppercase}
-.poster-footer b{color:var(--lime)}
+.poster-topic{position:relative;z-index:1;margin-top:18px;padding:16px;background:var(--crew-accent);color:var(--crew-text);font-size:clamp(17px,2.5vw,22px);font-weight:900;line-height:1.28;letter-spacing:-.02em;white-space:pre-wrap;overflow-wrap:anywhere}
+.poster-block{position:relative;z-index:1;margin-top:16px;padding:13px 14px;background:#1b2030;border-left:4px solid var(--crew-bg)}.poster-block small{display:block;color:var(--lime);font-size:9px;letter-spacing:.2em;font-weight:950;text-transform:uppercase;margin-bottom:7px}.poster-block p{margin:0;font-size:14px;line-height:1.55;white-space:pre-wrap;overflow-wrap:anywhere;color:#f1f1ee}
+.poster-footer{position:relative;z-index:1;margin-top:20px;border-top:1px solid #454957;padding-top:10px;display:flex;justify-content:space-between;gap:8px;font-size:8px;letter-spacing:.13em;color:#aeb4c3;text-transform:uppercase;flex-wrap:wrap}
+.poster-footer b{color:var(--crew-accent)}
+.poster + .help{margin-bottom:10px}
+.preview-stack{display:grid;gap:16px}
+.preview-card{background:#fffefa;padding:14px;border:1px solid var(--line)}
+.preview-card h4{margin:0 0 10px;font-size:11px;letter-spacing:.13em;text-transform:uppercase}
+.poster-retrain{background:#f0f3fa;color:#10131d;border-color:#d9dfed}
+.poster-retrain .poster-brand{color:#4f5668}
+.poster-retrain .poster-block{background:#fff;border-color:var(--crew-bg)}
+.poster-retrain .poster-block p{color:#10131d;font-size:16px;line-height:1.65}
+.poster-retrain .poster-footer{color:#5c6270;border-color:#c9ced9}
+.poster-retrain .poster-crew{color:#fff}
+.poster-retrain .poster-kicker{color:#5c6270}
 .modal{display:none;position:fixed;inset:0;background:#10131ddd;z-index:50;align-items:center;justify-content:center;padding:18px}.modal.show{display:flex}.modalbox{background:var(--paper);width:min(430px,100%);padding:20px;border:2px solid var(--ink);box-shadow:8px 8px 0 var(--orange)}.modalbox h3{margin:0 0 8px;font-size:18px}.crew-manage-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 0;border-bottom:1px solid var(--line);font-size:12px;font-weight:800}.crew-manage-row button{border:1px solid var(--line);background:#fff;padding:6px 8px;font-size:9px;font-weight:900}
 .toast{position:fixed;bottom:15px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:12px 16px;font-size:11px;z-index:100;display:none;max-width:90vw}.toast.show{display:block}
-@media(max-width:760px){.shell{padding:12px}.topbar{align-items:flex-start}.hero{padding:20px;min-height:190px;display:block}.hero h2{font-size:39px}.date-stamp{text-align:left;margin-top:20px}.hero:after{right:-80px}.grid{grid-template-columns:1fr}.panel{padding:15px}.poster{min-height:455px}.actions .btn{flex:1}}
+@media(max-width:760px){.shell{padding:12px}.topbar{align-items:flex-start}.hero{padding:20px;min-height:190px;display:block}.hero h2{font-size:39px}.date-stamp{text-align:left;margin-top:20px}.grid{grid-template-columns:1fr}.panel{padding:15px}.poster{min-height:0;padding:17px}.actions .btn{flex:1}}
 @media print{body{background:white}.shell>*:not(.preview-panel){display:none!important}.preview-panel{display:block!important}.poster{width:100%;max-width:600px;margin:auto}}
 </style>
 </head>
@@ -64,7 +72,7 @@ textarea{resize:vertical;min-height:105px;line-height:1.5}
  </div>
  <section class="hero">
   <div><div class="kicker">Practice makes the pitch</div><h2>SHOW UP.<br>SHARPEN THE STORY.</h2><p>A focused daily space for crew practice, retraining and pitch discipline.</p></div>
-  <div class="date-stamp"><span id="dayName">TODAY</span><strong id="dateLabel">—</strong></div>
+  <div class="date-stamp"><label for="practiceDate">SELECT PRACTICE DATE</label><input id="practiceDate" type="date"><span id="dayName">TODAY</span><strong id="dateLabel">—</strong></div>
  </section>
  <div id="holidayView" class="holiday" hidden><b>REST. RESET. RECHARGE.</b><span>Sunday is a holiday · No pitch practice scheduled</span></div>
  <main id="practiceView" class="grid">
@@ -93,18 +101,34 @@ textarea{resize:vertical;min-height:105px;line-height:1.5}
    <div class="status" id="dailyStatus" aria-live="polite">Connecting to shared practice data…</div>
   </section>
   <section class="panel preview-panel">
-   <h3 class="preview-title">04 / Image preview</h3>
-   <div class="poster" id="poster">
-    <div class="poster-top"><img class="poster-logo" src="../alza-org-logo.svg" alt="ALZA ORG official logo"><span class="poster-brand">PRACTICE<br>SERIES / 01</span><span class="poster-date" id="posterDate">DATE</span></div>
-    <div class="poster-crew" id="posterCrew">SELECT A CREW</div>
-    <div class="poster-kicker">Today's pitch practice</div>
-    <div class="poster-topic" id="posterTopic">Your practice topic appears here</div>
-    <div class="poster-block" id="posterSpecialBlock"><small>Special for the day</small><p id="posterSpecial">—</p></div>
-    <div class="poster-block"><small>Retraining pairs</small><p id="posterRetrain">Add retraining names to display them here.</p></div>
-    <div class="poster-footer"><span>PEOPLE · PURPOSE · PERFORMANCE</span><b>REHEARSE TO RAISE THE STANDARD</b></div>
+   <h3 class="preview-title">04 / Downloadable practice images</h3>
+   <div class="preview-stack">
+    <div class="preview-card">
+     <h4>Image 1 · Daily practice details</h4>
+     <div class="poster" id="posterDaily">
+      <div class="poster-top"><span class="poster-brand">ALZA ORG / DAILY PRACTICE</span><span class="poster-date" id="posterDateDaily">DATE</span></div>
+      <div class="poster-crew" id="posterCrewDaily">SELECT A CREW</div>
+      <div class="poster-kicker">Today's pitch practice</div>
+      <div class="poster-topic" id="posterTopic">Your practice topic appears here</div>
+      <div class="poster-block" id="posterSpecialBlock"><small>Special for the day</small><p id="posterSpecial">—</p></div>
+      <div class="poster-footer"><span>PEOPLE · PURPOSE · PERFORMANCE</span><b>REHEARSE TO RAISE THE STANDARD</b></div>
+     </div>
+     <div class="actions"><button class="btn dark" id="downloadDaily">Download daily details</button></div>
+    </div>
+    <div class="preview-card">
+     <h4>Image 2 · Pitch practice & retraining</h4>
+     <div class="poster poster-retrain" id="posterRetrainImage">
+      <div class="poster-top"><span class="poster-brand">ALZA ORG / RETRAINING SERIES</span><span class="poster-date" id="posterDateRetrain">DATE</span></div>
+      <div class="poster-crew" id="posterCrewRetrain">SELECT A CREW</div>
+      <div class="poster-kicker">Pitch practice · retraining pairs</div>
+      <div class="poster-block"><small>Retraining pairs</small><p id="posterRetrain">Add retraining names to display them here.</p></div>
+      <div class="poster-footer"><span>PEOPLE · PURPOSE · PERFORMANCE</span><b>REHEARSE TO RAISE THE STANDARD</b></div>
+     </div>
+     <div class="actions"><button class="btn blue" id="downloadRetrain">Download retraining</button></div>
+    </div>
    </div>
-   <div class="help">The generated poster uses a separate visual style and places the selected crew name at the top.</div>
-   <div class="actions"><button class="btn dark" id="downloadImage">Download image</button></div>
+   <div class="actions"><button class="btn" id="downloadBoth">Download both images</button></div>
+   <div class="help">Each image is laid out independently with readable line spacing. The selected crew name and its assigned colour appear at the top of both images.</div>
    <div class="status" id="imageStatus"></div>
   </section>
  </main>
@@ -125,37 +149,48 @@ const SB=window.supabase&&window.supabase.createClient?window.supabase.createCli
 const $=id=>document.getElementById(id);
 const pad=n=>String(n).padStart(2,'0');
 const localDate=()=>{const d=new Date();return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())};
-const weekday=new Date().getDay();
-const isoWeekday=weekday===0?7:weekday;
-const dateKey=localDate();
-setInterval(()=>{if(localDate()!==dateKey)location.reload()},60000);
 const dayNames=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-let crews=[],selectedCrew='',topicLoaded=false,dailyLoaded=false,topicTimer=null,dailyTimer=null,lastImageUrl=null;
 const defaultTopics={1:'Introduction & Rapport Building',2:'Need Discovery & Presentation',3:'Product Knowledge & Impact Story',4:'Objection Handling',5:'Closing & Commitment',6:'Follow-up & Referral Handling'};
+const crewPalette=[
+ ['#2857ff','#dce5ff','#ffffff'],['#087f5b','#d3f9e8','#ffffff'],['#b42318','#fee4e2','#ffffff'],
+ ['#7c3aed','#ede9fe','#ffffff'],['#b45309','#fef3c7','#ffffff'],['#0e7490','#cffafe','#ffffff'],
+ ['#be185d','#fce7f3','#ffffff'],['#4d7c0f','#ecfccb','#ffffff'],['#334155','#e2e8f0','#ffffff'],
+ ['#9333ea','#f3e8ff','#ffffff'],['#c2410c','#ffedd5','#ffffff']
+];
+let selectedDate=localDate(),crews=[],selectedCrew='',topicTimer=null,dailyTimer=null;
+const dateParts=()=>{const d=new Date(selectedDate+'T12:00:00');return {date:d,weekday:d.getDay(),isoWeekday:d.getDay()===0?7:d.getDay()}};
+const dateKey=()=>selectedDate;
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function toast(msg){$('toast').textContent=msg;$('toast').classList.add('show');setTimeout(()=>$('toast').classList.remove('show'),2600)}
 function setStatus(id,msg,kind=''){const el=$(id);el.textContent=msg;el.className='status '+kind}
-function showDate(){const d=new Date();$('dayName').textContent=dayNames[d.getDay()].toUpperCase();$('dateLabel').textContent=d.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});$('weekdayLabel').textContent=dayNames[d.getDay()].toUpperCase();$('posterDate').textContent=d.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});if(weekday===0){$('holidayView').hidden=false;$('practiceView').hidden=true}} 
-function renderPoster(){const crew=selectedCrew||'SELECT A CREW';$('posterCrew').textContent=crew.toUpperCase();$('posterTopic').textContent=$('topic').value.trim()||'Your practice topic appears here';const sp=$('special').value.trim();$('posterSpecialBlock').style.display=sp?'block':'none';$('posterSpecial').textContent=sp;$('posterRetrain').textContent=$('retrain').value.trim()||'Add retraining names to display them here.'}
+function prettyDate(value){return new Date(value+'T12:00:00').toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})}
+function crewColors(){const idx=Math.max(0,crews.findIndex(c=>c.name===selectedCrew))%crewPalette.length;return crewPalette[idx]}
+function applyCrewTheme(){const [bg,accent,text]=crewColors();['posterDaily','posterRetrainImage'].forEach(id=>{const p=$(id);p.style.setProperty('--crew-bg',bg);p.style.setProperty('--crew-accent',accent);p.style.setProperty('--crew-text',text)})}
+function showDate(){const {date,weekday}=dateParts();$('dayName').textContent=dayNames[weekday].toUpperCase();$('dateLabel').textContent=prettyDate(selectedDate);$('weekdayLabel').textContent=dayNames[weekday].toUpperCase();$('posterDateDaily').textContent=prettyDate(selectedDate);$('posterDateRetrain').textContent=prettyDate(selectedDate);const holiday=weekday===0;$('holidayView').hidden=!holiday;$('practiceView').hidden=holiday}
+function renderPoster(){const crew=selectedCrew||'SELECT A CREW';$('posterCrewDaily').textContent=crew.toUpperCase();$('posterCrewRetrain').textContent=crew.toUpperCase();$('posterTopic').textContent=$('topic').value.trim()||'Practice topic not entered';const sp=$('special').value.trim();$('posterSpecialBlock').style.display=sp?'block':'none';$('posterSpecial').textContent=sp;$('posterRetrain').textContent=$('retrain').value.trim()||'No retraining pairs added for this date.';applyCrewTheme()}
 function renderCrewOptions(filter=''){const q=filter.trim().toLowerCase();const list=crews.filter(c=>c.name.toLowerCase().includes(q));$('crewOptions').innerHTML=list.length?list.map(c=>'<button type="button" class="crew-option" data-crew="'+esc(c.name)+'"><span>'+esc(c.name)+'</span><small>SELECT</small></button>').join(''):'<div class="help" style="padding:12px">No crew found. Use Add / edit crews.</div>';$('crewOptions').classList.add('open')}
-function chooseCrew(name){selectedCrew=name;$('crewSearch').value=name;$('crewOptions').classList.remove('open');renderPoster();saveDaily(true)}
 function renderCrewManager(){$('crewManageList').innerHTML=crews.map(c=>'<div class="crew-manage-row"><span>'+esc(c.name)+'</span><button type="button" data-edit-crew="'+esc(c.id)+'">RENAME</button></div>').join('')}
-async function loadCrews(){if(!SB){try{crews=JSON.parse(localStorage.getItem('pp_crews')||'[]')}catch{};renderCrewOptions();renderCrewManager();return}const {data,error}=await SB.from('dp_pitch_practice_crews').select('id,name,sort_order').eq('active',true).order('sort_order').order('name');if(error)throw error;crews=data||[];localStorage.setItem('pp_crews',JSON.stringify(crews));renderCrewManager()}
-async function loadTopic(){const local=localStorage.getItem('pp_topic_'+isoWeekday);if(local!==null)$('topic').value=local;if(SB){const {data,error}=await SB.from('dp_pitch_practice_topics').select('topic').eq('weekday',isoWeekday).maybeSingle();if(error)throw error;if(data)$('topic').value=data.topic;else $('topic').value=defaultTopics[isoWeekday]||''}else if(local===null)$('topic').value=defaultTopics[isoWeekday]||'';localStorage.setItem('pp_topic_'+isoWeekday,$('topic').value);topicLoaded=true;setStatus('topicStatus','Saved for every '+dayNames[weekday]+'.','ok')}
-async function saveTopic(){const value=$('topic').value.trim();localStorage.setItem('pp_topic_'+isoWeekday,value);if(SB){const {error}=await SB.from('dp_pitch_practice_topics').upsert({weekday:isoWeekday,topic:value,updated_at:new Date().toISOString()},{onConflict:'weekday'});if(error)throw error}setStatus('topicStatus','Weekday topic saved · repeats every '+dayNames[weekday]+'.','ok');renderPoster()}
-async function loadDaily(){const local=JSON.parse(localStorage.getItem('pp_daily_'+dateKey)||'{}');$('special').value=local.special_for_day||'';$('retrain').value=local.retrain||'';selectedCrew=local.crew||'';$('crewSearch').value=selectedCrew;if(SB){const {data,error}=await SB.from('dp_pitch_practice_daily').select('special_for_day,crew,retrain').eq('practice_date',dateKey).maybeSingle();if(error)throw error;if(data){$('special').value=data.special_for_day||'';$('retrain').value=data.retrain||'';selectedCrew=data.crew||'';$('crewSearch').value=selectedCrew}else if(local.special_for_day||local.crew||local.retrain)await saveDaily(true)}dailyLoaded=true;localStorage.setItem('pp_daily_'+dateKey,JSON.stringify({special_for_day:$('special').value,crew:selectedCrew,retrain:$('retrain').value}));renderPoster();setStatus('dailyStatus','Today’s practice is ready. Changes can be saved to the shared planner database.','ok')}
-async function saveDaily(silent=false){const data={special_for_day:$('special').value,crew:selectedCrew,retrain:$('retrain').value};localStorage.setItem('pp_daily_'+dateKey,JSON.stringify(data));if(SB){const {error}=await SB.from('dp_pitch_practice_daily').upsert({practice_date:dateKey,...data,updated_at:new Date().toISOString()},{onConflict:'practice_date'});if(error){setStatus('dailyStatus','Saved on this device; online sync failed: '+error.message,'bad');if(!silent)toast('Online save failed');throw error}}setStatus('dailyStatus','Saved for '+dateKey+' · shared across devices.','ok');renderPoster();if(!silent)toast('Today’s practice saved')}
+async function loadCrews(){if(!SB){try{crews=JSON.parse(localStorage.getItem('pp_crews')||'[]')}catch{crews=[]}renderCrewOptions();renderCrewManager();return}const {data,error}=await SB.from('dp_pitch_practice_crews').select('id,name,sort_order').eq('active',true).order('sort_order').order('name');if(error)throw error;crews=data||[];localStorage.setItem('pp_crews',JSON.stringify(crews));renderCrewManager()}
+async function loadTopic(){const {isoWeekday}=dateParts();const local=localStorage.getItem('pp_topic_'+isoWeekday);$('topic').value=local??(defaultTopics[isoWeekday]||'');if(SB){const {data,error}=await SB.from('dp_pitch_practice_topics').select('topic').eq('weekday',isoWeekday).maybeSingle();if(error)throw error;if(data)$('topic').value=data.topic;else $('topic').value=defaultTopics[isoWeekday]||''}localStorage.setItem('pp_topic_'+isoWeekday,$('topic').value);setStatus('topicStatus','Saved for every '+dayNames[dateParts().weekday]+'.','ok')}
+async function saveTopic(){const {isoWeekday,weekday}=dateParts();const value=$('topic').value.trim();localStorage.setItem('pp_topic_'+isoWeekday,value);if(SB){const {error}=await SB.from('dp_pitch_practice_topics').upsert({weekday:isoWeekday,topic:value,updated_at:new Date().toISOString()},{onConflict:'weekday'});if(error)throw error}setStatus('topicStatus','Weekday topic saved · repeats every '+dayNames[weekday]+'.','ok');renderPoster()}
+async function loadDaily(){const key=dateKey();let local={};try{local=JSON.parse(localStorage.getItem('pp_daily_'+key)||'{}')}catch{}$('special').value=local.special_for_day||'';$('retrain').value=local.retrain||'';selectedCrew=local.crew||'';$('crewSearch').value=selectedCrew;if(SB){const {data,error}=await SB.from('dp_pitch_practice_daily').select('special_for_day,crew,retrain').eq('practice_date',key).maybeSingle();if(error)throw error;if(data){$('special').value=data.special_for_day||'';$('retrain').value=data.retrain||'';selectedCrew=data.crew||'';$('crewSearch').value=selectedCrew}else{$('special').value='';$('retrain').value='';selectedCrew='';$('crewSearch').value=''}}localStorage.setItem('pp_daily_'+key,JSON.stringify({special_for_day:$('special').value,crew:selectedCrew,retrain:$('retrain').value}));renderPoster();setStatus('dailyStatus','Loaded practice for '+prettyDate(key)+'.','ok')}
+async function saveDaily(silent=false){const data={special_for_day:$('special').value,crew:selectedCrew,retrain:$('retrain').value};localStorage.setItem('pp_daily_'+dateKey(),JSON.stringify(data));if(SB){const {error}=await SB.from('dp_pitch_practice_daily').upsert({practice_date:dateKey(),...data,updated_at:new Date().toISOString()},{onConflict:'practice_date'});if(error){setStatus('dailyStatus','Device save retained; online sync failed: '+error.message,'bad');if(!silent)toast('Online save failed');throw error}}setStatus('dailyStatus','Saved for '+prettyDate(dateKey())+' · shared across devices.','ok');renderPoster();if(!silent)toast('Practice saved')}
 function scheduleDailySave(){renderPoster();clearTimeout(dailyTimer);dailyTimer=setTimeout(()=>saveDaily(true).catch(()=>{}),700)}
-async function addCrew(){const name=$('newCrew').value.trim().replace(/\s+/g,' ');if(!name)return toast('Enter a crew name');if(crews.some(c=>c.name.toLowerCase()===name.toLowerCase()))return toast('Crew already exists');if(!SB)return toast('Database connection unavailable');const {data,error}=await SB.from('dp_pitch_practice_crews').insert({name,sort_order:crews.length+1}).select('id,name,sort_order').single();if(error)return toast(error.message);crews.push(data);crews.sort((a,b)=>a.sort_order-b.sort_order||a.name.localeCompare(b.name));$('newCrew').value='';renderCrewManager();renderCrewOptions();toast('Crew added')}
+async function changeDate(){selectedDate=$('practiceDate').value||localDate();showDate();$('special').value='';$('retrain').value='';$('topic').value='';selectedCrew='';$('crewSearch').value='';if(dateParts().weekday===0){renderPoster();setStatus('dailyStatus','Sunday is a holiday. Select another date for practice.','');return}try{await loadTopic();await loadDaily()}catch(e){console.error(e);setStatus('dailyStatus','Could not load selected date: '+e.message,'bad')}}
+function chooseCrew(name){selectedCrew=name;$('crewSearch').value=name;$('crewOptions').classList.remove('open');renderPoster();saveDaily(true).catch(()=>{})}
+async function addCrew(){const name=$('newCrew').value.trim().replace(/\s+/g,' ');if(!name)return toast('Enter a crew name');if(crews.some(c=>c.name.toLowerCase()===name.toLowerCase()))return toast('Crew already exists');if(!SB)return toast('Database connection unavailable');const {data,error}=await SB.from('dp_pitch_practice_crews').insert({name,sort_order:crews.length+1}).select('id,name,sort_order').single();if(error)return toast(error.message);crews.push(data);crews.sort((a,b)=>a.sort_order-b.sort_order||a.name.localeCompare(b.name));$('newCrew').value='';renderCrewManager();renderCrewOptions();renderPoster();toast('Crew added')}
 async function renameCrew(id){const c=crews.find(x=>x.id===id);if(!c)return;const next=prompt('Rename crew:',c.name);if(next===null)return;const name=next.trim().replace(/\s+/g,' ');if(!name||name===c.name)return;if(crews.some(x=>x.id!==id&&x.name.toLowerCase()===name.toLowerCase()))return toast('Crew already exists');const {error}=await SB.from('dp_pitch_practice_crews').update({name,updated_at:new Date().toISOString()}).eq('id',id);if(error)return toast(error.message);if(selectedCrew===c.name){selectedCrew=name;$('crewSearch').value=name;await saveDaily(true)}await loadCrews();renderCrewOptions();renderPoster();toast('Crew renamed')}
-async function generateImage(){renderPoster();if(!selectedCrew){toast('Select a crew before generating the image');$('crewSearch').focus();return}if(!window.html2canvas){toast('Image generator is still loading');return}const btn=$('generate');btn.disabled=true;btn.textContent='GENERATING…';try{const canvas=await html2canvas($('poster'),{scale:2,backgroundColor:'#10131d',useCORS:true});const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));if(!blob)throw new Error('Could not create image');if(lastImageUrl)URL.revokeObjectURL(lastImageUrl);lastImageUrl=URL.createObjectURL(blob);const a=document.createElement('a');a.href=lastImageUrl;a.download='ALZA-ORG-'+selectedCrew.replace(/[^a-z0-9]+/gi,'-')+'-'+dateKey+'.png';document.body.appendChild(a);a.click();a.remove();setStatus('imageStatus','Image generated and downloaded.','ok')}catch(e){console.error(e);setStatus('imageStatus','Could not generate image: '+e.message,'bad')}finally{btn.disabled=false;btn.textContent='Generate image ↓'}}
-async function init(){showDate();if(weekday===0)return;try{await loadCrews();await Promise.all([loadTopic(),loadDaily()]);setStatus('dailyStatus','Connected · data is shared across devices.','ok')}catch(e){console.error(e);setStatus('dailyStatus','Could not fully sync online. Local edits are retained on this device. '+(e.message||''),'bad')}}
+async function downloadPoster(id,suffix){renderPoster();if(!selectedCrew){toast('Select a crew before downloading');$('crewSearch').focus();return}if(!window.html2canvas){toast('Image generator is still loading');return}const btn=id==='posterDaily'?'downloadDaily':'downloadRetrain';$(btn).disabled=true;try{const target=$(id);const canvas=await html2canvas(target,{scale:2,backgroundColor:id==='posterDaily'?'#10131d':'#f0f3fa',useCORS:true,windowWidth:Math.max(document.documentElement.clientWidth,target.scrollWidth)});const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));if(!blob)throw new Error('Could not create image');const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='ALZA-ORG-'+selectedCrew.replace(/[^a-z0-9]+/gi,'-')+'-'+suffix+'-'+dateKey()+'.png';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);setStatus('imageStatus',suffix+' image downloaded.','ok')}catch(e){console.error(e);setStatus('imageStatus','Could not generate image: '+e.message,'bad')}finally{$(btn).disabled=false}}
+async function downloadBoth(){await downloadPoster('posterDaily','daily-details');await new Promise(r=>setTimeout(r,350));await downloadPoster('posterRetrainImage','retraining')}
+async function init(){selectedDate=localDate();$('practiceDate').value=selectedDate;showDate();if(dateParts().weekday===0){setStatus('dailyStatus','Sunday is a holiday. You can select another date.','');}try{await loadCrews();if(dateParts().weekday!==0){await loadTopic();await loadDaily()}else renderPoster();setStatus('dailyStatus','Connected · shared practice data is ready.','ok')}catch(e){console.error(e);setStatus('dailyStatus','Could not fully sync online. '+(e.message||''),'bad')}}
+$('practiceDate').addEventListener('change',changeDate);
 $('crewSearch').addEventListener('focus',()=>renderCrewOptions($('crewSearch').value));$('crewSearch').addEventListener('input',()=>renderCrewOptions($('crewSearch').value));$('crewOptions').addEventListener('click',e=>{const b=e.target.closest('[data-crew]');if(b)chooseCrew(b.dataset.crew)});document.addEventListener('click',e=>{if(!e.target.closest('.crew-select'))$('crewOptions').classList.remove('open')});
 $('clearCrew').onclick=()=>{selectedCrew='';$('crewSearch').value='';renderPoster();scheduleDailySave()};
 $('manageCrews').onclick=()=>{$('crewModal').classList.add('show');renderCrewManager()};$('closeCrewModal').onclick=()=>$('crewModal').classList.remove('show');$('addCrew').onclick=addCrew;$('crewManageList').addEventListener('click',e=>{const b=e.target.closest('[data-edit-crew]');if(b)renameCrew(b.dataset.editCrew)});
-$('saveTopic').onclick=()=>saveTopic().catch(e=>{setStatus('topicStatus','Could not save topic: '+e.message,'bad')});
+$('saveTopic').onclick=()=>saveTopic().catch(e=>setStatus('topicStatus','Could not save topic: '+e.message,'bad'));
 $('topic').addEventListener('input',()=>{renderPoster();clearTimeout(topicTimer);topicTimer=setTimeout(()=>saveTopic().catch(e=>setStatus('topicStatus','Auto-save failed: '+e.message,'bad')),900)});
-$('special').addEventListener('input',scheduleDailySave);$('retrain').addEventListener('input',scheduleDailySave);$('saveDaily').onclick=()=>saveDaily(false).catch(()=>{});$('generate').onclick=generateImage;$('downloadImage').onclick=generateImage;
+$('special').addEventListener('input',scheduleDailySave);$('retrain').addEventListener('input',scheduleDailySave);$('saveDaily').onclick=()=>saveDaily(false).catch(()=>{});
+$('downloadDaily').onclick=()=>downloadPoster('posterDaily','daily-details');$('downloadRetrain').onclick=()=>downloadPoster('posterRetrainImage','retraining');$('downloadBoth').onclick=downloadBoth;
 init();
 </script>
 </body>
