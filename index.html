@@ -373,34 +373,15 @@ async function ensureTasks(){
    .map(t=>t.source_task_id).filter(Boolean));
  const toInsert=[];
 
- // Rapport Building uses its dated rows as the shared task list.
- // Existing dated tasks are the template; missing dates inherit the same task.
- const allRapport=await SB.from('dp_tasks').select('title,owner_id')
-   .eq('section','rapport').order('created_at');
- if(allRapport.error)throw allRapport.error;
- const rapportMap=new Map();
- for(const row of (allRapport.data||[]))rapportMap.set(row.title,row);
- if(!rapportMap.size){
-   for(const [title,owner] of defaultRapport)rapportMap.set(title,{title,owner_id:byName[owner]||null});
- }
- for(const master of rapportMap.values()){
-   const key='rapport|'+master.title;
+ // Rapport Building and Night Clearing use persistent shared templates.
+ const sharedRes=await SB.from('dp_shared_tasks')
+   .select('id,section,title,owner_id,sort_order').eq('active',true)
+   .order('section').order('sort_order');
+ if(sharedRes.error)throw sharedRes.error;
+ for(const master of (sharedRes.data||[])){
+   const key=master.section+'|'+master.title;
    if(!existingKeys.has(key)){
-     toInsert.push({task_date:k,section:'rapport',title:master.title,owner_id:master.owner_id||null,is_carried_forward:false});
-     existingKeys.add(key);
-   }
- }
-
- // Night Clearing is also a shared checklist: dated rows form its shared task list.
- const allNight=await SB.from('dp_tasks').select('title,owner_id')
-   .eq('section','night').order('created_at');
- if(allNight.error)throw allNight.error;
- const nightMap=new Map();
- for(const row of (allNight.data||[]))nightMap.set(row.title,row);
- for(const master of nightMap.values()){
-   const key='night|'+master.title;
-   if(!existingKeys.has(key)){
-     toInsert.push({task_date:k,section:'night',title:master.title,owner_id:master.owner_id||null,is_carried_forward:false});
+     toInsert.push({task_date:k,section:master.section,title:master.title,owner_id:master.owner_id||null,is_carried_forward:false});
      existingKeys.add(key);
    }
  }
@@ -1345,13 +1326,13 @@ async function saveTask(){
        if(!template){const ins=await SB.from('dp_daily_templates').insert({weekday:current.getDay(),title:finalTitle,sort_order:dbTemplates.length,active:true}).select('*').single();if(ins.error)throw ins.error;template=ins.data}
        else if(template.title!==title){const u=await SB.from('dp_daily_templates').update({title:finalTitle,updated_at:new Date().toISOString()}).eq('id',template.id);if(u.error)throw u.error}
        const u=await SB.from('dp_tasks').update({title:finalTitle,owner_id:ownerId||null,section:'daily',template_id:template.id,updated_at:new Date().toISOString()}).eq('id',editingTaskId);if(u.error)throw u.error;
-     }else if(old.section==='rapport'&&section==='rapport'){
-       const u=await SB.from('dp_tasks').update({title:finalTitle,owner_id:ownerId,updated_at:new Date().toISOString()})
-         .eq('section','rapport').eq('title',old.title);
-       if(u.error)throw u.error;
-     }else if(old.section==='night'&&section==='night'){
-       const u=await SB.from('dp_tasks').update({title:finalTitle,owner_id:ownerId,updated_at:new Date().toISOString()})
-         .eq('section','night').eq('title',old.title);
+     }else if((old.section==='rapport'||old.section==='night')&&section===old.section){
+       const master=await SB.from('dp_shared_tasks').update({title:finalTitle,owner_id:ownerId||null,updated_at:new Date().toISOString()})
+         .eq('section',old.section).eq('title',old.title).select('id');
+       if(master.error)throw master.error;
+       if(!master.data||!master.data.length)throw new Error('Shared task template was not found. Refresh and try again.');
+       const u=await SB.from('dp_tasks').update({title:finalTitle,owner_id:ownerId||null,updated_at:new Date().toISOString()})
+         .eq('section',old.section).eq('title',old.title);
        if(u.error)throw u.error;
      }else{
        const u=await SB.from('dp_tasks').update({title:finalTitle,owner_id:ownerId,section,updated_at:new Date().toISOString()}).eq('id',editingTaskId);if(u.error)throw u.error;
@@ -1360,6 +1341,8 @@ async function saveTask(){
      const insT=await SB.from('dp_daily_templates').insert({weekday:current.getDay(),title:finalTitle,sort_order:dbTemplates.length,active:true}).select('*').single();if(insT.error)throw insT.error;
      const ins=await SB.from('dp_tasks').insert({task_date:iso(current),section:'daily',title,owner_id:ownerId||null,template_id:insT.data.id,is_carried_forward:false});if(ins.error)throw ins.error;
    }else if(section==='rapport'||section==='night'){
+     const master=await SB.from('dp_shared_tasks').insert({section,title:finalTitle,owner_id:ownerId,active:true,sort_order:Date.now()}).select('id').single();
+     if(master.error)throw master.error;
      const ins=await SB.from('dp_tasks').insert({task_date:iso(current),section,title:finalTitle,owner_id:ownerId,is_carried_forward:false});
      if(ins.error)throw ins.error;
    }else{
@@ -1392,10 +1375,13 @@ async function deleteTask(id){
  if(!confirm('Delete this task?'))return;
  await action(async()=>{
    if(t.section==='rapport'||t.section==='night'){
+     const master=await SB.from('dp_shared_tasks').update({active:false,updated_at:new Date().toISOString()})
+       .eq('section',t.section).eq('title',t.title).select('id');
+     if(master.error)throw master.error;
+     if(!master.data||!master.data.length)throw new Error('Shared task template was not found. Refresh and try again.');
      const allDays=await SB.from('dp_tasks').delete()
        .eq('section',t.section).eq('title',t.title).select('id');
      if(allDays.error)throw allDays.error;
-     if(!allDays.data||allDays.data.length===0)throw new Error('No matching tasks were deleted. Please refresh and try again.');
    }else{
      const d=await SB.from('dp_tasks').delete().eq('id',id).select('id');
      if(d.error)throw d.error;
