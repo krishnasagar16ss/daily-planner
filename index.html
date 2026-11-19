@@ -1341,7 +1341,11 @@ async function saveTask(){
      const insT=await SB.from('dp_daily_templates').insert({weekday:current.getDay(),title:finalTitle,sort_order:dbTemplates.length,active:true}).select('*').single();if(insT.error)throw insT.error;
      const ins=await SB.from('dp_tasks').insert({task_date:iso(current),section:'daily',title,owner_id:ownerId||null,template_id:insT.data.id,is_carried_forward:false});if(ins.error)throw ins.error;
    }else if(section==='rapport'||section==='night'){
-     const master=await SB.from('dp_shared_tasks').insert({section,title:finalTitle,owner_id:ownerId,active:true,sort_order:Date.now()}).select('id').single();
+     const lastOrder=await SB.from('dp_shared_tasks').select('sort_order')
+       .eq('section',section).order('sort_order',{ascending:false}).limit(1);
+     if(lastOrder.error)throw lastOrder.error;
+     const nextOrder=(lastOrder.data&&lastOrder.data.length?Number(lastOrder.data[0].sort_order)||0:0)+1;
+     const master=await SB.from('dp_shared_tasks').insert({section,title:finalTitle,owner_id:ownerId,active:true,sort_order:nextOrder}).select('id').single();
      if(master.error)throw master.error;
      const ins=await SB.from('dp_tasks').insert({task_date:iso(current),section,title:finalTitle,owner_id:ownerId,is_carried_forward:false});
      if(ins.error)throw ins.error;
