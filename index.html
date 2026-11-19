@@ -1392,10 +1392,14 @@ async function deleteTask(id){
  if(!confirm('Delete this task?'))return;
  await action(async()=>{
    if(t.section==='rapport'||t.section==='night'){
-     const allDays=await SB.from('dp_tasks').delete().eq('section',t.section).eq('title',t.title);
+     const allDays=await SB.from('dp_tasks').delete()
+       .eq('section',t.section).eq('title',t.title).select('id');
      if(allDays.error)throw allDays.error;
+     if(!allDays.data||allDays.data.length===0)throw new Error('No matching tasks were deleted. Please refresh and try again.');
    }else{
-     const d=await SB.from('dp_tasks').delete().eq('id',id);if(d.error)throw d.error;
+     const d=await SB.from('dp_tasks').delete().eq('id',id).select('id');
+     if(d.error)throw d.error;
+     if(!d.data||d.data.length===0)throw new Error('The task was not deleted. Please refresh and try again.');
    }
    if(t.section==='daily'&&t.template_id){const u=await SB.from('dp_daily_templates').update({active:false,updated_at:new Date().toISOString()}).eq('id',t.template_id);if(u.error)throw u.error}
  },'Task deleted');
