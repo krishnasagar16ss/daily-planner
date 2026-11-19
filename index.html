@@ -280,7 +280,7 @@ const defaultRapport=[
 const recurring={
  activities:[['Activities','Gayathri']],
  agenda:[['Owners call','Branch Head'],['HR evaluation call','Branch Head'],['Retrain and next day plan call','Branch Head'],['Quality call','Branch Head']],
- night:[['Today’s all work is done','Branch Head'],['TMC done in all groups and all level, by owners','Branch Head'],['Spoke to the guys, on training','Branch Head'],['Texted working for criteria, Ridha','Branch Head'],['Zero people feedbacks and training topic sent to them?','Branch Head'],['Night routines done','Branch Head'],['New guy activities done','Branch Head'],['Next day agenda done','Branch Head'],['Inputting done / post people not submitted','Branch Head'],['Excel sheet updated','Branch Head']]
+
 };
 const ownerRoutines={
  Krishna:[
@@ -387,6 +387,20 @@ async function ensureTasks(){
    const key='rapport|'+master.title;
    if(!existingKeys.has(key)){
      toInsert.push({task_date:k,section:'rapport',title:master.title,owner_id:master.owner_id||null,is_carried_forward:false});
+     existingKeys.add(key);
+   }
+ }
+
+ // Night Clearing is also a shared checklist: dated rows form its shared task list.
+ const allNight=await SB.from('dp_tasks').select('title,owner_id')
+   .eq('section','night').order('created_at');
+ if(allNight.error)throw allNight.error;
+ const nightMap=new Map();
+ for(const row of (allNight.data||[]))nightMap.set(row.title,row);
+ for(const master of nightMap.values()){
+   const key='night|'+master.title;
+   if(!existingKeys.has(key)){
+     toInsert.push({task_date:k,section:'night',title:master.title,owner_id:master.owner_id||null,is_carried_forward:false});
      existingKeys.add(key);
    }
  }
@@ -1335,14 +1349,18 @@ async function saveTask(){
        const u=await SB.from('dp_tasks').update({title:finalTitle,owner_id:ownerId,updated_at:new Date().toISOString()})
          .eq('section','rapport').eq('title',old.title);
        if(u.error)throw u.error;
+     }else if(old.section==='night'&&section==='night'){
+       const u=await SB.from('dp_tasks').update({title:finalTitle,owner_id:ownerId,updated_at:new Date().toISOString()})
+         .eq('section','night').eq('title',old.title);
+       if(u.error)throw u.error;
      }else{
        const u=await SB.from('dp_tasks').update({title:finalTitle,owner_id:ownerId,section,updated_at:new Date().toISOString()}).eq('id',editingTaskId);if(u.error)throw u.error;
      }
    }else if(section==='daily'){
      const insT=await SB.from('dp_daily_templates').insert({weekday:current.getDay(),title:finalTitle,sort_order:dbTemplates.length,active:true}).select('*').single();if(insT.error)throw insT.error;
      const ins=await SB.from('dp_tasks').insert({task_date:iso(current),section:'daily',title,owner_id:ownerId||null,template_id:insT.data.id,is_carried_forward:false});if(ins.error)throw ins.error;
-   }else if(section==='rapport'){
-     const ins=await SB.from('dp_tasks').insert({task_date:iso(current),section:'rapport',title:finalTitle,owner_id:ownerId,is_carried_forward:false});
+   }else if(section==='rapport'||section==='night'){
+     const ins=await SB.from('dp_tasks').insert({task_date:iso(current),section,title:finalTitle,owner_id:ownerId,is_carried_forward:false});
      if(ins.error)throw ins.error;
    }else{
      const ins=await SB.from('dp_tasks').insert({task_date:iso(current),section,title:finalTitle,owner_id:ownerId,is_carried_forward:false});if(ins.error)throw ins.error;
@@ -1373,8 +1391,8 @@ async function deleteTask(id){
  if(t.is_carried_forward){toast('Carried-forward history is preserved.','info');return}
  if(!confirm('Delete this task?'))return;
  await action(async()=>{
-   if(t.section==='rapport'){
-     const allDays=await SB.from('dp_tasks').delete().eq('section','rapport').eq('title',t.title);
+   if(t.section==='rapport'||t.section==='night'){
+     const allDays=await SB.from('dp_tasks').delete().eq('section',t.section).eq('title',t.title);
      if(allDays.error)throw allDays.error;
    }else{
      const d=await SB.from('dp_tasks').delete().eq('id',id);if(d.error)throw d.error;
