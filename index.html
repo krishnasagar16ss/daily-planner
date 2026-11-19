@@ -378,18 +378,21 @@ async function ensureTasks(){
  let masterRes=await SB.from('dp_tasks').select('id,title,owner_id')
    .eq('task_date',RAPPORT_MASTER_DATE).eq('section','rapport_master').order('created_at');
  if(masterRes.error)throw masterRes.error;
- let rapportMasters=masterRes.data||[];
- if(!rapportMasters.length){
+ const RAPPORT_INIT_MARKER='__RAPPORT_TEMPLATE_INITIALIZED__';
+ const masterRows=masterRes.data||[];
+ let rapportMasters=masterRows.filter(t=>t.title!==RAPPORT_INIT_MARKER);
+ if(!masterRows.some(t=>t.title===RAPPORT_INIT_MARKER)){
    const legacy=await SB.from('dp_tasks').select('title,owner_id,created_at')
      .eq('section','rapport').order('created_at');
    if(legacy.error)throw legacy.error;
    const unique=new Map();
    for(const row of (legacy.data||[]))unique.set(row.title,row);
    const seed=unique.size?[...unique.values()]:defaultRapport.map(([title,owner])=>({title,owner_id:byName[owner]||null}));
-   const rows=seed.map((t,i)=>({task_date:RAPPORT_MASTER_DATE,section:'rapport_master',title:t.title,owner_id:t.owner_id||null,is_carried_forward:false}));
+   const rows=seed.map(t=>({task_date:RAPPORT_MASTER_DATE,section:'rapport_master',title:t.title,owner_id:t.owner_id||null,is_carried_forward:false}));
+   rows.push({task_date:RAPPORT_MASTER_DATE,section:'rapport_master',title:RAPPORT_INIT_MARKER,owner_id:null,is_carried_forward:false});
    const created=await SB.from('dp_tasks').insert(rows).select('id,title,owner_id');
    if(created.error)throw created.error;
-   rapportMasters=created.data||[];
+   rapportMasters=(created.data||[]).filter(t=>t.title!==RAPPORT_INIT_MARKER);
  }
  for(const master of rapportMasters){
    const key='rapport|'+master.title;
