@@ -1326,7 +1326,7 @@ async function saveTask(){
        if(!template){const ins=await SB.from('dp_daily_templates').insert({weekday:current.getDay(),title:finalTitle,sort_order:dbTemplates.length,active:true}).select('*').single();if(ins.error)throw ins.error;template=ins.data}
        else if(template.title!==title){const u=await SB.from('dp_daily_templates').update({title:finalTitle,updated_at:new Date().toISOString()}).eq('id',template.id);if(u.error)throw u.error}
        const u=await SB.from('dp_tasks').update({title:finalTitle,owner_id:ownerId||null,section:'daily',template_id:template.id,updated_at:new Date().toISOString()}).eq('id',editingTaskId);if(u.error)throw u.error;
-     }else if((old.section==='rapport'||old.section==='night')&&section===old.section){
+     }else if((old.section==='rapport'||old.section==='night'||old.section==='agenda')&&section===old.section){
        const master=await SB.from('dp_shared_tasks').update({title:finalTitle,owner_id:ownerId||null,updated_at:new Date().toISOString()})
          .eq('section',old.section).eq('title',old.title).select('id');
        if(master.error)throw master.error;
@@ -1340,7 +1340,7 @@ async function saveTask(){
    }else if(section==='daily'){
      const insT=await SB.from('dp_daily_templates').insert({weekday:current.getDay(),title:finalTitle,sort_order:dbTemplates.length,active:true}).select('*').single();if(insT.error)throw insT.error;
      const ins=await SB.from('dp_tasks').insert({task_date:iso(current),section:'daily',title,owner_id:ownerId||null,template_id:insT.data.id,is_carried_forward:false});if(ins.error)throw ins.error;
-   }else if(section==='rapport'||section==='night'){
+   }else if(section==='rapport'||section==='night'||section==='agenda'){
      const lastOrder=await SB.from('dp_shared_tasks').select('sort_order')
        .eq('section',section).order('sort_order',{ascending:false}).limit(1);
      if(lastOrder.error)throw lastOrder.error;
@@ -1378,7 +1378,7 @@ async function deleteTask(id){
  if(t.is_carried_forward){toast('Carried-forward history is preserved.','info');return}
  if(!confirm('Delete this task?'))return;
  await action(async()=>{
-   if(t.section==='rapport'||t.section==='night'){
+   if(t.section==='rapport'||t.section==='night'||t.section==='agenda'){
      const master=await SB.from('dp_shared_tasks').update({active:false,updated_at:new Date().toISOString()})
        .eq('section',t.section).eq('title',t.title).select('id');
      if(master.error)throw master.error;
