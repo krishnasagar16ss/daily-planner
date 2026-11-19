@@ -376,7 +376,7 @@ async function ensureTasks(){
 
  // Rapport Building is managed as one shared template, then materialised for each date.
  let masterRes=await SB.from('dp_tasks').select('id,title,owner_id')
-   .eq('task_date',RAPPORT_MASTER_DATE).eq('section','rapport_master').order('created_at');
+   .eq('task_date',RAPPORT_MASTER_DATE).eq('section','rapport').order('created_at');
  if(masterRes.error)throw masterRes.error;
  const RAPPORT_INIT_MARKER='__RAPPORT_TEMPLATE_INITIALIZED__';
  const masterRows=masterRes.data||[];
@@ -388,8 +388,8 @@ async function ensureTasks(){
    const unique=new Map();
    for(const row of (legacy.data||[]))unique.set(row.title,row);
    const seed=unique.size?[...unique.values()]:defaultRapport.map(([title,owner])=>({title,owner_id:byName[owner]||null}));
-   const rows=seed.map(t=>({task_date:RAPPORT_MASTER_DATE,section:'rapport_master',title:t.title,owner_id:t.owner_id||null,is_carried_forward:false}));
-   rows.push({task_date:RAPPORT_MASTER_DATE,section:'rapport_master',title:RAPPORT_INIT_MARKER,owner_id:null,is_carried_forward:false});
+   const rows=seed.map(t=>({task_date:RAPPORT_MASTER_DATE,section:'rapport',title:t.title,owner_id:t.owner_id||null,is_carried_forward:false}));
+   rows.push({task_date:RAPPORT_MASTER_DATE,section:'rapport',title:RAPPORT_INIT_MARKER,owner_id:null,is_carried_forward:false});
    const created=await SB.from('dp_tasks').insert(rows).select('id,title,owner_id');
    if(created.error)throw created.error;
    rapportMasters=(created.data||[]).filter(t=>t.title!==RAPPORT_INIT_MARKER);
@@ -1344,10 +1344,10 @@ async function saveTask(){
        const u=await SB.from('dp_tasks').update({title:finalTitle,owner_id:ownerId||null,section:'daily',template_id:template.id,updated_at:new Date().toISOString()}).eq('id',editingTaskId);if(u.error)throw u.error;
      }else if(old.section==='rapport'&&section==='rapport'){
        const master=await SB.from('dp_tasks').update({title:finalTitle,owner_id:ownerId,updated_at:new Date().toISOString()})
-         .eq('task_date',RAPPORT_MASTER_DATE).eq('section','rapport_master').eq('title',old.title);
+         .eq('task_date',RAPPORT_MASTER_DATE).eq('section','rapport').neq('task_date',RAPPORT_MASTER_DATE).eq('title',old.title);
        if(master.error)throw master.error;
        const u=await SB.from('dp_tasks').update({title:finalTitle,owner_id:ownerId,updated_at:new Date().toISOString()})
-         .eq('section','rapport').eq('title',old.title);
+         .eq('section','rapport').neq('task_date',RAPPORT_MASTER_DATE).eq('title',old.title);
        if(u.error)throw u.error;
      }else{
        const u=await SB.from('dp_tasks').update({title:finalTitle,owner_id:ownerId,section,updated_at:new Date().toISOString()}).eq('id',editingTaskId);if(u.error)throw u.error;
@@ -1356,7 +1356,7 @@ async function saveTask(){
      const insT=await SB.from('dp_daily_templates').insert({weekday:current.getDay(),title:finalTitle,sort_order:dbTemplates.length,active:true}).select('*').single();if(insT.error)throw insT.error;
      const ins=await SB.from('dp_tasks').insert({task_date:iso(current),section:'daily',title,owner_id:ownerId||null,template_id:insT.data.id,is_carried_forward:false});if(ins.error)throw ins.error;
    }else if(section==='rapport'){
-     const master=await SB.from('dp_tasks').insert({task_date:RAPPORT_MASTER_DATE,section:'rapport_master',title:finalTitle,owner_id:ownerId,is_carried_forward:false});
+     const master=await SB.from('dp_tasks').insert({task_date:RAPPORT_MASTER_DATE,section:'rapport',title:finalTitle,owner_id:ownerId,is_carried_forward:false});
      if(master.error)throw master.error;
      const ins=await SB.from('dp_tasks').insert({task_date:iso(current),section:'rapport',title:finalTitle,owner_id:ownerId,is_carried_forward:false});
      if(ins.error)throw ins.error;
@@ -1390,9 +1390,9 @@ async function deleteTask(id){
  if(!confirm('Delete this task?'))return;
  await action(async()=>{
    if(t.section==='rapport'){
-     const master=await SB.from('dp_tasks').delete().eq('task_date',RAPPORT_MASTER_DATE).eq('section','rapport_master').eq('title',t.title);
+     const master=await SB.from('dp_tasks').delete().eq('task_date',RAPPORT_MASTER_DATE).eq('section','rapport').neq('task_date',RAPPORT_MASTER_DATE).eq('title',t.title);
      if(master.error)throw master.error;
-     const allDays=await SB.from('dp_tasks').delete().eq('section','rapport').eq('title',t.title);
+     const allDays=await SB.from('dp_tasks').delete().eq('section','rapport').neq('task_date',RAPPORT_MASTER_DATE).eq('title',t.title);
      if(allDays.error)throw allDays.error;
    }else{
      const d=await SB.from('dp_tasks').delete().eq('id',id);if(d.error)throw d.error;
