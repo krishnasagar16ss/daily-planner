@@ -1209,12 +1209,13 @@ function render(){
  const common=all.filter(t=>!t.section.startsWith('owner_'));
  const ownerTasks=all.filter(t=>t.section.startsWith('owner_'));
  $('dailyHead').textContent=name+' agenda';renderList($('dailyTasks'),common.filter(t=>t.section==='daily'));
- const ownerGroups=dbOwners.filter(o=>ownerTasks.some(t=>t.owner_id===o.id));
+ const ownerIds=[...new Set(ownerTasks.map(t=>t.owner_id||'__unassigned'))];
+ const ownerGroups=ownerIds.map(id=>({id:id==='__unassigned'?'':id,name:id==='__unassigned'?'Owner not assigned':(dbOwners.find(o=>o.id===id)?.name||ownerName(id))}));
  $('ownerTaskGroups').innerHTML=ownerGroups.map(o=>{
-   const tasks=ownerTasks.filter(t=>t.owner_id===o.id);
-   return '<section class="card owner-task-card"><div class="cardhead"><div><h3>'+esc(o.name)+'</h3><span>Individual responsibilities</span></div><div class="section-tools"><span>'+tasks.filter(t=>t.done).length+'/'+tasks.length+' completed</span><button class="btn" data-owner-add="'+esc(o.id)+'">＋ Add task</button></div></div><div class="body" id="ownerTasks_'+esc(o.id)+'"></div></section>';
+   const tasks=ownerTasks.filter(t=>(t.owner_id||'')===o.id);
+   return '<section class="card owner-task-card"><div class="cardhead"><div><h3>'+esc(o.name)+'</h3><span>Individual responsibilities</span></div><div class="section-tools"><span>'+tasks.filter(t=>t.done).length+'/'+tasks.length+' completed</span>'+(o.id?'<button class="btn" data-owner-add="'+esc(o.id)+'">＋ Add task</button>':'')+'</div></div><div class="body" id="ownerTasks_'+(o.id?esc(o.id):'unassigned')+'"></div></section>';
  }).join('');
- ownerGroups.forEach(o=>renderList($('ownerTasks_'+o.id),ownerTasks.filter(t=>t.owner_id===o.id)));
+ ownerGroups.forEach(o=>renderList($('ownerTasks_'+(o.id?o.id:'unassigned')),ownerTasks.filter(t=>(t.owner_id||'')===o.id)));
  const total=all.length,done=all.filter(t=>t.done).length,carry=all.filter(t=>t.carry).length;
  $('totalN').textContent=total;$('doneN').textContent=done;$('pendingN').textContent=total-done;$('carryN').textContent=carry;$('dailyCount').textContent=common.filter(t=>t.section==='daily').length+' tasks';
  const by={};all.forEach(t=>{const p=t.owner||'Unassigned';by[p]??={t:0,d:0};by[p].t++;if(t.done)by[p].d++});
