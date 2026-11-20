@@ -271,7 +271,6 @@ const SB_URL='https://sqgymglyshbyqhlnmxlj.supabase.co';
 const SB_KEY='sb_publishable_55cb_Smd0gZ2l5O_qlTy9w__Y26o1ea';
 const SB=window.supabase&&window.supabase.createClient?window.supabase.createClient(SB_URL,SB_KEY):null;
 
-const recurring={};
 const ownerRoutines={
  Krishna:[
   'Text and call people who train new guys — one to one',
@@ -363,7 +362,7 @@ async function ensureTasks(){
    .map(t=>t.source_task_id).filter(Boolean));
  const toInsert=[];
 
- // Rapport Building and Night Clearing use persistent shared templates.
+ // All recurring tasks now come from individual-owner shared templates.
  const sharedRes=await SB.from('dp_shared_tasks')
    .select('id,section,title,owner_id,sort_order').eq('active',true)
    .order('section').order('sort_order');
@@ -373,17 +372,6 @@ async function ensureTasks(){
    if(!existingKeys.has(key)){
      toInsert.push({task_date:k,section:master.section,title:master.title,owner_id:master.owner_id||null,is_carried_forward:false});
      existingKeys.add(key);
-   }
- }
-
- // Fixed daily sections: match the original idempotency rules without per-task queries.
- for(const [section,arr] of Object.entries(recurring)){
-   for(const [title,owner] of arr){
-     const key=section+'|'+title;
-     if(!existingKeys.has(key)){
-       toInsert.push({task_date:k,section,title,owner_id:byName[owner]||null,is_carried_forward:false});
-       existingKeys.add(key);
-     }
    }
  }
 
@@ -1318,7 +1306,7 @@ async function saveTask(){
    }else if(section==='daily'){
      const insT=await SB.from('dp_daily_templates').insert({weekday:current.getDay(),title:finalTitle,sort_order:dbTemplates.length,active:true}).select('*').single();if(insT.error)throw insT.error;
      const ins=await SB.from('dp_tasks').insert({task_date:iso(current),section:'daily',title,owner_id:ownerId||null,template_id:insT.data.id,is_carried_forward:false});if(ins.error)throw ins.error;
-   }else if(section==='rapport'||section==='night'||section==='agenda'||section.startsWith('owner_')){
+   }else if(section.startsWith('owner_')){
      const lastOrder=await SB.from('dp_shared_tasks').select('sort_order')
        .eq('section',section).order('sort_order',{ascending:false}).limit(1);
      if(lastOrder.error)throw lastOrder.error;
@@ -1356,7 +1344,7 @@ async function deleteTask(id){
  if(t.is_carried_forward){toast('Carried-forward history is preserved.','info');return}
  if(!confirm('Delete this task?'))return;
  await action(async()=>{
-   if(t.section==='rapport'||t.section==='night'||t.section==='agenda'||t.section.startsWith('owner_')){
+   if(t.section.startsWith('owner_')){
      const master=await SB.from('dp_shared_tasks').update({active:false,updated_at:new Date().toISOString()})
        .eq('section',t.section).eq('title',t.title).select('id');
      if(master.error)throw master.error;
@@ -1406,10 +1394,6 @@ async function deleteOwner(id){
  const o=dbOwners.find(x=>x.id===id);if(!o)return;
  if(!confirm('Remove '+o.name+'? Existing tasks will stay but become unassigned.'))return;
  await action(async()=>{const u=await SB.from('dp_owners').update({active:false}).eq('id',id);if(u.error)throw u.error},'Owner deleted');
-}
-async function completeNight(){
- const pending=dbTasks.filter(t=>t.section==='night'&&!t.is_completed);if(!pending.length){toast('Night clearing is already complete.','info');return}
- await action(async()=>{for(const t of pending){const u=await SB.from('dp_tasks').update({is_completed:true,updated_at:new Date().toISOString()}).eq('id',t.id);if(u.error)throw u.error}},'Night clearing saved as complete');
 }
 async function carryForwardNow(){
  // Carry-forward applies only to the day-specific agenda, never the daily recurring sections.
