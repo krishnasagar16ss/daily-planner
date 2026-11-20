@@ -239,10 +239,6 @@ button,input,select{font:inherit}button{cursor:pointer}.app{max-width:1160px;mar
 <div class="layout" id="commonLayout">
 <main>
 <section class="card"><div class="cardhead"><div><h3 id="dailyHead">Agenda</h3><span>Day-specific responsibilities · weekly template</span></div><div class="section-tools"><span id="dailyCount"></span><button class="btn primary" id="dailyDownload">⬇ Download agenda</button><button class="btn" id="dailyAdd">＋</button></div></div><div class="body" id="dailyTasks"></div></section>
-<section class="card"><div class="cardhead"><div><h3>Rapport Building</h3><span>Same structure every day</span></div><button class="btn" id="rapportAdd">＋ Add</button></div><div class="body" id="rapport"></div></section>
-<section class="card"><div class="cardhead"><div><h3>Activities</h3><span>Same every day</span></div><button class="btn" id="activitiesAdd">＋ Add</button></div><div class="body" id="activities"></div></section>
-<section class="card"><div class="cardhead"><div><h3>Agenda</h3><span>Management calls & planning</span></div><button class="btn" id="agendaAdd">＋ Add</button></div><div class="body" id="agenda"></div></section>
-<section class="card night"><div class="cardhead"><div><h3>Night Clearing</h3><span>Final closing checklist</span></div><button class="btn" id="nightAll">Complete all</button></div><div class="body" id="night"></div></section>
 </main>
 <aside>
 <div class="sidecard"><h3>People & progress</h3><div id="people"></div><button class="btn primary" style="width:100%;margin-top:11px" id="ownersSideBtn">＋ Register / manage owners</button></div>
@@ -258,7 +254,7 @@ button,input,select{font:inherit}button{cursor:pointer}.app{max-width:1160px;mar
 <h3 id="modalTitle">Add a task</h3>
 <div class="field"><label>Task</label><input id="taskText" placeholder="e.g. Owners call"></div>
 <div class="field"><label>Owner</label><select id="taskOwner"></select></div>
-<div class="field"><label>Section</label><select id="taskSection"><option value="daily">Today's agenda</option><option value="rapport">Rapport Building</option><option value="activities">Activities</option><option value="agenda">Agenda</option><option value="night">Night Clearing</option><option value="owner">Owner dashboard routine</option></select></div>
+<div class="field"><label>Section</label><select id="taskSection"><option value="daily">Today's agenda</option><option value="owner">Individual owner task</option></select></div>
 <div class="row"><button class="btn" id="cancelBtn">Cancel</button><button class="btn primary" id="saveBtn">Save task</button></div>
 </div></div>
 
@@ -275,15 +271,7 @@ const SB_URL='https://sqgymglyshbyqhlnmxlj.supabase.co';
 const SB_KEY='sb_publishable_55cb_Smd0gZ2l5O_qlTy9w__Y26o1ea';
 const SB=window.supabase&&window.supabase.createClient?window.supabase.createClient(SB_URL,SB_KEY):null;
 
-const defaultRapport=[
- ['On training — Tele','Avinash'],['On training — Unicef','Gayathri'],['On training — One off field','Vishnu'],
- ['Working for Criteria — Tele','Ridha'],['Working for Criteria — Unicef','Gayathri'],['Working for Criteria — One off field','Vishnu']
-];
-const recurring={
- activities:[['Activities','Gayathri']],
- agenda:[['Owners call','Branch Head'],['HR evaluation call','Branch Head'],['Retrain and next day plan call','Branch Head'],['Quality call','Branch Head']],
-
-};
+const recurring={};
 const ownerRoutines={
  Krishna:[
   'Text and call people who train new guys — one to one',
@@ -1253,7 +1241,7 @@ function render(){
  }
  const common=all.filter(t=>!t.section.startsWith('owner_'));
  $('dailyHead').textContent=name+' agenda';
- renderList($('dailyTasks'),common.filter(t=>t.section==='daily'));renderList($('rapport'),common.filter(t=>t.section==='rapport'));renderList($('activities'),common.filter(t=>t.section==='activities'));renderList($('agenda'),common.filter(t=>t.section==='agenda'));renderList($('night'),common.filter(t=>t.section==='night'));
+ renderList($('dailyTasks'),common.filter(t=>t.section==='daily'));
  const total=common.length,done=common.filter(t=>t.done).length,carry=common.filter(t=>t.carry).length;
  $('totalN').textContent=total;$('doneN').textContent=done;$('pendingN').textContent=total-done;$('carryN').textContent=carry;$('dailyCount').textContent=common.filter(t=>t.section==='daily').length+' tasks';
  const by={};common.forEach(t=>{const p=t.owner||'Unassigned';by[p]??={t:0,d:0};by[p].t++;if(t.done)by[p].d++});
@@ -1503,7 +1491,7 @@ function bind(){
  $('datePicker').onchange=e=>goToDate(e.target.value);
  $('mDatePicker').onchange=e=>goToDate(e.target.value);
  $('mPrev').onclick=()=>$('prevBtn').click();$('mNext').onclick=()=>$('nextBtn').click();$('mToday').onclick=()=>$('todayBtn').click();
- $('mAdd').onclick=()=>openTask('daily');$('addBtn').onclick=()=>openTask('daily');$('dailyAdd').onclick=()=>openTask('daily');$('dailyDownload').onclick=downloadDailyAgendaImage;$('rapportAdd').onclick=()=>openTask('rapport');$('activitiesAdd').onclick=()=>openTask('activities');$('agendaAdd').onclick=()=>openTask('agenda');$('nightAll').onclick=completeNight;
+ $('mAdd').onclick=()=>openTask('daily');$('addBtn').onclick=()=>openTask('daily');$('dailyAdd').onclick=()=>openTask('daily');$('dailyDownload').onclick=downloadDailyAgendaImage;
  $('dashboardOwner').onchange=e=>{selectedDashboardOwner=e.target.value;render()};$('ownerAddTask').onclick=()=>openTask('owner');$('ownersBtn').onclick=openOwners;$('ownersSideBtn').onclick=openOwners;$('cancelBtn').onclick=closeTask;$('ownerCancel').onclick=closeOwners;$('saveBtn').onclick=saveTask;$('ownerSave').onclick=saveOwner;
  $('reconnectBtn').onclick=()=>{if(navigator.onLine)refresh();else toast('Your device is still offline.','error')};
  document.addEventListener('click',e=>{
