@@ -111,13 +111,15 @@ button,input,select{font:inherit}button{cursor:pointer}.app{max-width:1160px;mar
     <span class="status" id="status"><i class="dot"></i><span>Connecting…</span></span>
     <button class="btn" id="prevBtn">← Previous</button>
     <button class="btn" id="todayBtn">Today</button>
+    <input class="btn" id="datePicker" type="date" aria-label="Choose planner date" title="Choose planner date">
+    <button class="btn" id="nextBtn">Next →</button>
     <button class="btn" id="ownersBtn">＋ Owners</button>
     <button class="btn primary" id="addBtn">＋ Add task</button>
   </div>
 </header>
 <div class="mobile-actions">
   <label class="dashboard-picker mobile-dashboard-picker" for="dashboardOwner">Choose dashboard <select id="dashboardOwner"><option value="">Common dashboard</option><option value="__aham">Ahammed — Stitch Your Pitch</option></select></label>
-  <button class="btn" id="mPrev">← Previous</button><button class="btn" id="mToday">Today</button><button class="btn primary" id="mAdd">＋ Add task</button>
+  <button class="btn" id="mPrev">← Previous</button><button class="btn" id="mToday">Today</button><input class="btn" id="mDatePicker" type="date" aria-label="Choose planner date" title="Choose planner date"><button class="btn" id="mNext">Next →</button><button class="btn primary" id="mAdd">＋ Add task</button>
 </div>
 
 <section class="hero">
@@ -1249,6 +1251,7 @@ function render(){
  $('stats').style.display='grid';
  $('dayTitle').textContent=ownerMode?owner.name+' — Daily Dashboard':name;
  $('dateText').textContent=pretty(current);
+ syncDatePickers();
  if(ownerMode){
    const tasks=all.filter(t=>t.section==='owner_'+owner.name.toLowerCase()&&t.owner_id===owner.id);
    renderList($('ownerTasks'),tasks);
@@ -1506,9 +1509,14 @@ async function downloadDailyAgendaImage(){
  toast('Daily agenda image downloaded.','success');
 }
 function bind(){
+ const goToDate=async(value)=>{if(!requireReady()||!value)return;const parts=value.split('-').map(Number);if(parts.length!==3||parts.some(n=>!Number.isFinite(n)))return;current=new Date(parts[0],parts[1]-1,parts[2],12,0,0,0);await refresh()};
+ const syncDatePickers=()=>{const value=iso(current);['datePicker','mDatePicker'].forEach(id=>{const el=$(id);if(el)el.value=value})};
  $('prevBtn').onclick=async()=>{if(!requireReady())return;current.setDate(current.getDate()-1);await refresh()};
+ $('nextBtn').onclick=async()=>{if(!requireReady())return;current.setDate(current.getDate()+1);await refresh()};
  $('todayBtn').onclick=async()=>{if(!requireReady())return;current=new Date();current.setHours(12,0,0,0);await refresh()};
- $('mPrev').onclick=()=>$('prevBtn').click();$('mToday').onclick=()=>$('todayBtn').click();
+ $('datePicker').onchange=e=>goToDate(e.target.value);
+ $('mDatePicker').onchange=e=>goToDate(e.target.value);
+ $('mPrev').onclick=()=>$('prevBtn').click();$('mNext').onclick=()=>$('nextBtn').click();$('mToday').onclick=()=>$('todayBtn').click();
  $('mAdd').onclick=()=>openTask('daily');$('addBtn').onclick=()=>openTask('daily');$('dailyAdd').onclick=()=>openTask('daily');$('dailyDownload').onclick=downloadDailyAgendaImage;$('rapportAdd').onclick=()=>openTask('rapport');$('activitiesAdd').onclick=()=>openTask('activities');$('agendaAdd').onclick=()=>openTask('agenda');$('nightAll').onclick=completeNight;
  $('dashboardOwner').onchange=e=>{selectedDashboardOwner=e.target.value;render()};$('ownerAddTask').onclick=()=>openTask('owner');$('ownersBtn').onclick=openOwners;$('ownersSideBtn').onclick=openOwners;$('cancelBtn').onclick=closeTask;$('ownerCancel').onclick=closeOwners;$('saveBtn').onclick=saveTask;$('ownerSave').onclick=saveOwner;
  $('reconnectBtn').onclick=()=>{if(navigator.onLine)refresh();else toast('Your device is still offline.','error')};
