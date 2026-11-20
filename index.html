@@ -1290,7 +1290,7 @@ function renderOwnerList(){
 }
 function closeOwners(){$('ownerModal').classList.remove('show');editingOwnerId=null}
 async function saveTask(){
- const title=$('taskText').value.trim(),ownerId=selectedDashboardOwner&&$('taskSection').value==='owner'?selectedDashboardOwner:$('taskOwner').value,section=$('taskSection').value==='owner'?(selectedDashboardOwner?'owner_'+(dbOwners.find(o=>o.id===selectedDashboardOwner)?.name||'').toLowerCase():'owner'):$('taskSection').value;
+ const title=$('taskText').value.trim(),chosenOwner=$('taskOwner').value,ownerId=$('taskSection').value==='owner'&&!editingTaskId&&selectedDashboardOwner&&selectedDashboardOwner!=='__aham'?selectedDashboardOwner:chosenOwner,section=$('taskSection').value==='owner'?(dbOwners.find(o=>o.id===ownerId)?'owner_'+dbOwners.find(o=>o.id===ownerId).name.toLowerCase():'owner'):$('taskSection').value;
  const existingTask=editingTaskId?dbTasks.find(t=>t.id===editingTaskId):null;
  const finalTitle=title||existingTask?.title||'';
  if(!finalTitle){toast('Enter a task name first.','error');return}
@@ -1304,12 +1304,12 @@ async function saveTask(){
        if(!template){const ins=await SB.from('dp_daily_templates').insert({weekday:current.getDay(),title:finalTitle,sort_order:dbTemplates.length,active:true}).select('*').single();if(ins.error)throw ins.error;template=ins.data}
        else if(template.title!==title){const u=await SB.from('dp_daily_templates').update({title:finalTitle,updated_at:new Date().toISOString()}).eq('id',template.id);if(u.error)throw u.error}
        const u=await SB.from('dp_tasks').update({title:finalTitle,owner_id:ownerId||null,section:'daily',template_id:template.id,updated_at:new Date().toISOString()}).eq('id',editingTaskId);if(u.error)throw u.error;
-     }else if((old.section==='rapport'||old.section==='night'||old.section==='agenda'||old.section.startsWith('owner_'))&&section===old.section){
-       const master=await SB.from('dp_shared_tasks').update({title:finalTitle,owner_id:ownerId||null,updated_at:new Date().toISOString()})
+     }else if(old.section.startsWith('owner_')&&section.startsWith('owner_')){
+       const master=await SB.from('dp_shared_tasks').update({section,title:finalTitle,owner_id:ownerId||null,updated_at:new Date().toISOString()})
          .eq('section',old.section).eq('title',old.title).select('id');
        if(master.error)throw master.error;
        if(!master.data||!master.data.length)throw new Error('Shared task template was not found. Refresh and try again.');
-       const u=await SB.from('dp_tasks').update({title:finalTitle,owner_id:ownerId||null,updated_at:new Date().toISOString()})
+       const u=await SB.from('dp_tasks').update({section,title:finalTitle,owner_id:ownerId||null,updated_at:new Date().toISOString()})
          .eq('section',old.section).eq('title',old.title);
        if(u.error)throw u.error;
      }else{
