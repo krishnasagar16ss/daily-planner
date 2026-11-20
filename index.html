@@ -1239,6 +1239,7 @@ function bindPitchDashboard(){
  ['dashboardOwner','dashboardOwnerDesktop'].forEach(id=>{const el=$(id);if(el)el.addEventListener('change',()=>{selectedDashboardOwner=el.value;['dashboardOwner','dashboardOwnerDesktop'].forEach(other=>{if($(other))$(other).value=selectedDashboardOwner});render()})});
 }
 
+function syncDatePickers(){const value=iso(current);['datePicker','mDatePicker'].forEach(id=>{const el=$(id);if(el)el.value=value})}
 function render(){
  const all=dbTasks.map(taskView),name=dayName(current);
  const pitchMode=selectedDashboardOwner==='__aham';
@@ -1510,7 +1511,6 @@ async function downloadDailyAgendaImage(){
 }
 function bind(){
  const goToDate=async(value)=>{if(!requireReady()||!value)return;const parts=value.split('-').map(Number);if(parts.length!==3||parts.some(n=>!Number.isFinite(n)))return;current=new Date(parts[0],parts[1]-1,parts[2],12,0,0,0);await refresh()};
- const syncDatePickers=()=>{const value=iso(current);['datePicker','mDatePicker'].forEach(id=>{const el=$(id);if(el)el.value=value})};
  $('prevBtn').onclick=async()=>{if(!requireReady())return;current.setDate(current.getDate()-1);await refresh()};
  $('nextBtn').onclick=async()=>{if(!requireReady())return;current.setDate(current.getDate()+1);await refresh()};
  $('todayBtn').onclick=async()=>{if(!requireReady())return;current=new Date();current.setHours(12,0,0,0);await refresh()};
