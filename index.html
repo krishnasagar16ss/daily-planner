@@ -353,7 +353,24 @@ async function ensureTasks(){
    .select('id,section,title,template_id,is_carried_forward,source_task_id')
    .eq('task_date',k);
  if(currentRes.error)throw currentRes.error;
- const currentRows=currentRes.data||[];
+ let currentRows=currentRes.data||[];
+
+ // A task may be completed after its carry-forward copy was created.
+ // Reconcile today's copies against the live completion state of their source rows.
+ const carriedRows=currentRows.filter(t=>t.is_carried_forward&&t.source_task_id);
+ if(carriedRows.length){
+   const sourceIds=[...new Set(carriedRows.map(t=>t.source_task_id))];
+   const sourceRes=await SB.from('dp_tasks').select('id,is_completed').in('id',sourceIds);
+   if(sourceRes.error)throw sourceRes.error;
+   const completedSources=new Set((sourceRes.data||[]).filter(t=>t.is_completed).map(t=>t.id));
+   const staleCarryIds=carriedRows.filter(t=>completedSources.has(t.source_task_id)).map(t=>t.id);
+   if(staleCarryIds.length){
+     const cleanup=await SB.from('dp_tasks').delete().in('id',staleCarryIds);
+     if(cleanup.error)throw cleanup.error;
+     const staleSet=new Set(staleCarryIds);
+     currentRows=currentRows.filter(t=>!staleSet.has(t.id));
+   }
+ }
  const existingKeys=new Set(currentRows.filter(t=>!t.is_carried_forward)
    .map(t=>t.section+'|'+t.title));
  const existingTemplateIds=new Set(currentRows.map(t=>t.template_id).filter(Boolean));
