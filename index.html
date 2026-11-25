@@ -423,91 +423,7 @@ async function ensureTasks(){
    if(ins.error)throw ins.error;
  }
 }
-async function saveTaskOrder(container){
- const nodes=[...container.querySelectorAll(':scope > .task[data-task-id]')];
- if(nodes.length<2)return;
- const ids=nodes.map(n=>n.dataset.taskId).filter(Boolean);
- if(new Set(ids).size!==ids.length){toast('Could not save order: duplicate task rows found.','error');return}
- await action(async()=>{
-   const result=await SB.rpc('dp_reorder_tasks',{p_task_date:iso(current),p_task_ids:ids});
-   if(result.error)throw result.error;
-   // Read the saved sequence back before reporting success.
-   const verify=await SB.from('dp_tasks').select('id,sort_order').in('id',ids).eq('task_date',iso(current)).order('sort_order',{ascending:true});
-   if(verify.error)throw verify.error;
-   const actual=(verify.data||[]).map(t=>t.id);
-   if(actual.length!==ids.length||actual.some((id,i)=>id!==ids[i]))throw new Error('The new task order could not be verified. Please try again.');
- },'Task order saved');
-}
-function bindTaskDragDrop(){
- let dragged=null,longPressTimer=null,touchActive=false,startX=0,startY=0,moved=false;
- const clearMarks=()=>document.querySelectorAll('.task.drag-over').forEach(x=>x.classList.remove('drag-over'));
- const finish=()=>{
-   if(longPressTimer){clearTimeout(longPressTimer);longPressTimer=null}
-   if(dragged){
-     const parent=dragged.parentElement;
-     dragged.classList.remove('dragging','long-press-moving');
-     clearMarks();
-     if(moved&&parent)saveTaskOrder(parent);
-   }
-   dragged=null;touchActive=false;moved=false;
- };
- const moveToPoint=(x,y)=>{
-   if(!dragged)return;
-   const target=document.elementFromPoint(x,y)?.closest('.task[data-task-id]');
-   if(!target||target===dragged||target.parentElement!==dragged.parentElement)return;
-   const rect=target.getBoundingClientRect();
-   target.parentElement.insertBefore(dragged,y<rect.top+rect.height/2?target:target.nextSibling);
-   clearMarks();target.classList.add('drag-over');moved=true;
- };
- // Desktop: native drag, initiated from anywhere on the task row.
- document.addEventListener('dragstart',e=>{
-   const row=e.target.closest('.task[draggable="true"]');
-   if(!row){return}
-   dragged=row;row.classList.add('dragging');
-   e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',row.dataset.taskId);
- });
- document.addEventListener('dragover',e=>{
-   if(!dragged||touchActive)return;
-   const row=e.target.closest('.task[draggable="true"]');
-   if(!row||row===dragged||row.parentElement!==dragged.parentElement)return;
-   e.preventDefault();e.dataTransfer.dropEffect='move';
-   const rect=row.getBoundingClientRect();
-   row.parentElement.insertBefore(dragged,e.clientY<rect.top+rect.height/2?row:row.nextSibling);
-   clearMarks();row.classList.add('drag-over');moved=true;
- });
- document.addEventListener('drop',e=>{
-   if(!dragged||touchActive)return;
-   e.preventDefault();finish();
- });
- document.addEventListener('dragend',finish);
- // Mobile: press and hold a task for 450ms, then drag it vertically.
- document.addEventListener('touchstart',e=>{
-   const row=e.target.closest('.task[data-task-id]');
-   if(!row||e.target.closest('button,a,input,select,textarea,[data-action]'))return;
-   if(e.touches.length!==1)return;
-   const t=e.touches[0];startX=t.clientX;startY=t.clientY;moved=false;dragged=row;touchActive=false;
-   longPressTimer=setTimeout(()=>{
-     if(!dragged)return;
-     touchActive=true;dragged.classList.add('dragging','long-press-moving');
-     if(navigator.vibrate)navigator.vibrate(35);
-     toast('Move the task up or down, then release.','info');
-   },450);
- },{passive:true});
- document.addEventListener('touchmove',e=>{
-   if(!dragged||e.touches.length!==1)return;
-   const t=e.touches[0];
-   if(!touchActive){
-     if(Math.abs(t.clientX-startX)>12||Math.abs(t.clientY-startY)>12){
-       if(longPressTimer){clearTimeout(longPressTimer);longPressTimer=null}
-       dragged=null;
-     }
-     return;
-   }
-   e.preventDefault();moveToPoint(t.clientX,t.clientY);
- },{passive:false});
- document.addEventListener('touchend',()=>{if(longPressTimer){clearTimeout(longPressTimer);longPressTimer=null}if(touchActive)finish();else{dragged=null;touchActive=false}}, {passive:true});
- document.addEventListener('touchcancel',finish,{passive:true});
-}
+
 async function fetchTasks(){
  const r=await SB.from('dp_tasks').select('*,dp_owners(name,whatsapp),dp_daily_templates(weekday,title)').eq('task_date',iso(current)).order('sort_order',{ascending:true,nullsFirst:false}).order('created_at');
  if(r.error)throw r.error;dbTasks=r.data||[]
@@ -1635,7 +1551,7 @@ async function initRealtime(){
  });
  realtimeChannel.subscribe();
 }
-bind();bindTaskDragDrop();bindPitchDashboard();bindTerritoryPlan();bindCallsTracker();
+bind();bindPitchDashboard();bindTerritoryPlan();bindCallsTracker();
 if(navigator.onLine)refresh();else showOffline();
 if(SB)initRealtime();
 </script>
