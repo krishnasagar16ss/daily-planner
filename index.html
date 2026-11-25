@@ -426,20 +426,16 @@ async function ensureTasks(){
 async function saveTaskOrder(container){
  const nodes=[...container.querySelectorAll(':scope > .task[data-task-id]')];
  if(nodes.length<2)return;
- const ids=nodes.map(n=>n.dataset.taskId);
+ const ids=nodes.map(n=>n.dataset.taskId).filter(Boolean);
+ if(new Set(ids).size!==ids.length){toast('Could not save order: duplicate task rows found.','error');return}
  await action(async()=>{
-   for(let i=0;i<ids.length;i++){
-     const task=dbTasks.find(t=>t.id===ids[i]);if(!task)continue;
-     const u=await SB.from('dp_tasks').update({sort_order:i,updated_at:new Date().toISOString()}).eq('id',task.id);
-     if(u.error)throw u.error;
-     if(task.section.startsWith('owner_')){
-       const m=await SB.from('dp_shared_tasks').update({sort_order:i,updated_at:new Date().toISOString()}).eq('section',task.section).eq('title',task.title);
-       if(m.error)throw m.error;
-     }else if(task.section==='daily'&&!task.is_carried_forward&&task.template_id){
-       const m=await SB.from('dp_daily_templates').update({sort_order:i,updated_at:new Date().toISOString()}).eq('id',task.template_id);
-       if(m.error)throw m.error;
-     }
-   }
+   const result=await SB.rpc('dp_reorder_tasks',{p_task_date:iso(current),p_task_ids:ids});
+   if(result.error)throw result.error;
+   // Read the saved sequence back before reporting success.
+   const verify=await SB.from('dp_tasks').select('id,sort_order').in('id',ids).eq('task_date',iso(current)).order('sort_order',{ascending:true});
+   if(verify.error)throw verify.error;
+   const actual=(verify.data||[]).map(t=>t.id);
+   if(actual.length!==ids.length||actual.some((id,i)=>id!==ids[i]))throw new Error('The new task order could not be verified. Please try again.');
  },'Task order saved');
 }
 function bindTaskDragDrop(){
