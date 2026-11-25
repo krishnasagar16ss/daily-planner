@@ -17,14 +17,14 @@ button,input,select{font:inherit}button{cursor:pointer}.app{max-width:1160px;mar
 .status{display:flex;align-items:center;gap:6px;padding:7px 10px;border-radius:999px;font-size:11px;font-weight:750;background:var(--orange2);color:var(--orange);white-space:nowrap}.status .dot{width:7px;height:7px;border-radius:50%;background:currentColor}.status.online{background:var(--green2);color:var(--green)}.status.offline{background:var(--red2);color:var(--red)}
 .hero{background:linear-gradient(135deg,#111827,#293650);color:#fff;border-radius:22px;padding:20px 22px;display:flex;justify-content:space-between;align-items:flex-end;gap:18px;min-height:135px;box-shadow:var(--shadow)}.kicker{font-size:10px;text-transform:uppercase;letter-spacing:.1em;opacity:.65}.hero h2{font-size:29px;margin:5px 0 3px}.hero p{margin:0;opacity:.72;font-size:12px}.datebox{background:rgba(255,255,255,.1);padding:11px 14px;border-radius:13px;min-width:145px;text-align:right}.datebox strong{display:block;font-size:17px}.datebox span{font-size:10px;opacity:.7}
 .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:12px 0}.stat{background:#fff;border:1px solid var(--line);border-radius:15px;padding:12px 14px;box-shadow:var(--shadow)}.stat .n{font-size:22px;font-weight:800}.stat .l{font-size:11px;color:var(--muted)}.green .n{color:var(--green)}.orange .n{color:var(--orange)}.red .n{color:var(--red)}
-.layout{display:grid;grid-template-columns:minmax(0,1.65fr) 300px;gap:12px}.card,.sidecard{background:#fff;border:1px solid var(--line);border-radius:17px;box-shadow:var(--shadow);overflow:hidden;margin-bottom:12px}.cardhead{padding:13px 15px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:8px}.cardhead h3{font-size:14px;margin:0}.cardhead span{font-size:10px;color:var(--muted)}.body{padding:8px 14px 12px}.section-tools{display:flex;gap:6px;align-items:center}.task{display:grid;grid-template-columns:22px 28px minmax(0,1fr) auto;gap:7px;align-items:center;padding:10px 6px;border-bottom:1px solid #f0f2f5}.task:last-child{border-bottom:0}.drag-handle{cursor:grab;color:#94a3b8;font-size:18px;font-weight:800;display:grid;place-items:center;user-select:none}.task.dragging{opacity:.4;position:relative;z-index:5;box-shadow:0 8px 22px rgba(15,23,42,.16);background:#eff6ff}.task.long-press-moving{border-radius:10px;touch-action:none}.task.drag-over{outline:2px dashed #3b82f6;outline-offset:-2px;background:#eff6ff}.task[draggable=true]{-webkit-user-drag:element}.check{width:22px;height:22px;border-radius:7px;border:2px solid #cbd5e1;background:#fff;color:#fff;display:grid;place-items:center;font-weight:900}.check.done{background:var(--green);border-color:var(--green)}.task.done .title{text-decoration:line-through;color:#7b8798}.title{font-weight:700;font-size:12px}.meta{font-size:10px;color:var(--muted);margin-top:3px}.owner{font-size:10px;padding:5px 8px;border-radius:999px;background:#f1f5f9;color:#475569;white-space:nowrap}.task-actions{display:flex;gap:5px}.task-actions .btn{padding:5px 7px;font-size:10px}.carry{background:var(--orange2);border-left:3px solid #f59e0b}.empty{text-align:center;padding:20px;color:var(--muted);font-size:11px}
+.layout{display:grid;grid-template-columns:minmax(0,1.65fr) 300px;gap:12px}.card,.sidecard{background:#fff;border:1px solid var(--line);border-radius:17px;box-shadow:var(--shadow);overflow:hidden;margin-bottom:12px}.cardhead{padding:13px 15px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:8px}.cardhead h3{font-size:14px;margin:0}.cardhead span{font-size:10px;color:var(--muted)}.body{padding:8px 14px 12px}.section-tools{display:flex;gap:6px;align-items:center}.task{display:grid;grid-template-columns:28px minmax(0,1fr) auto;gap:9px;align-items:center;padding:10px 6px;border-bottom:1px solid #f0f2f5;user-select:none;-webkit-user-select:none}.task:last-child{border-bottom:0}.task.reorder-source{visibility:hidden!important}.task-reorder-ghost{position:fixed!important;margin:0!important;z-index:99999!important;pointer-events:none!important;opacity:.96!important;box-shadow:0 12px 30px rgba(15,23,42,.24)!important;border:1px solid #93c5fd!important;border-radius:12px!important;background:#eff6ff!important}.task.reorder-target{outline:2px dashed #3b82f6;outline-offset:-2px;background:#eff6ff}.check{width:22px;height:22px;border-radius:7px;border:2px solid #cbd5e1;background:#fff;color:#fff;display:grid;place-items:center;font-weight:900}.check.done{background:var(--green);border-color:var(--green)}.task.done .title{text-decoration:line-through;color:#7b8798}.title{font-weight:700;font-size:12px}.meta{font-size:10px;color:var(--muted);margin-top:3px}.owner{font-size:10px;padding:5px 8px;border-radius:999px;background:#f1f5f9;color:#475569;white-space:nowrap}.task-actions{display:flex;gap:5px}.task-actions .btn{padding:5px 7px;font-size:10px}.carry{background:var(--orange2);border-left:3px solid #f59e0b}.empty{text-align:center;padding:20px;color:var(--muted);font-size:11px}
 .sidecard{padding:14px}.sidecard h3{font-size:13px;margin:0 0 10px}.person{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f0f2f5}.person:last-child{border-bottom:0}.person b{font-size:11px}.pill{font-size:10px;padding:4px 7px;border-radius:999px;background:var(--green2);color:#15803d;font-weight:750}.pill.warn{background:var(--orange2);color:#b45309}.progress{height:6px;background:#eef2f7;border-radius:99px;overflow:hidden;margin-top:5px;width:125px}.progress i{display:block;height:100%;background:var(--green);border-radius:99px}
 .night{background:#111827;color:#fff}.night .cardhead{border-color:#2c374c}.night .task{border-color:#2c374c}.night .meta{color:#aab4c5}.night .check{background:#1f2937;border-color:#475569}
 .toast{position:fixed;right:18px;bottom:18px;z-index:100;background:#111827;color:#fff;padding:12px 15px;border-radius:13px;box-shadow:0 15px 40px rgba(0,0,0,.2);font-size:12px;opacity:0;transform:translateY(10px);transition:.22s;pointer-events:none;max-width:330px}.toast.show{opacity:1;transform:none}.toast.success{background:#166534}.toast.error{background:#b91c1c}.toast.info{background:#1e3a8a}
 .modal{position:fixed;inset:0;background:rgba(15,23,42,.55);display:none;align-items:center;justify-content:center;padding:18px;z-index:50}.modal.show{display:flex}.modalbox{background:#fff;border-radius:20px;max-width:560px;width:100%;padding:19px;box-shadow:0 25px 70px rgba(0,0,0,.25)}.modalbox h3{margin:0 0 6px;font-size:18px}.field{margin:12px 0}.field label{display:block;font-size:11px;font-weight:750;margin-bottom:5px}.field input,.field select{width:100%;padding:10px 11px;border:1px solid var(--line);border-radius:10px;outline:none}.field input:focus,.field select:focus{border-color:#93c5fd;box-shadow:0 0 0 3px #eff6ff}.row{display:flex;justify-content:flex-end;gap:7px;margin-top:15px}.owner-list-modal{max-height:260px;overflow:auto;border:1px solid var(--line);border-radius:12px;padding:0 11px;margin-top:10px}.owner-row{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid var(--line)}.owner-row:last-child{border-bottom:0}.owner-row b{font-size:12px}.owner-row small{display:block;color:var(--muted);font-size:10px;margin-top:2px}
 .offline-screen{position:fixed;inset:0;z-index:200;background:rgba(245,247,251,.98);display:none;align-items:center;justify-content:center;padding:22px}.offline-screen.show{display:flex}.offline-box{max-width:390px;width:100%;background:#fff;border:1px solid var(--line);border-radius:24px;padding:28px;text-align:center;box-shadow:0 20px 70px rgba(15,23,42,.12)}.offline-icon{width:62px;height:62px;border-radius:20px;background:var(--red2);color:var(--red);display:grid;place-items:center;font-size:28px;margin:0 auto 15px}.offline-box h2{margin:0 0 7px;font-size:20px}.offline-box p{margin:0;color:var(--muted);font-size:12px;line-height:1.6}.offline-box .btn{margin-top:18px;width:100%;padding:12px}.small-note{font-size:10px;color:var(--muted);margin-top:8px}
 .mobile-actions{display:none}
-@media(max-width:850px){.app{padding:11px}.top{padding:12px;align-items:flex-start}.top .actions{display:none}.mobile-actions{display:grid;grid-template-columns:1fr 1fr 1fr;margin:9px 0}.mobile-dashboard-picker{grid-column:1/-1;justify-content:space-between;background:#fff;border:1px solid var(--line);border-radius:10px;padding:9px 12px}.mobile-dashboard-picker select{max-width:65%;flex:1}.mobile-actions .btn{min-height:42px}.status{font-size:10px}.hero{padding:18px;flex-direction:column;align-items:flex-start}.datebox{text-align:left}.stats{grid-template-columns:repeat(2,1fr)}.layout{grid-template-columns:1fr}.layout aside{order:2}.task{grid-template-columns:22px 28px minmax(0,1fr) auto}.owner{display:none}.progress{width:105px}}
+@media(max-width:850px){.app{padding:11px}.top{padding:12px;align-items:flex-start}.top .actions{display:none}.mobile-actions{display:grid;grid-template-columns:1fr 1fr 1fr;margin:9px 0}.mobile-dashboard-picker{grid-column:1/-1;justify-content:space-between;background:#fff;border:1px solid var(--line);border-radius:10px;padding:9px 12px}.mobile-dashboard-picker select{max-width:65%;flex:1}.mobile-actions .btn{min-height:42px}.status{font-size:10px}.hero{padding:18px;flex-direction:column;align-items:flex-start}.datebox{text-align:left}.stats{grid-template-columns:repeat(2,1fr)}.layout{grid-template-columns:1fr}.layout aside{order:2}.task{grid-template-columns:28px minmax(0,1fr) auto}.owner{display:none}.progress{width:105px}}
 
 .pitch-dashboard{display:none;background:#f4fbff;border:1px solid #cfe4f1;border-radius:18px;overflow:hidden;margin-bottom:14px;box-shadow:var(--shadow)}
 .pitch-head{padding:20px 18px;background:linear-gradient(135deg,#dff4ff,#a9d7eb);color:#10243b}
@@ -423,90 +423,205 @@ async function ensureTasks(){
    if(ins.error)throw ins.error;
  }
 }
-async function saveTaskOrder(container){
- const nodes=[...container.querySelectorAll(':scope > .task[data-task-id]')];
- if(nodes.length<2)return;
- const ids=nodes.map(n=>n.dataset.taskId).filter(Boolean);
- if(new Set(ids).size!==ids.length){toast('Could not save order: duplicate task rows found.','error');return}
- await action(async()=>{
-   const result=await SB.rpc('dp_reorder_tasks',{p_task_date:iso(current),p_task_ids:ids});
-   if(result.error)throw result.error;
-   // Read the saved sequence back before reporting success.
-   const verify=await SB.from('dp_tasks').select('id,sort_order').in('id',ids).eq('task_date',iso(current)).order('sort_order',{ascending:true});
-   if(verify.error)throw verify.error;
-   const actual=(verify.data||[]).map(t=>t.id);
-   if(actual.length!==ids.length||actual.some((id,i)=>id!==ids[i]))throw new Error('The new task order could not be verified. Please try again.');
- },'Task order saved');
-}
 function bindTaskDragDrop(){
- let dragged=null,longPressTimer=null,touchActive=false,startX=0,startY=0,moved=false;
- const clearMarks=()=>document.querySelectorAll('.task.drag-over').forEach(x=>x.classList.remove('drag-over'));
- const finish=()=>{
-   if(longPressTimer){clearTimeout(longPressTimer);longPressTimer=null}
-   if(dragged){
-     const parent=dragged.parentElement;
-     dragged.classList.remove('dragging','long-press-moving');
-     clearMarks();
-     if(moved&&parent)saveTaskOrder(parent);
-   }
-   dragged=null;touchActive=false;moved=false;
- };
- const moveToPoint=(x,y)=>{
-   if(!dragged)return;
-   const target=document.elementFromPoint(x,y)?.closest('.task[data-task-id]');
-   if(!target||target===dragged||target.parentElement!==dragged.parentElement)return;
-   const rect=target.getBoundingClientRect();
-   target.parentElement.insertBefore(dragged,y<rect.top+rect.height/2?target:target.nextSibling);
-   clearMarks();target.classList.add('drag-over');moved=true;
- };
- // Desktop: native drag, initiated from anywhere on the task row.
- document.addEventListener('dragstart',e=>{
-   const row=e.target.closest('.task[draggable="true"]');
-   if(!row){return}
-   dragged=row;row.classList.add('dragging');
-   e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',row.dataset.taskId);
- });
- document.addEventListener('dragover',e=>{
-   if(!dragged||touchActive)return;
-   const row=e.target.closest('.task[draggable="true"]');
-   if(!row||row===dragged||row.parentElement!==dragged.parentElement)return;
-   e.preventDefault();e.dataTransfer.dropEffect='move';
-   const rect=row.getBoundingClientRect();
-   row.parentElement.insertBefore(dragged,e.clientY<rect.top+rect.height/2?row:row.nextSibling);
-   clearMarks();row.classList.add('drag-over');moved=true;
- });
- document.addEventListener('drop',e=>{
-   if(!dragged||touchActive)return;
-   e.preventDefault();finish();
- });
- document.addEventListener('dragend',finish);
- // Mobile: press and hold a task for 450ms, then drag it vertically.
- document.addEventListener('touchstart',e=>{
-   const row=e.target.closest('.task[data-task-id]');
-   if(!row||e.target.closest('button,a,input,select,textarea,[data-action]'))return;
-   if(e.touches.length!==1)return;
-   const t=e.touches[0];startX=t.clientX;startY=t.clientY;moved=false;dragged=row;touchActive=false;
-   longPressTimer=setTimeout(()=>{
-     if(!dragged)return;
-     touchActive=true;dragged.classList.add('dragging','long-press-moving');
-     if(navigator.vibrate)navigator.vibrate(35);
-     toast('Move the task up or down, then release.','info');
-   },450);
- },{passive:true});
- document.addEventListener('touchmove',e=>{
-   if(!dragged||e.touches.length!==1)return;
-   const t=e.touches[0];
-   if(!touchActive){
-     if(Math.abs(t.clientX-startX)>12||Math.abs(t.clientY-startY)>12){
-       if(longPressTimer){clearTimeout(longPressTimer);longPressTimer=null}
-       dragged=null;
-     }
+ let pending=null,active=null;
+ const HOLD_MS=500,MOVE_CANCEL=10,EDGE=76;
+
+ function taskRow(target){
+   return target instanceof Element ? target.closest('.task[data-task-id]') : null;
+ }
+ function isControl(target){
+   return !!(target instanceof Element && target.closest('button,a,input,select,textarea,[data-action]'));
+ }
+ function clearPending(){
+   if(pending?.timer)clearTimeout(pending.timer);
+   pending=null;
+ }
+ function currentIds(container){
+   return [...container.querySelectorAll(':scope > .task[data-task-id]')]
+     .map(node=>node.dataset.taskId).filter(Boolean);
+ }
+ function restoreOriginal(state){
+   state.originalNodes.forEach(node=>state.container.appendChild(node));
+ }
+ function startVisual(state,x,y){
+   const row=state.row,rect=row.getBoundingClientRect();
+   const ghost=row.cloneNode(true);
+   ghost.classList.remove('reorder-source','reorder-target');
+   ghost.classList.add('task-reorder-ghost');
+   ghost.removeAttribute('data-task-id');
+   ghost.removeAttribute('draggable');
+   ghost.querySelectorAll('[data-id],[data-action]').forEach(el=>{
+     el.removeAttribute('data-id');el.removeAttribute('data-action');
+   });
+   Object.assign(ghost.style,{
+     left:rect.left+'px',top:rect.top+'px',
+     width:rect.width+'px',height:rect.height+'px'
+   });
+   document.body.appendChild(ghost);
+   state.ghost=ghost;
+   state.offsetX=x-rect.left;
+   state.offsetY=y-rect.top;
+   row.classList.add('reorder-source');
+   row.setAttribute('aria-grabbed','true');
+   if(navigator.vibrate)navigator.vibrate(30);
+   toast('Move the task, then release to save its position.','info');
+ }
+ function moveGhost(state,x,y){
+   if(!state.ghost)return;
+   state.ghost.style.left=(x-state.offsetX)+'px';
+   state.ghost.style.top=(y-state.offsetY)+'px';
+ }
+ function movePlaceholder(state,x,y){
+   const hit=taskRow(document.elementFromPoint(x,y));
+   if(!hit||hit===state.row||hit.parentElement!==state.container)return;
+   const rect=hit.getBoundingClientRect();
+   const before=y<rect.top+rect.height/2;
+   const next=before?hit:hit.nextElementSibling;
+   if(next===state.row||(!next&&state.row===state.container.lastElementChild))return;
+   state.container.insertBefore(state.row,next||null);
+   state.changed=true;
+   state.container.querySelectorAll('.task.reorder-target').forEach(el=>el.classList.remove('reorder-target'));
+   hit.classList.add('reorder-target');
+ }
+ function autoScroll(y){
+   if(y<EDGE)window.scrollBy(0,-Math.max(6,Math.round((EDGE-y)/4)));
+   else if(y>window.innerHeight-EDGE)window.scrollBy(0,Math.max(6,Math.round((y-(window.innerHeight-EDGE))/4)));
+ }
+ async function persist(state){
+   const ids=currentIds(state.container);
+   if(ids.length!==state.originalIds.length||new Set(ids).size!==ids.length){
+     restoreOriginal(state);
+     toast('Reordering was cancelled because the task list changed.','error');
      return;
    }
-   e.preventDefault();moveToPoint(t.clientX,t.clientY);
+   if(ids.every((id,i)=>id===state.originalIds[i]))return;
+   try{
+     const result=await SB.rpc('dp_reorder_tasks',{
+       p_task_date:state.date,p_task_ids:ids
+     });
+     if(result.error)throw result.error;
+     const check=await SB.from('dp_tasks')
+       .select('id,sort_order')
+       .eq('task_date',state.date)
+       .in('id',ids)
+       .order('sort_order',{ascending:true});
+     if(check.error)throw check.error;
+     const saved=(check.data||[]).map(row=>row.id);
+     if(saved.length!==ids.length||saved.some((id,i)=>id!==ids[i])){
+       throw new Error('The database returned a different task order.');
+     }
+     await refresh();
+     toast('Task order saved.','success');
+   }catch(error){
+     console.error('Task reorder failed:',error);
+     restoreOriginal(state);
+     toast(error?.message||'Could not save the task order. Original order restored.','error');
+   }
+ }
+ function finish(state,cancel=false){
+   if(!state)return;
+   if(state.timer)clearTimeout(state.timer);
+   if(state.ghost)state.ghost.remove();
+   state.row.classList.remove('reorder-source');
+   state.row.removeAttribute('aria-grabbed');
+   state.container.querySelectorAll('.task.reorder-target').forEach(el=>el.classList.remove('reorder-target'));
+   if(cancel)restoreOriginal(state);
+   else if(state.activated&&state.changed)persist(state);
+ }
+ function activate(state,x,y){
+   if(active!==state)return;
+   state.activated=true;
+   startVisual(state,x,y);
+ }
+ function schedule(row,x,y,pointerId=null,kind='touch'){
+   clearPending();
+   const container=row.parentElement;
+   if(!container)return;
+   const state={
+     row,container,date:iso(current),pointerId,kind,
+     originalNodes:[...container.querySelectorAll(':scope > .task[data-task-id]')],
+     originalIds:currentIds(container),
+     startX:x,startY:y,activated:false,changed:false,timer:null
+   };
+   pending=state;active=state;
+   state.timer=setTimeout(()=>activate(state,state.startX,state.startY),HOLD_MS);
+ }
+ function cancelIfMoved(state,x,y){
+   if(!state||state.activated)return false;
+   if(Math.abs(x-state.startX)>MOVE_CANCEL||Math.abs(y-state.startY)>MOVE_CANCEL){
+     clearPending();active=null;return true;
+   }
+   return false;
+ }
+
+ // Android / iOS touch: allow normal scrolling until the long-press threshold.
+ document.addEventListener('touchstart',e=>{
+   if(e.touches.length!==1)return;
+   const row=taskRow(e.target);
+   if(!row||isControl(e.target))return;
+   const t=e.touches[0];
+   schedule(row,t.clientX,t.clientY,null,'touch');
+ },{passive:true});
+
+ document.addEventListener('touchmove',e=>{
+   const state=active;
+   if(!state||state.kind!=='touch'||e.touches.length!==1)return;
+   const t=e.touches[0];
+   if(cancelIfMoved(state,t.clientX,t.clientY))return;
+   if(!state.activated)return;
+   if(e.cancelable)e.preventDefault();
+   moveGhost(state,t.clientX,t.clientY);
+   autoScroll(t.clientY);
+   movePlaceholder(state,t.clientX,t.clientY);
  },{passive:false});
- document.addEventListener('touchend',()=>{if(longPressTimer){clearTimeout(longPressTimer);longPressTimer=null}if(touchActive)finish();else{dragged=null;touchActive=false}}, {passive:true});
- document.addEventListener('touchcancel',finish,{passive:true});
+
+ document.addEventListener('touchend',e=>{
+   const state=active;
+   if(!state||state.kind!=='touch')return;
+   clearPending();active=null;
+   finish(state,false);
+ },{passive:true});
+
+ document.addEventListener('touchcancel',()=>{
+   const state=active;
+   if(!state||state.kind!=='touch')return;
+   clearPending();active=null;finish(state,true);
+ },{passive:true});
+
+ // Desktop mouse / pen uses the same long-press interaction.
+ document.addEventListener('pointerdown',e=>{
+   if(e.pointerType==='touch'||!e.isPrimary||e.button!==0)return;
+   const row=taskRow(e.target);
+   if(!row||isControl(e.target))return;
+   schedule(row,e.clientX,e.clientY,e.pointerId,'pointer');
+ },true);
+
+ document.addEventListener('pointermove',e=>{
+   const state=active;
+   if(!state||state.kind!=='pointer'||state.pointerId!==e.pointerId)return;
+   if(cancelIfMoved(state,e.clientX,e.clientY))return;
+   if(!state.activated)return;
+   if(e.cancelable)e.preventDefault();
+   moveGhost(state,e.clientX,e.clientY);
+   movePlaceholder(state,e.clientX,e.clientY);
+ },true);
+
+ document.addEventListener('pointerup',e=>{
+   const state=active;
+   if(!state||state.kind!=='pointer'||state.pointerId!==e.pointerId)return;
+   clearPending();active=null;finish(state,false);
+ },true);
+
+ document.addEventListener('pointercancel',e=>{
+   const state=active;
+   if(!state||state.kind!=='pointer'||state.pointerId!==e.pointerId)return;
+   clearPending();active=null;finish(state,true);
+ },true);
+
+ document.addEventListener('contextmenu',e=>{
+   if(active?.activated){e.preventDefault()}
+ },true);
 }
 async function fetchTasks(){
  const r=await SB.from('dp_tasks').select('*,dp_owners(name,whatsapp),dp_daily_templates(weekday,title)').eq('task_date',iso(current)).order('sort_order',{ascending:true,nullsFirst:false}).order('created_at');
@@ -521,8 +636,7 @@ function fillDashboardOwners(){
 }
 function renderList(el,tasks){
  if(!tasks.length){el.innerHTML='<div class="empty">No tasks in this section</div>';return}
- el.innerHTML=tasks.map(t=>'<div class="task '+(t.done?'done ':'')+(t.carry?'carry':'')+'" draggable="true" data-task-id="'+esc(t.id)+'">'+
- '<span class="drag-handle" title="Drag to reorder" aria-label="Drag to reorder">⠿</span>'+
+ el.innerHTML=tasks.map(t=>'<div class="task '+(t.done?'done ':'')+(t.carry?'carry':'')+'" data-task-id="'+esc(t.id)+'">'+
  '<button class="check '+(t.done?'done':'')+'" data-action="toggle" data-id="'+esc(t.id)+'">'+(t.done?'✓':'')+'</button>'+
  '<div><div class="title">'+esc(t.text)+'</div><div class="meta">'+(t.carry?'↪ Carried forward · ':'')+'Assigned to <b>'+esc(t.owner||'Owner not assigned')+'</b></div></div>'+
  '<div class="task-actions"><button class="btn" data-action="edit" data-id="'+esc(t.id)+'">Edit</button><button class="btn danger" data-action="delete" data-id="'+esc(t.id)+'">Delete</button></div></div>').join('')
