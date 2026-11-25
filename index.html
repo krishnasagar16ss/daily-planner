@@ -511,12 +511,18 @@ function bindTaskDragDrop(){
      if(saved.length!==ids.length||saved.some((id,i)=>id!==ids[i])){
        throw new Error('The database returned a different task order.');
      }
-     await refresh();
-     toast('Task order saved.','success');
    }catch(error){
      console.error('Task reorder failed:',error);
      restoreOriginal(state);
      toast(error?.message||'Could not save the task order. Original order restored.','error');
+     return;
+   }
+   try{
+     await refresh();
+     toast('Task order saved.','success');
+   }catch(refreshError){
+     console.error('Task order saved, but refresh failed:',refreshError);
+     toast('Task order saved. Refresh the page to reload the list.','info');
    }
  }
  function finish(state,cancel=false){
