@@ -6,7 +6,6 @@
 <title>ALZA ORG · Owners Daily Plan</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.0"></script>
 <script src="https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 <style>
 :root{--ink:#10131d;--paper:#f4f2ec;--muted:#737887;--line:#dedbd2;--accent:#2857ff;--soft:#e8edff;--card:#fffefa}
 *{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font-family:Inter,Arial,sans-serif}button,input,textarea,select{font:inherit}button{cursor:pointer}
@@ -86,7 +85,6 @@ async function downloadAllOwners(){
  let stage=null;
  try{
   if(!db)throw new Error('Online database connection is unavailable.');
-  if(!window.JSZip)throw new Error('ZIP library did not load. Refresh and try again.');
   if(!window.htmlToImage)throw new Error('Poster export library did not load. Refresh and try again.');
   const ws=startOfWeek(date),first=date.slice(0,7)+'-01',[yy,mm]=date.split('-').map(Number),last=yy+'-'+pad(mm)+'-'+pad(new Date(Date.UTC(yy,mm,0)).getUTCDate());
   const results=await Promise.all([
@@ -99,9 +97,10 @@ async function downloadAllOwners(){
   const plans=results[0].data||[],goals=results[1].data||[],monthRows=results[2].data||[];
   if(!plans.length)throw new Error('No owner daily plans have been saved for '+date+'.');
   const topicText=weekdayOf(date)===0?'Sunday · No scheduled pitch practice':(results[3].data?.topic||'Topic not yet added');
-  const zip=new JSZip();stage=document.createElement('div');stage.style.cssText='position:fixed;left:-100000px;top:0;width:720px;z-index:-1';document.body.appendChild(stage);
+  const ordered=branches.map(b=>plans.find(p=>p.branch===b[0])).filter(Boolean);
+  stage=document.createElement('div');stage.style.cssText='position:fixed;left:-100000px;top:0;width:720px;z-index:-1';document.body.appendChild(stage);
   await document.fonts.ready;let completed=0;
-  for(const plan of plans){
+  for(const plan of ordered){
    const branchInfo=branches.find(x=>x[0]===plan.branch);if(!branchInfo)continue;
    const branchName=branchInfo[0],color=branchInfo[1],goal=Number(goals.find(x=>x.branch===branchName)?.weekly_goal||0),sales=Number(plan.team_sales||0);
    const monthly=monthRows.filter(x=>x.branch===branchName),forms=monthly.reduce((s,x)=>s+Number(x.personal_forms||0),0),supports=monthly.reduce((s,x)=>s+Number(x.personal_supports||0),0);
@@ -114,12 +113,15 @@ async function downloadAllOwners(){
    stage.appendChild(node);
    const blob=await htmlToImage.toBlob(node,{pixelRatio:2,cacheBust:true,backgroundColor:'#10131d'});
    if(!blob)throw new Error('Could not render poster for '+branchName);
-   zip.file('ALZA-ORG-'+branchName.replace(/\s+/g,'-')+'-'+date+'.png',blob);stage.removeChild(node);completed++;
-   $('imageStatus').textContent='Preparing posters… '+completed+' of '+plans.length;
+   const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='ALZA-ORG-'+branchName.replace(/\s+/g,'-')+'-Owners-Plan-'+date+'.png';document.body.appendChild(a);a.click();a.remove();
+   setTimeout(()=>URL.revokeObjectURL(url),10000);
+   stage.removeChild(node);completed++;
+   $('imageStatus').textContent='Downloading separate images… '+completed+' of '+ordered.length;
+   await new Promise(resolve=>setTimeout(resolve,700));
   }
   if(!completed)throw new Error('No recognised branch plans found for this date.');
-  const out=await zip.generateAsync({type:'blob'}),url=URL.createObjectURL(out),a=document.createElement('a');a.href=url;a.download='ALZA-ORG-OWNERS-ALL-UPDATES-'+date+'.zip';a.click();setTimeout(()=>URL.revokeObjectURL(url),1500);
-  $('imageStatus').textContent='✓ Downloaded '+completed+' owner poster(s) in one ZIP file for '+date+'.';$('imageStatus').className='status ok';
+  $('imageStatus').textContent='✓ Started '+completed+' separate poster image downloads for '+date+'. If prompted, allow multiple downloads in your browser.';
+  $('imageStatus').className='status ok';
  }catch(e){$('imageStatus').textContent='Bulk download failed: '+e.message;$('imageStatus').className='status bad'}
  finally{if(stage)stage.remove();btn.disabled=false}
 }
