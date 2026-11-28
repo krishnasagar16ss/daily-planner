@@ -6,6 +6,7 @@
 <title>ALZA ORG · Owners Daily Plan</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.0"></script>
 <script src="https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 <style>
 :root{--ink:#10131d;--paper:#f4f2ec;--muted:#737887;--line:#dedbd2;--accent:#2857ff;--soft:#e8edff;--card:#fffefa}
 *{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font-family:Inter,Arial,sans-serif}button,input,textarea,select{font:inherit}button{cursor:pointer}
@@ -44,7 +45,7 @@ input,textarea,select{width:100%;border:1px solid #c9c6bd;background:white;paddi
 </main>
 <aside class="panel" style="background:#e8e6de"><div class="head"><h2>06 / DAILY PLAN POSTER</h2><span class="step">LIVE PREVIEW</span></div>
 <div class="poster" id="poster"><div class="poster-head"><img src="../alza-org-logo.svg" alt="ALZA ORG"><div style="text-align:right"><div class="poster-brand">OWNERS DAILY PLAN</div><div class="poster-date" id="pDate">DATE</div></div></div><div class="poster-branch" id="pBranch">SELECT A BRANCH</div><div class="poster-date" id="pWeek">WEEKLY EXECUTION PLAN</div><section class="poster-practice"><div class="poster-practice-title"><span>DAILY PITCH PRACTICE</span><i></i></div><div class="poster-practice-grid" id="pTopicCards"><div class="practice-card"><p>Select a date to load the topic.</p></div></div></section><div class="poster-stats"><div class="poster-stat"><small>Weekly goal</small><b id="pGoal">0s</b></div><div class="poster-stat"><small>Team sales</small><b id="pSales">0s</b></div><div class="poster-stat"><small>Remaining</small><b id="pMore">0s</b></div></div><div class="poster-detail"><small>PERSONAL RETRAIN & GOAL</small><p id="pRetrain">—</p></div><div class="poster-detail"><small>EXTRA WORKS</small><p id="pExtra">—</p></div><div class="poster-detail"><small>PERSONAL SALES SO FAR</small><p id="pPersonal">0 forms · 0 supports</p></div><div class="poster-foot"><span>PEOPLE · PURPOSE · PERFORMANCE</span><b>ALZA ORG</b></div></div>
-<div class="actions"><button class="btn dark" id="downloadBtn">Download poster</button></div><div class="status" id="imageStatus"></div>
+<div class="actions"><button class="btn dark" id="downloadBtn">Download this poster</button><button class="btn" id="downloadAllBtn">Download all owners</button></div><div class="status" id="imageStatus" aria-live="polite">Download one branch or all saved branch updates for the selected date.</div>
 <div class="history"><div class="head"><h2>RECENT DATES</h2></div><div class="history-list" id="history"></div><div class="help">Choose a date above to view or edit a previous plan. Previous weeks remain available as history; a new week starts with fresh weekly data.</div></div>
 </aside></div></div>
 <script>
@@ -67,6 +68,61 @@ function setBranchTheme(){const color=branches.find(x=>x[0]===branch)?.[1]||'#28
 function renderBranches(){$('branches').innerHTML=branches.map(([name,color])=>'<button class="branch" data-branch="'+name+'" style="--branch:'+color+'">'+name+'</button>').join('');$('branches').addEventListener('click',e=>{const b=e.target.closest('[data-branch]');if(b)selectBranch(b.dataset.branch)})}
 function workdaysAfter(v){let count=0;for(let i=0;i<=6;i++){const next=addDays(v,i),wd=weekdayOf(next);if(wd>=1&&wd<=6&&startOfWeek(next)===startOfWeek(v))count++}return count}
 function updateMetrics(){const goal=Math.max(0,Number($('weeklyGoal').value||weeklyGoal||0)),sales=Math.max(0,Number($('teamSales').value||0));const remaining=Math.max(0,goal-sales),days=workdaysAfter(date);$('mGoal').textContent=fmt(goal)+'s';$('mMore').textContent=fmt(remaining)+'s';$('mDay').textContent=remaining===0?'0s':days?fmt(remaining/days)+'s':'—';$('daysLeft').textContent=remaining===0?'Goal achieved':days?days+' working days left':'Week completed';$('weekLabel').textContent=weekdays[weekdayOf(date)].toUpperCase();$('weekStart').value=weekStart;$('pGoal').textContent=fmt(goal)+'s';$('pSales').textContent=fmt(sales)+'s';$('pMore').textContent=fmt(remaining)+'s';renderPoster()}
+
+function buildTopicCardsHTML(value){
+ const lines=String(value||'No topic available').split(/\r?\n/).map(x=>x.trim()).filter(Boolean),cards=[];
+ let current=null;
+ for(const line of lines){
+  const h=line.match(/^(\d+)[.)]\s*(.+)$/),sub=line.match(/^([a-z])[.)]\s*(.+)$/i);
+  if(h){current={n:h[1],title:h[2],items:[]};cards.push(current)}
+  else if(sub&&current)current.items.push({key:sub[1],text:sub[2]});
+  else if(current)current.items.push({key:'',text:line});
+  else cards.push({n:'',title:line,items:[]});
+ }
+ return cards.map(card=>'<article class="practice-card '+(!card.items.length?'single':'')+'">'+(card.n?'<div class="practice-card-head"><b class="practice-card-num">'+esc(card.n)+'</b><div class="practice-card-title">'+esc(card.title)+'</div></div>':'<div class="practice-card-title">'+esc(card.title)+'</div>')+(card.items.length?'<div class="practice-card-body">'+card.items.map(it=>'<div class="practice-sub">'+(it.key?'<b>'+esc(it.key)+'</b>':'<b>•</b>')+'<span>'+esc(it.text)+'</span></div>').join('')+'</div>':'')+'</article>').join('')||'<div class="practice-card"><p>No topic available</p></div>';
+}
+async function downloadAllOwners(){
+ const btn=$('downloadAllBtn');btn.disabled=true;$('imageStatus').textContent='Collecting saved owner updates for '+date+'…';$('imageStatus').className='status saving';
+ let stage=null;
+ try{
+  if(!db)throw new Error('Online database connection is unavailable.');
+  if(!window.JSZip)throw new Error('ZIP library did not load. Refresh and try again.');
+  if(!window.htmlToImage)throw new Error('Poster export library did not load. Refresh and try again.');
+  const ws=startOfWeek(date),first=date.slice(0,7)+'-01',[yy,mm]=date.split('-').map(Number),last=yy+'-'+pad(mm)+'-'+pad(new Date(Date.UTC(yy,mm,0)).getUTCDate());
+  const results=await Promise.all([
+   db.from('dp_owner_daily_plans').select('*').eq('plan_date',date),
+   db.from('dp_owner_weekly_goals').select('branch,weekly_goal').eq('week_start',ws),
+   db.from('dp_owner_daily_plans').select('branch,personal_forms,personal_supports').gte('plan_date',first).lte('plan_date',last),
+   db.from('dp_pitch_practice_topics').select('topic').eq('weekday',weekdayOf(date)).maybeSingle()
+  ]);
+  for(const res of results)if(res.error)throw res.error;
+  const plans=results[0].data||[],goals=results[1].data||[],monthRows=results[2].data||[];
+  if(!plans.length)throw new Error('No owner daily plans have been saved for '+date+'.');
+  const topicText=weekdayOf(date)===0?'Sunday · No scheduled pitch practice':(results[3].data?.topic||'Topic not yet added');
+  const zip=new JSZip();stage=document.createElement('div');stage.style.cssText='position:fixed;left:-100000px;top:0;width:720px;z-index:-1';document.body.appendChild(stage);
+  await document.fonts.ready;let completed=0;
+  for(const plan of plans){
+   const branchInfo=branches.find(x=>x[0]===plan.branch);if(!branchInfo)continue;
+   const branchName=branchInfo[0],color=branchInfo[1],goal=Number(goals.find(x=>x.branch===branchName)?.weekly_goal||0),sales=Number(plan.team_sales||0);
+   const monthly=monthRows.filter(x=>x.branch===branchName),forms=monthly.reduce((s,x)=>s+Number(x.personal_forms||0),0),supports=monthly.reduce((s,x)=>s+Number(x.personal_supports||0),0);
+   const node=$('poster').cloneNode(true);node.removeAttribute('id');node.style.setProperty('--branch',color);node.style.width='640px';node.style.maxWidth='none';node.style.boxShadow='none';node.style.margin='0';
+   const put=(id,value)=>{const el=node.querySelector('#'+id);if(el)el.textContent=value};
+   put('pBranch',branchName);put('pDate',new Date(date+'T00:00:00Z').toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric',timeZone:'UTC'}));put('pWeek','WEEK OF '+ws);
+   const topicRoot=node.querySelector('#pTopicCards');if(topicRoot)topicRoot.innerHTML=buildTopicCardsHTML(topicText);
+   put('pGoal',fmt(goal)+'s');put('pSales',fmt(sales)+'s');put('pMore',fmt(Math.max(0,goal-sales))+'s');
+   put('pRetrain',plan.retrain_goal||'—');put('pExtra',(plan.extra_works||[]).join(' · ')||'—');put('pPersonal',fmt(forms)+' forms · '+fmt(supports)+' supports');
+   stage.appendChild(node);
+   const blob=await htmlToImage.toBlob(node,{pixelRatio:2,cacheBust:true,backgroundColor:'#10131d'});
+   if(!blob)throw new Error('Could not render poster for '+branchName);
+   zip.file('ALZA-ORG-'+branchName.replace(/\s+/g,'-')+'-'+date+'.png',blob);stage.removeChild(node);completed++;
+   $('imageStatus').textContent='Preparing posters… '+completed+' of '+plans.length;
+  }
+  if(!completed)throw new Error('No recognised branch plans found for this date.');
+  const out=await zip.generateAsync({type:'blob'}),url=URL.createObjectURL(out),a=document.createElement('a');a.href=url;a.download='ALZA-ORG-OWNERS-ALL-UPDATES-'+date+'.zip';a.click();setTimeout(()=>URL.revokeObjectURL(url),1500);
+  $('imageStatus').textContent='✓ Downloaded '+completed+' owner poster(s) in one ZIP file for '+date+'.';$('imageStatus').className='status ok';
+ }catch(e){$('imageStatus').textContent='Bulk download failed: '+e.message;$('imageStatus').className='status bad'}
+ finally{if(stage)stage.remove();btn.disabled=false}
+}
 function renderTopicCards(value){const root=$('pTopicCards');if(!root)return;const lines=String(value||'No topic available').split(/\r?\n/).map(x=>x.trim()).filter(Boolean);const cards=[];let current=null;for(const line of lines){const h=line.match(/^(\d+)[.)]\s*(.+)$/);const sub=line.match(/^([a-z])[.)]\s*(.+)$/i);if(h){current={n:h[1],title:h[2],items:[]};cards.push(current)}else if(sub&&current){current.items.push({key:sub[1],text:sub[2]})}else if(current){current.items.push({key:'',text:line})}else{cards.push({n:'',title:line,items:[]})}}root.innerHTML=cards.map(card=>'<article class="practice-card '+(!card.items.length?'single':'')+'">'+(card.n?'<div class="practice-card-head"><b class="practice-card-num">'+esc(card.n)+'</b><div class="practice-card-title">'+esc(card.title)+'</div></div>':'<div class="practice-card-title">'+esc(card.title)+'</div>')+(card.items.length?'<div class="practice-card-body">'+card.items.map(it=>'<div class="practice-sub">'+(it.key?'<b>'+esc(it.key)+'</b>':'<b>•</b>')+'<span>'+esc(it.text)+'</span></div>').join('')+'</div>':'')+'</article>').join('')||'<div class="practice-card"><p>No topic available</p></div>'}
 function renderPoster(){if(!$('poster'))return;$('pBranch').textContent=branch||'SELECT A BRANCH';$('pDate').textContent=new Date(date+'T00:00:00Z').toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric',timeZone:'UTC'});$('pWeek').textContent='WEEK OF '+(weekStart||startOfWeek(date));renderTopicCards(topic);$('pRetrain').textContent=$('retrainGoal').value.trim()||'—';const extra=[...document.querySelectorAll('.check input:checked')].map(x=>x.value);$('pExtra').textContent=extra.join(' · ')||'—';$('pPersonal').textContent=fmt($('monthForms').textContent)+' forms · '+fmt($('monthSupports').textContent)+' supports';}
 async function loadTopic(){const weekday=weekdayOf(date);if(weekday===0){topic='Sunday · No scheduled pitch practice';}else{const {data,error}=await db.from('dp_pitch_practice_topics').select('topic').eq('weekday',weekday).maybeSingle();if(error)throw error;topic=data?.topic||'Topic not yet added';}$('topic').textContent=topic;renderTopicCards(topic)}
@@ -82,5 +138,5 @@ async function changeDate(){date=$('planDate').value||today();if(!branch){weekSt
 async function save(){if(!branch){status('Select a branch before saving.','bad');return}if(!goalSaved){status('Save the weekly goal first.','bad');return}if(!db){status('No online connection. Nothing was saved.','bad');return}const btn=$('saveBtn');btn.disabled=true;status('Saving daily plan online…','saving');try{const works=[...document.querySelectorAll('.check input:checked')].map(x=>x.value);const record={branch,plan_date:date,team_sales:Math.max(0,Number($('teamSales').value||0)),personal_forms:Math.max(0,Math.floor(Number($('personalForms').value||0))),personal_supports:Math.max(0,Number($('personalSupports').value||0)),retrain_goal:$('retrainGoal').value.trim(),extra_works:works,updated_at:new Date().toISOString()};const {error:dErr}=await db.from('dp_owner_daily_plans').upsert(record,{onConflict:'branch,plan_date'});if(dErr)throw dErr;daily=record;updateMetrics();await Promise.all([loadMonth(),loadHistory()]);status('✓ Daily plan saved successfully online · '+new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}),'ok')}catch(e){status('Save failed: '+e.message+'. Please retry; changes are not confirmed saved.','bad')}finally{btn.disabled=false}}
 async function refresh(){await loadAll()}
 async function download(){if(!branch){$('imageStatus').textContent='Select a branch first.';return}const btn=$('downloadBtn');btn.disabled=true;try{await document.fonts.ready;const blob=await htmlToImage.toBlob($('poster'),{pixelRatio:2,cacheBust:true,backgroundColor:'#10131d'});if(!blob)throw new Error('Poster export failed');const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='ALZA-ORG-'+branch.replace(/\s+/g,'-')+'-Owners-Plan-'+date+'.png';a.click();URL.revokeObjectURL(url);$('imageStatus').textContent='Poster downloaded from the live preview.'}catch(e){$('imageStatus').textContent='Download failed: '+e.message}finally{btn.disabled=false}}
-$('planDate').value=date;weekStart=startOfWeek(date);renderBranches();$('planDate').addEventListener('change',changeDate);$('saveBtn').addEventListener('click',save);$('goalSaveBtn').addEventListener('click',saveGoal);$('goalEditBtn').addEventListener('click',editGoal);$('refreshBtn').addEventListener('click',refresh);$('downloadBtn').addEventListener('click',download);$('history').addEventListener('click',e=>{const b=e.target.closest('[data-date]');if(b){date=b.dataset.date;$('planDate').value=date;changeDate()}});['weeklyGoal','teamSales','personalForms','personalSupports','retrainGoal'].forEach(id=>$(id).addEventListener('input',()=>{updateMetrics()}));document.querySelectorAll('.check input').forEach(x=>x.addEventListener('change',renderPoster));if(!db)status('Supabase client could not start. Please check your internet connection.','bad');else status('Online database ready. Choose a branch to begin.','ok');updateMetrics();
+$('planDate').value=date;weekStart=startOfWeek(date);renderBranches();$('planDate').addEventListener('change',changeDate);$('saveBtn').addEventListener('click',save);$('goalSaveBtn').addEventListener('click',saveGoal);$('goalEditBtn').addEventListener('click',editGoal);$('refreshBtn').addEventListener('click',refresh);$('downloadBtn').addEventListener('click',download);$('downloadAllBtn').addEventListener('click',downloadAllOwners);$('history').addEventListener('click',e=>{const b=e.target.closest('[data-date]');if(b){date=b.dataset.date;$('planDate').value=date;changeDate()}});['weeklyGoal','teamSales','personalForms','personalSupports','retrainGoal'].forEach(id=>$(id).addEventListener('input',()=>{updateMetrics()}));document.querySelectorAll('.check input').forEach(x=>x.addEventListener('change',renderPoster));if(!db)status('Supabase client could not start. Please check your internet connection.','bad');else status('Online database ready. Choose a branch to begin.','ok');updateMetrics();
 </script></body></html>
